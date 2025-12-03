@@ -1837,17 +1837,31 @@ async function runCompiler(e) {
     }
 
     const data = await res.json();
-    const stdout = (data.stdout || []).map((s) => s.text).join("\n").trim();
-    const stderr = (data.stderr || []).map((s) => s.text).join("\n").trim();
+    const compilerStdout = (data.stdout || []).map((s) => s.text).join("\n").trim();
+    const compilerStderr = (data.stderr || []).map((s) => s.text).join("\n").trim();
+    const execStdout = (data.execResult?.stdout || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const execStderr = (data.execResult?.stderr || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const exitCode = data.execResult?.code ?? data.code;
 
     lines.push("Compilation via Compiler Explorer (gcc 13.1)");
-    lines.push(`Exit code: ${data.code}`);
-    if (stderr) {
+    if (compilerStdout || compilerStderr) {
+      lines.push("Compiler output:");
+      if (compilerStdout) lines.push(compilerStdout);
+      if (compilerStderr) lines.push(compilerStderr);
+    }
+    lines.push(`Exit code: ${exitCode}`);
+    if (execStderr) {
       lines.push("Stderr:");
-      lines.push(stderr);
+      lines.push(execStderr);
     }
     lines.push("Program output:");
-    lines.push(stdout || "(no output)");
+    lines.push(execStdout || "(no output)");
   } catch (err) {
     lines.push(`Compilation failed: ${err.message}`);
   }
