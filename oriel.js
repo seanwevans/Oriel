@@ -1796,29 +1796,72 @@ function handleConsoleKey(e) {
   if (e.key === "Enter") e.target.value = "";
 }
 
-function runCompiler(e) {
+async function runCompiler(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#compiler-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
+  const code = editor?.value || "";
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No source code provided.</pre>`;
+    return;
+  }
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  const payload = {
+    source: code,
+    options: {
+      userArguments: "",
+      compilerOptions: { executorRequest: true },
+      filters: { execute: true },
+      executeParameters: { args: [] }
+    }
+  };
+
   const lines = [];
   try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No source code provided.");
-    } else {
-      lines.push("Compiling Tiny C...");
-      if (!/int\s+main\s*\(/.test(code)) {
-        throw new Error("error: missing int main() entry point");
-      }
-      lines.push("Build succeeded.");
-      const printfMatch = code.match(/printf\s*\(\s*\"([^\"]*)\"/);
-      const programOutput = printfMatch ? printfMatch[1] : "(no output)";
-      lines.push("Program output:");
-      lines.push(programOutput);
+    const res = await fetch("https://godbolt.org/api/compiler/g131/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(`compiler service responded with ${res.status}`);
     }
+
+    const data = await res.json();
+    const compilerStdout = (data.stdout || []).map((s) => s.text).join("\n").trim();
+    const compilerStderr = (data.stderr || []).map((s) => s.text).join("\n").trim();
+    const execStdout = (data.execResult?.stdout || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const execStderr = (data.execResult?.stderr || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const exitCode = data.execResult?.code ?? data.code;
+
+    lines.push("Compilation via Compiler Explorer (gcc 13.1)");
+    if (compilerStdout || compilerStderr) {
+      lines.push("Compiler output:");
+      if (compilerStdout) lines.push(compilerStdout);
+      if (compilerStderr) lines.push(compilerStderr);
+    }
+    lines.push(`Exit code: ${exitCode}`);
+    if (execStderr) {
+      lines.push("Stderr:");
+      lines.push(execStderr);
+    }
+    lines.push("Program output:");
+    lines.push(execStdout || "(no output)");
   } catch (err) {
     lines.push(`Compilation failed: ${err.message}`);
   }
