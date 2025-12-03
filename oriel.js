@@ -23,13 +23,18 @@ const ICONS = {
   reversi: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#008000" stroke="black"/><circle cx="16" cy="16" r="8" fill="red"/><circle cx="16" cy="16" r="4" fill="blue"/></svg>`,
   mplayer: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 6h24v20H4z" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="12" fill="black"/><path d="M12 24l8 0l-4 4z" fill="#000"/></svg>`,
   simcity: `<svg viewBox='0 0 32 32' class='svg-icon'><rect x='4' y='12' width='24' height='14' fill='#87ceeb' stroke='black'/><rect x='6' y='18' width='6' height='6' fill='#d3d3d3' stroke='black'/><rect x='14' y='14' width='6' height='10' fill='#a0d468' stroke='black'/><rect x='22' y='16' width='4' height='8' fill='#fdd835' stroke='black'/><rect x='4' y='10' width='24' height='2' fill='#8d6e63'/><rect x='2' y='24' width='28' height='4' fill='#6d4c41'/></svg>`,
+  chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
+  browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
   readme: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M10 8h12M10 12h12M10 16h12M10 20h8" stroke="black" stroke-width="2"/></svg>`,
   help: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#FFFF00" stroke="black"/><text x="16" y="22" font-size="20" text-anchor="middle" font-weight="bold" font-family="serif">?</text></svg>`,
-  desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`
+  desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
+  pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`
 };
+const DEFAULT_PDF_DATA_URI =
+  "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
 // --- MOCK FILE SYSTEM ---
 const MOCK_FS = {
   "C:\\": {
@@ -61,6 +66,10 @@ const MOCK_FS = {
           "WINMINE.EXE": {
             type: "file",
             app: "mines"
+          },
+          "CHESS.EXE": {
+            type: "file",
+            app: "chess"
           },
           "SOL.EXE": {
             type: "file",
@@ -114,6 +123,10 @@ const MOCK_FS = {
             type: "file",
             app: "control"
           },
+          "WEB.EXE": {
+            type: "file",
+            app: "browser"
+          },
           "TINYC.EXE": {
             type: "file",
             app: "compiler"
@@ -140,12 +153,23 @@ const MOCK_FS = {
             type: "file",
             app: "notepad",
             content: "- Buy Milk\n- Install DOOM"
+          },
+          "MANUAL.PDF": {
+            type: "file",
+            app: "pdfreader",
+            content: {
+              name: "Manual.pdf",
+              src: DEFAULT_PDF_DATA_URI
+            }
           }
         }
       }
     }
   }
 };
+const BROWSER_HOME = "https://example.com/";
+const browserSessions = {};
+const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
 // --- KERNEL & SCHEDULER SIMULATION ---
 class SimulatedKernel {
   constructor() {
@@ -316,6 +340,7 @@ class WindowManager {
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
     if (type === "taskman") content = this.getTaskManContent();
+    if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = this.getPaintContent();
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = this.getSimCityContent();
@@ -327,6 +352,8 @@ class WindowManager {
     if (type === "control") content = this.getControlPanelContent();
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
+    if (type === "pdfreader") content = this.getPdfReaderContent(initData);
+    if (type === "browser") content = this.getBrowserContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -355,20 +382,28 @@ class WindowManager {
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
     if (type === "control") initControlPanel(winEl);
+    if (type === "chess") initChess(winEl);
+    if (type === "console") initConsole(winEl);
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
+    if (type === "pdfreader") initPdfReader(winEl, initData);
+    if (type === "browser") initBrowser(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
   closeWindow(id) {
     const index = this.windows.findIndex((w) => w.id === id);
     if (index > -1) {
-      this.windows[index].el.remove();
+      const closingWin = this.windows[index];
+      if (typeof closingWin.el.chessCleanup === "function")
+        closingWin.el.chessCleanup();
+      closingWin.el.remove();
       // Remove minimized icon if exists
       const minIcon = document.getElementById("min-" + id);
       if (minIcon) minIcon.remove();
       this.windows.splice(index, 1);
+      delete browserSessions[id];
       // Kill Process
       kernel.unregisterProcess(id);
       refreshAllTaskManagers();
@@ -547,6 +582,10 @@ class WindowManager {
                         ${ICONS.solitaire}
                         <div class="prog-label">Solitaire</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('chess', 'Chess', 640, 520)">
+                        ${ICONS.chess}
+                        <div class="prog-label">Chess</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('reversi', 'Reversi', 300, 340)">
                         ${ICONS.reversi}
                         <div class="prog-label">Reversi</div>
@@ -575,6 +614,10 @@ class WindowManager {
                         ${ICONS.control}
                         <div class="prog-label">Control</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('pdfreader', 'PDF Reader', 720, 540)">
+                        ${ICONS.pdfreader}
+                        <div class="prog-label">PDF Reader</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('clipbrd', 'Clipboard', 300, 250)">
                         ${ICONS.clipboard}
                         <div class="prog-label">Clipboard</div>
@@ -598,6 +641,10 @@ class WindowManager {
                     <div class="prog-icon" onclick="wm.openWindow('console', 'Console', 500, 350)">
                         ${ICONS.console}
                         <div class="prog-label">Console</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
+                        ${ICONS.browser}
+                        <div class="prog-label">Browser</div>
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
                         ${ICONS.readme}
@@ -627,6 +674,21 @@ class WindowManager {
                     <div class="simcity-log">Welcome to Micropolis! Place roads, homes, and power to grow your town.</div>
                 </div>
             `;
+  getBrowserContent() {
+    return `<div class="browser-layout">
+              <div class="browser-toolbar">
+                <button class="browser-btn" data-action="back" title="Back">◀</button>
+                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+                <button class="browser-btn" data-action="home" title="Home">⌂</button>
+                <input class="browser-url" type="text" placeholder="https://example.com" spellcheck="false">
+                <button class="browser-btn go-btn" data-action="go">Go</button>
+              </div>
+              <div class="browser-view">
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
   }
   getTaskManContent() {
     return `
@@ -649,6 +711,9 @@ class WindowManager {
   // ... [Previous Content Methods] ...
   getReversiContent() {
     return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
+  }
+  getChessContent() {
+    return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
     return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas></div><div class="mplayer-controls"><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
@@ -680,7 +745,7 @@ class WindowManager {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
   }
   getNotepadContent(txt) {
     return `<textarea class="notepad-area" spellcheck="false">${
@@ -694,13 +759,28 @@ class WindowManager {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\WINDOWS></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
+    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
   }
   getReadmeContent() {
     return `<div style="padding:15px; font-family:'Times New Roman', serif;"><h2>Welcome to Web 3.1</h2><p>Features: Solitaire, Reversi, Media Player, Clock, etc.</p></div>`;
+  }
+  getPdfReaderContent(initData) {
+    const src = initData?.src || DEFAULT_PDF_DATA_URI;
+    const name = initData?.name || "Sample.pdf";
+    return `<div class="pdf-reader">
+                <div class="pdf-toolbar">
+                    <label class="task-btn file-btn">Open File<input type="file" accept="application/pdf" class="pdf-file-input"></label>
+                    <input type="text" class="pdf-url-input" placeholder="Paste PDF URL and click Load" value="">
+                    <button class="task-btn pdf-load-btn">Load</button>
+                    <div class="pdf-status">Loaded ${name}</div>
+                </div>
+                <div class="pdf-viewer">
+                    <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
+                </div>
+            </div>`;
   }
   getCalcContent() {
     return `<div class="calc-grid"><div class="calc-display" id="calc-disp" data-val="0">0</div><div class="calc-btn" onclick="calcInput(event, 'C')">C</div><div class="calc-btn" onclick="calcInput(event, '/')">/</div><div class="calc-btn" onclick="calcInput(event, '*')">*</div><div class="calc-btn" onclick="calcInput(event, '-')">-</div><div class="calc-btn" onclick="calcInput(event, '7')">7</div><div class="calc-btn" onclick="calcInput(event, '8')">8</div><div class="calc-btn" onclick="calcInput(event, '9')">9</div><div class="calc-btn op" onclick="calcInput(event, '+')">+</div><div class="calc-btn" onclick="calcInput(event, '4')">4</div><div class="calc-btn" onclick="calcInput(event, '5')">5</div><div class="calc-btn" onclick="calcInput(event, '6')">6</div><div class="calc-btn op" style="grid-row:span 2" onclick="calcInput(event, '=')">=</div><div class="calc-btn" onclick="calcInput(event, '1')">1</div><div class="calc-btn" onclick="calcInput(event, '2')">2</div><div class="calc-btn" onclick="calcInput(event, '3')">3</div><div class="calc-btn" style="grid-column: span 2" onclick="calcInput(event, '0')">0</div><div class="calc-btn" onclick="calcInput(event, '.')">.</div></div>`;
@@ -712,7 +792,7 @@ class WindowManager {
     return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
   getDatabaseContent() {
-    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
+    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
 const wm = new WindowManager();
@@ -859,6 +939,122 @@ function setWallpaper() {
   } else {
     body.style.backgroundImage = "none";
   }
+}
+function initBrowser(win) {
+  const urlInput = win.querySelector(".browser-url");
+  const frame = win.querySelector(".browser-frame");
+  const status = win.querySelector(".browser-status");
+  const backBtn = win.querySelector('[data-action="back"]');
+  const fwdBtn = win.querySelector('[data-action="forward"]');
+  const refreshBtn = win.querySelector('[data-action="refresh"]');
+  const homeBtn = win.querySelector('[data-action="home"]');
+  const goBtn = win.querySelector('[data-action="go"]');
+  const sessionId = win.dataset.id;
+
+  if (!urlInput || !frame || !status) return;
+
+  browserSessions[sessionId] = {
+    history: [],
+    index: -1
+  };
+
+  const setStatus = (text) => {
+    status.textContent = text;
+  };
+
+  const normalizeUrl = (raw) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
+  const buildProxiedUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      const portPart = parsed.port ? `:${parsed.port}` : "";
+      return `${BROWSER_PROXY_PREFIX}${parsed.protocol}//${parsed.hostname}${portPart}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch (err) {
+      // Fallback for malformed URLs; r.jina.ai will still try to fetch it.
+      return `${BROWSER_PROXY_PREFIX}https://${url.replace(/^\/+/, "")}`;
+    }
+  };
+
+  const updateNavState = () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const hasBack = session.index > 0;
+    const hasForward = session.index < session.history.length - 1;
+    if (backBtn) backBtn.disabled = !hasBack;
+    if (fwdBtn) fwdBtn.disabled = !hasForward;
+  };
+
+  const loadUrl = (rawUrl, pushHistory = true) => {
+    const url = normalizeUrl(rawUrl);
+    const session = browserSessions[sessionId];
+    if (!url || !session) return;
+    if (pushHistory) {
+      session.history = session.history.slice(0, session.index + 1);
+      session.history.push(url);
+      session.index = session.history.length - 1;
+    }
+    const proxied = buildProxiedUrl(url);
+    urlInput.value = url;
+    frame.src = proxied;
+    setStatus(`Loading ${url} (via text proxy)...`);
+    updateNavState();
+  };
+
+  if (backBtn)
+    backBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index <= 0) return;
+      session.index -= 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Loading ${target} (via text proxy)...`);
+      updateNavState();
+    };
+
+  if (fwdBtn)
+    fwdBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index >= session.history.length - 1) return;
+      session.index += 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Loading ${target} (via text proxy)...`);
+      updateNavState();
+    };
+
+  if (refreshBtn)
+    refreshBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index < 0) return;
+      const target = session.history[session.index];
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Refreshing ${target} (via text proxy)...`);
+    };
+
+  if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
+  if (goBtn) goBtn.onclick = () => loadUrl(urlInput.value);
+
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadUrl(urlInput.value);
+  });
+
+  frame.addEventListener("load", () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const currentUrl = session.history[session.index] || "";
+    setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
+  });
+
+  loadUrl(BROWSER_HOME);
 }
 // --- TASK MANAGER & SCHEDULER LOGIC ---
 let selT = {};
@@ -1488,6 +1684,7 @@ function initControlPanel(w) {
   menu.innerHTML = `
     <div class="menu-item cp-menu-item active" data-view="desktop">Desktop</div>
     <div class="menu-item cp-menu-item" data-view="color">Colors</div>
+    <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
 
@@ -1495,6 +1692,7 @@ function initControlPanel(w) {
     <div class="cp-menu-bar">
       <button class="task-btn cp-tab-btn active" data-view="desktop">Desktop</button>
       <button class="task-btn cp-tab-btn" data-view="color">Colors</button>
+      <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
     <div class="cp-view-area"></div>
@@ -1519,6 +1717,7 @@ function initControlPanel(w) {
     setActive(view);
     if (view === "desktop") openCPDesktop(viewArea);
     else if (view === "color") openCPColor(viewArea);
+    else if (view === "fonts") openCPFonts(viewArea);
     else renderHome();
   };
 
@@ -1531,6 +1730,83 @@ function initControlPanel(w) {
   });
 
   switchView("desktop");
+}
+
+function openCPFonts(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "fonts")
+      );
+  }
+
+  const fontOptions = ["Inter", "Roboto", "Open Sans", "Press Start 2P", "VT323"]
+    .map((f) => `<option value="${f}">${f}</option>`)
+    .join("");
+
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection()">Apply</button></div></div></div>`;
+
+  const select = body.querySelector("#cp-font-select");
+  const custom = body.querySelector("#cp-font-custom");
+  const preview = body.querySelector("#cp-font-preview-text");
+
+  const updatePreview = () => {
+    const font = (custom?.value.trim() || select?.value || "Segoe UI").trim();
+    const family = `'${font}', sans-serif`;
+    if (preview) {
+      preview.style.fontFamily = family;
+      preview.textContent = `The quick brown fox jumps over the lazy dog. (${font})`;
+    }
+  };
+
+  select?.addEventListener("change", updatePreview);
+  custom?.addEventListener("input", updatePreview);
+  updatePreview();
+}
+
+function loadGoogleFont(fontName) {
+  if (!fontName) return;
+  const encodedName = fontName.trim().replace(/\s+/g, "+");
+  const href = `https://fonts.googleapis.com/css2?family=${encodedName}:wght@400;700&display=swap`;
+  let link = document.getElementById("cp-google-font-link");
+  if (!link) {
+    link = document.createElement("link");
+    link.id = "cp-google-font-link";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+  }
+  link.href = href;
+}
+
+function applyFontSelection() {
+  const custom = document.getElementById("cp-font-custom");
+  const select = document.getElementById("cp-font-select");
+  const chosen = (custom?.value.trim() || select?.value || "").trim();
+  if (!chosen) return;
+  loadGoogleFont(chosen);
+  const family = `'${chosen}', sans-serif`;
+  document.documentElement.style.setProperty("--font-main", family);
+  const preview = document.getElementById("cp-font-preview-text");
+  if (preview) {
+    preview.style.fontFamily = family;
+    preview.textContent = `The quick brown fox jumps over the lazy dog. (${chosen})`;
+  }
 }
 
 function openCPColor(target, containerOverride) {
@@ -1573,12 +1849,317 @@ function applyTheme() {
   }
 }
 
+let chessLibPromise = null;
+
+function loadChessLibrary() {
+  if (!chessLibPromise) {
+    chessLibPromise = new Promise((resolve, reject) => {
+      if (window.Chess) return resolve(window.Chess);
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js";
+      s.onload = () => resolve(window.Chess);
+      s.onerror = (e) => reject(e);
+      document.head.appendChild(s);
+    });
+  }
+  return chessLibPromise;
+}
+
+function initStockfishEngine(w) {
+  if (w.chessWorkerReady) return Promise.resolve(w.chessWorker);
+  if (w.chessWorkerInit) return w.chessWorkerInit;
+  w.chessWorkerInit = new Promise((resolve, reject) => {
+    try {
+      const worker = new Worker(
+        "https://cdn.jsdelivr.net/npm/stockfish@16.1.1/src/stockfish.js"
+      );
+      w.chessWorker = worker;
+      const onMsg = (event) => {
+        const msg = String(event.data || "");
+        if (msg.includes("uciok")) worker.postMessage("isready");
+        if (msg.includes("readyok")) {
+          worker.removeEventListener("message", onMsg);
+          w.chessWorkerReady = true;
+          resolve(worker);
+        }
+      };
+      worker.addEventListener("message", onMsg);
+      worker.onerror = (e) => reject(e);
+      worker.postMessage("uci");
+      worker.postMessage("setoption name Skill Level value 5");
+      worker.postMessage("ucinewgame");
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return w.chessWorkerInit;
+}
+
+function initChess(w) {
+  const boardEl = w.querySelector(".chess-board"),
+    statusEl = w.querySelector(".chess-status"),
+    movesEl = w.querySelector(".chess-moves"),
+    fenInput = w.querySelector("#chess-fen"),
+    newBtn = w.querySelector(".chess-new"),
+    copyBtn = w.querySelector(".chess-copy"),
+    pasteBtn = w.querySelector(".chess-paste"),
+    loadBtn = w.querySelector(".chess-load");
+  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const symbols = {
+    p: "♟",
+    r: "♜",
+    n: "♞",
+    b: "♝",
+    q: "♛",
+    k: "♚"
+  };
+  let game = null;
+  let selected = null;
+  let legalTargets = [];
+  let userTurn = true;
+
+  const setStatus = (msg) => (statusEl.innerText = msg);
+
+  const renderMoves = () => {
+    movesEl.innerHTML = "";
+    const hist = game ? game.history({ verbose: true }) : [];
+    for (let i = 0; i < hist.length; i += 2) {
+      const white = hist[i];
+      const black = hist[i + 1];
+      const row = document.createElement("div");
+      row.className = "chess-move-row";
+      row.innerHTML = `<span class="mv-num">${i / 2 + 1}.</span><span class="mv-white">${
+        white ? white.san : ""
+      }</span><span class="mv-black">${black ? black.san : ""}</span>`;
+      movesEl.appendChild(row);
+    }
+    movesEl.scrollTop = movesEl.scrollHeight;
+  };
+
+  const renderBoard = () => {
+    if (!game) return;
+    boardEl.innerHTML = "";
+    const boardState = game.board();
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const square = files[col] + (8 - row);
+        const cell = document.createElement("div");
+        cell.className =
+          "chess-square " + ((row + col) % 2 === 0 ? "light" : "dark");
+        if (square === selected) cell.classList.add("selected");
+        if (legalTargets.includes(square)) cell.classList.add("hint");
+        cell.dataset.square = square;
+        const piece = boardState[row][col];
+        if (piece) {
+          const span = document.createElement("span");
+          span.className = "chess-piece";
+          span.innerText = symbols[piece.type];
+          if (piece.color === "w") span.classList.add("white");
+          cell.appendChild(span);
+        }
+        boardEl.appendChild(cell);
+      }
+    }
+    fenInput.value = game.fen();
+  };
+
+  const resetSelection = () => {
+    selected = null;
+    legalTargets = [];
+  };
+
+  const syncState = (fromPlayer) => {
+    renderBoard();
+    renderMoves();
+    if (game.game_over()) {
+      const res = game.in_checkmate()
+        ? fromPlayer
+          ? "Checkmate! You win."
+          : "Checkmate! Computer wins."
+        : "Game over.";
+      setStatus(res);
+      userTurn = false;
+      return;
+    }
+    if (fromPlayer) {
+      userTurn = false;
+      setStatus("Computer thinking...");
+      requestEngineMove();
+    } else {
+      userTurn = true;
+      setStatus("Your move (White)");
+    }
+  };
+
+  const applyEngineMove = (uci) => {
+    try {
+      const move = game.move({
+        from: uci.slice(0, 2),
+        to: uci.slice(2, 4),
+        promotion: "q"
+      });
+      if (move) resetSelection();
+      syncState(false);
+    } catch (e) {
+      setStatus("Engine move failed");
+      userTurn = true;
+    }
+  };
+
+  const requestEngineMove = () => {
+    initStockfishEngine(w)
+      .then((worker) => {
+        const listener = (event) => {
+          const msg = String(event.data || "");
+          if (msg.startsWith("bestmove")) {
+            const parts = msg.split(" ");
+            const best = parts[1];
+            worker.removeEventListener("message", listener);
+            applyEngineMove(best);
+          }
+        };
+        worker.addEventListener("message", listener);
+        worker.postMessage("position fen " + game.fen());
+        worker.postMessage("go movetime 800");
+      })
+      .catch(() => {
+        setStatus("Engine unavailable");
+        userTurn = true;
+      });
+  };
+
+  const selectSquare = (square) => {
+    if (!game || !userTurn) return;
+    const piece = game.get(square);
+    if (selected === square) {
+      resetSelection();
+      renderBoard();
+      return;
+    }
+    if (selected) {
+      const move = game.move({ from: selected, to: square, promotion: "q" });
+      if (move) {
+        resetSelection();
+        syncState(true);
+        return;
+      }
+    }
+    if (piece && piece.color === "w") {
+      selected = square;
+      legalTargets = game
+        .moves({ square, verbose: true })
+        .map((m) => m.to);
+    } else {
+      resetSelection();
+    }
+    renderBoard();
+  };
+
+  boardEl.addEventListener("click", (e) => {
+    const target = e.target.closest(".chess-square");
+    if (target?.dataset.square) selectSquare(target.dataset.square);
+  });
+
+  newBtn.onclick = () => {
+    if (!game) return;
+    game.reset();
+    resetSelection();
+    initStockfishEngine(w).catch(() => {});
+    syncState(false);
+  };
+
+  copyBtn.onclick = () => {
+    fenInput.select();
+    document.execCommand("copy");
+  };
+
+  pasteBtn.onclick = async () => {
+    if (navigator.clipboard?.readText) {
+      try {
+        fenInput.value = await navigator.clipboard.readText();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  };
+
+  loadBtn.onclick = () => {
+    if (!game) return;
+    const fen = fenInput.value.trim();
+    try {
+      const ok = game.load(fen);
+      if (ok) {
+        resetSelection();
+        syncState(false);
+        return;
+      }
+    } catch (e) {}
+    alert("Invalid FEN string");
+  };
+
+  w.chessCleanup = () => {
+    if (w.chessWorker) w.chessWorker.terminate();
+  };
+
+  loadChessLibrary()
+    .then((ChessClass) => {
+      game = new ChessClass();
+      resetSelection();
+      renderBoard();
+      renderMoves();
+      setStatus("Your move (White)");
+      initStockfishEngine(w).catch(() => setStatus("Engine unavailable"));
+    })
+    .catch(() => setStatus("Failed to load chess.js"));
+}
+
 function initFileManager(w) {
   w.cP = "C:\\";
   w.cD = MOCK_FS["C:\\"];
   w.currentDirObj = w.cD;
   rFT(w);
   rFL(w);
+}
+
+function initPdfReader(win, initData) {
+  const fileInput = win.querySelector(".pdf-file-input");
+  const urlInput = win.querySelector(".pdf-url-input");
+  const loadBtn = win.querySelector(".pdf-load-btn");
+  const frame = win.querySelector(".pdf-frame");
+  const status = win.querySelector(".pdf-status");
+
+  const loadDocument = (src, label) => {
+    if (!src) {
+      frame.src = "";
+      status.textContent = "No document loaded";
+      return;
+    }
+    frame.src = src;
+    status.textContent = `Loaded ${label}`;
+  };
+
+  const initialSrc = initData?.src || DEFAULT_PDF_DATA_URI;
+  loadDocument(initialSrc, initData?.name || "Sample.pdf");
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadDocument(ev.target.result, file.name);
+    reader.readAsDataURL(file);
+  });
+
+  loadBtn?.addEventListener("click", () => {
+    const url = urlInput?.value.trim();
+    if (url) loadDocument(url, url);
+  });
+
+  urlInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadBtn?.click();
+    }
+  });
 }
 
 function rFT(w) {
@@ -1744,6 +2325,32 @@ function deleteDbRecord(b, i) {
   renderDbTable(w);
 }
 
+function exportDbToCsv(b) {
+  const w = b.closest(".window");
+  const headers = ["Name", "Phone", "Email"];
+  const rows = w.dbData || [];
+  const csvLines = [
+    headers,
+    ...rows.map((r) => [r.name || "", r.phone || "", r.email || ""])
+  ].map((line) =>
+    line
+      .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+      .join(",")
+  );
+
+  const blob = new Blob([csvLines.join("\r\n")], {
+    type: "text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "data_manager_export.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function initPaint(w) {
   const c = w.querySelector("canvas"),
     ctx = c.getContext("2d"),
@@ -1825,33 +2432,230 @@ function clearPaint(el) {
   c.getContext("2d").fillRect(0, 0, c.width, c.height);
 }
 
-function handleConsoleKey(e) {
-  if (e.key === "Enter") e.target.value = "";
+function initConsole(w) {
+  w.consoleState = {
+    cwd: "C:\\",
+    history: [],
+    historyIndex: null
+  };
+  updateConsolePrompt(w);
+  const input = w.querySelector(".console-input");
+  if (input) input.focus();
 }
 
-function runCompiler(e) {
+function getConsoleState(w) {
+  if (!w.consoleState) initConsole(w);
+  return w.consoleState;
+}
+
+function updateConsolePrompt(w) {
+  const state = getConsoleState(w);
+  const prompt = w.querySelector(".console-line span");
+  if (prompt) prompt.textContent = `${state.cwd}>`;
+}
+
+function getPathSegments(pathStr) {
+  if (!pathStr) return [];
+  const cleaned = pathStr.replace(/^[A-Za-z]:/, "").replace(/^\\+/, "");
+  return cleaned ? cleaned.split(/\\+/).filter(Boolean) : [];
+}
+
+function resolveConsolePath(targetPath, cwd) {
+  let baseSegments = getPathSegments(cwd);
+  let remaining = targetPath || "";
+  const driveMatch = remaining.match(/^([A-Za-z]):/);
+  if (driveMatch) {
+    if (driveMatch[1].toUpperCase() !== "C") return { path: null, node: null };
+    baseSegments = [];
+    remaining = remaining.slice(driveMatch[0].length);
+  }
+  if (remaining.startsWith("\\")) {
+    baseSegments = [];
+    remaining = remaining.replace(/^\\+/, "");
+  }
+  const additional = getPathSegments(remaining);
+  const segments = [...baseSegments];
+  additional.forEach((seg) => {
+    if (!seg || seg === ".") return;
+    if (seg === "..") segments.pop();
+    else segments.push(seg.toUpperCase());
+  });
+  let node = MOCK_FS["C\\"] || MOCK_FS["C:\\"];
+  segments.forEach((seg) => {
+    if (!node || !node.children) return;
+    const key = Object.keys(node.children).find(
+      (k) => k.toUpperCase() === seg
+    );
+    node = key ? node.children[key] : null;
+  });
+  const normalizedPath =
+    "C:\\" + (segments.length ? segments.join("\\") : "");
+  return { path: normalizedPath.replace(/\\\\+/g, "\\"), node };
+}
+
+function appendConsoleLine(w, text = "") {
+  const output = w.querySelector(".console-output");
+  if (!output) return;
+  const line = document.createElement("div");
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function processConsoleCommand(w, input) {
+  const state = getConsoleState(w);
+  appendConsoleLine(w, `${state.cwd}>${input}`);
+  if (!input.trim()) {
+    updateConsolePrompt(w);
+    return;
+  }
+  const [rawCmd, ...rest] = input.trim().split(/\s+/);
+  const cmd = rawCmd.toLowerCase();
+  const argLine = rest.join(" ");
+  const lowerArgs = argLine.trim();
+  if (cmd === "cls") {
+    const output = w.querySelector(".console-output");
+    if (output) output.innerHTML = "";
+    return;
+  }
+  if (cmd === "help") {
+    [
+      "Egg Oriel Console Commands:",
+      "HELP - Show this help text",
+      "DIR  - List files and folders",
+      "CD   - Change directory",
+      "CLS  - Clear the screen",
+      "ECHO - Print text"
+    ].forEach((line) => appendConsoleLine(w, line));
+  } else if (cmd === "dir") {
+    const { node } = resolveConsolePath(lowerArgs || state.cwd, state.cwd);
+    if (!node || node.type !== "dir") {
+      appendConsoleLine(w, "File Not Found");
+    } else {
+      const entries = Object.keys(node.children || {});
+      entries.sort();
+      entries.forEach((key) => appendConsoleLine(w, key));
+      if (!entries.length) appendConsoleLine(w, "(empty)");
+    }
+  } else if (cmd === "echo") {
+    appendConsoleLine(w, lowerArgs);
+  } else if (cmd === "cd") {
+    if (!lowerArgs) {
+      appendConsoleLine(w, state.cwd);
+    } else {
+      const { path, node } = resolveConsolePath(lowerArgs, state.cwd);
+      if (node && node.type === "dir" && path) {
+        state.cwd = path;
+        updateConsolePrompt(w);
+      } else {
+        appendConsoleLine(w, "The system cannot find the path specified.");
+      }
+    }
+  } else {
+    appendConsoleLine(
+      w,
+      `'${rawCmd}' is not recognized as an internal or external command.`
+    );
+  }
+}
+
+function handleConsoleKey(e) {
+  const win = e.target.closest(".window");
+  if (!win) return;
+  const state = getConsoleState(win);
+  if (e.key === "Enter") {
+    e.preventDefault();
+    processConsoleCommand(win, e.target.value);
+    if (e.target.value.trim()) {
+      state.history.push(e.target.value.trim());
+    }
+    state.historyIndex = null;
+    e.target.value = "";
+    setTimeout(() => e.target.focus(), 0);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!state.history.length) return;
+    if (state.historyIndex === null) state.historyIndex = state.history.length - 1;
+    else if (state.historyIndex > 0) state.historyIndex--;
+    e.target.value = state.history[state.historyIndex] || "";
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (state.historyIndex === null) return;
+    if (state.historyIndex < state.history.length - 1) state.historyIndex++;
+    else state.historyIndex = null;
+    e.target.value =
+      state.historyIndex === null ? "" : state.history[state.historyIndex];
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  }
+}
+
+async function runCompiler(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#compiler-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
+  const code = editor?.value || "";
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No source code provided.</pre>`;
+    return;
+  }
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  const payload = {
+    source: code,
+    options: {
+      userArguments: "",
+      compilerOptions: { executorRequest: true },
+      filters: { execute: true },
+      executeParameters: { args: [] }
+    }
+  };
+
   const lines = [];
   try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No source code provided.");
-    } else {
-      lines.push("Compiling Tiny C...");
-      if (!/int\s+main\s*\(/.test(code)) {
-        throw new Error("error: missing int main() entry point");
-      }
-      lines.push("Build succeeded.");
-      const printfMatch = code.match(/printf\s*\(\s*\"([^\"]*)\"/);
-      const programOutput = printfMatch ? printfMatch[1] : "(no output)";
-      lines.push("Program output:");
-      lines.push(programOutput);
+    const res = await fetch("https://godbolt.org/api/compiler/g131/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(`compiler service responded with ${res.status}`);
     }
+
+    const data = await res.json();
+    const compilerStdout = (data.stdout || []).map((s) => s.text).join("\n").trim();
+    const compilerStderr = (data.stderr || []).map((s) => s.text).join("\n").trim();
+    const execStdout = (data.execResult?.stdout || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const execStderr = (data.execResult?.stderr || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const exitCode = data.execResult?.code ?? data.code;
+
+    lines.push("Compilation via Compiler Explorer (gcc 13.1)");
+    if (compilerStdout || compilerStderr) {
+      lines.push("Compiler output:");
+      if (compilerStdout) lines.push(compilerStdout);
+      if (compilerStderr) lines.push(compilerStderr);
+    }
+    lines.push(`Exit code: ${exitCode}`);
+    if (execStderr) {
+      lines.push("Stderr:");
+      lines.push(execStderr);
+    }
+    lines.push("Program output:");
+    lines.push(execStdout || "(no output)");
   } catch (err) {
     lines.push(`Compilation failed: ${err.message}`);
   }
@@ -1859,36 +2663,52 @@ function runCompiler(e) {
   output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
 }
 
-function runPython(e) {
+async function runPython(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#python-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
-  const lines = [];
-  try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No script provided.");
-    } else {
-      lines.push("Running Python 1.0 interpreter...");
-      const printRegex = /print\s*\(([^\)]*)\)/g;
-      const printed = [];
-      let match;
-      while ((match = printRegex.exec(code))) {
-        const raw = match[1].trim();
-        const textMatch = raw.match(/^\s*["'`](.*)["'`]\s*$/);
-        printed.push(textMatch ? textMatch[1] : raw);
-      }
-      lines.push("Program output:");
-      lines.push(printed.length ? printed.join("\n") : "(no output)");
-    }
-  } catch (err) {
-    lines.push(`Execution failed: ${err.message}`);
+  const code = editor?.value || "";
+
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No script provided.</pre>`;
+    return;
   }
 
-  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+  const body = {
+    source: code,
+    options: {
+      executeParameters: { args: [], stdin: "" },
+      compilerOptions: {},
+      filters: { execute: true },
+      tools: []
+    }
+  };
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  try {
+    const response = await fetch("https://godbolt.org/api/compiler/python312/compile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || response.statusText);
+
+    const pre = document.createElement("pre");
+    pre.textContent = text;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  } catch (err) {
+    const pre = document.createElement("pre");
+    pre.textContent = `Execution failed: ${err.message}`;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  }
 }
 
 function calcInput(e, v) {
