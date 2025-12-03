@@ -148,6 +148,7 @@ const MOCK_FS = {
 };
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
+const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
 // --- KERNEL & SCHEDULER SIMULATION ---
 class SimulatedKernel {
   constructor() {
@@ -889,6 +890,17 @@ function initBrowser(win) {
     return trimmed;
   };
 
+  const buildProxiedUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      const portPart = parsed.port ? `:${parsed.port}` : "";
+      return `${BROWSER_PROXY_PREFIX}${parsed.protocol}//${parsed.hostname}${portPart}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch (err) {
+      // Fallback for malformed URLs; r.jina.ai will still try to fetch it.
+      return `${BROWSER_PROXY_PREFIX}https://${url.replace(/^\/+/, "")}`;
+    }
+  };
+
   const updateNavState = () => {
     const session = browserSessions[sessionId];
     if (!session) return;
@@ -907,9 +919,10 @@ function initBrowser(win) {
       session.history.push(url);
       session.index = session.history.length - 1;
     }
+    const proxied = buildProxiedUrl(url);
     urlInput.value = url;
-    frame.src = url;
-    setStatus(`Loading ${url}...`);
+    frame.src = proxied;
+    setStatus(`Loading ${url} (via text proxy)...`);
     updateNavState();
   };
 
@@ -920,8 +933,8 @@ function initBrowser(win) {
       session.index -= 1;
       const target = session.history[session.index];
       urlInput.value = target;
-      frame.src = target;
-      setStatus(`Loading ${target}...`);
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Loading ${target} (via text proxy)...`);
       updateNavState();
     };
 
@@ -932,8 +945,8 @@ function initBrowser(win) {
       session.index += 1;
       const target = session.history[session.index];
       urlInput.value = target;
-      frame.src = target;
-      setStatus(`Loading ${target}...`);
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Loading ${target} (via text proxy)...`);
       updateNavState();
     };
 
@@ -942,8 +955,8 @@ function initBrowser(win) {
       const session = browserSessions[sessionId];
       if (!session || session.index < 0) return;
       const target = session.history[session.index];
-      frame.src = target;
-      setStatus(`Refreshing ${target}...`);
+      frame.src = buildProxiedUrl(target);
+      setStatus(`Refreshing ${target} (via text proxy)...`);
     };
 
   if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
