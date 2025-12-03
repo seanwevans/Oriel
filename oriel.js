@@ -28,8 +28,11 @@ const ICONS = {
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
   readme: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M10 8h12M10 12h12M10 16h12M10 20h8" stroke="black" stroke-width="2"/></svg>`,
   help: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#FFFF00" stroke="black"/><text x="16" y="22" font-size="20" text-anchor="middle" font-weight="bold" font-family="serif">?</text></svg>`,
-  desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`
+  desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
+  pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`
 };
+const DEFAULT_PDF_DATA_URI =
+  "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
 // --- MOCK FILE SYSTEM ---
 const MOCK_FS = {
   "C:\\": {
@@ -140,6 +143,14 @@ const MOCK_FS = {
             type: "file",
             app: "notepad",
             content: "- Buy Milk\n- Install DOOM"
+          },
+          "MANUAL.PDF": {
+            type: "file",
+            app: "pdfreader",
+            content: {
+              name: "Manual.pdf",
+              src: DEFAULT_PDF_DATA_URI
+            }
           }
         }
       }
@@ -328,6 +339,7 @@ class WindowManager {
     if (type === "control") content = this.getControlPanelContent();
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
+    if (type === "pdfreader") content = this.getPdfReaderContent(initData);
     if (type === "browser") content = this.getBrowserContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
@@ -360,6 +372,7 @@ class WindowManager {
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
+    if (type === "pdfreader") initPdfReader(winEl, initData);
     if (type === "browser") initBrowser(winEl);
     // Refresh logic
     refreshAllTaskManagers();
@@ -575,6 +588,10 @@ class WindowManager {
                         ${ICONS.control}
                         <div class="prog-label">Control</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('pdfreader', 'PDF Reader', 720, 540)">
+                        ${ICONS.pdfreader}
+                        <div class="prog-label">PDF Reader</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('clipbrd', 'Clipboard', 300, 250)">
                         ${ICONS.clipboard}
                         <div class="prog-label">Clipboard</div>
@@ -699,6 +716,21 @@ class WindowManager {
   }
   getReadmeContent() {
     return `<div style="padding:15px; font-family:'Times New Roman', serif;"><h2>Welcome to Web 3.1</h2><p>Features: Solitaire, Reversi, Media Player, Clock, etc.</p></div>`;
+  }
+  getPdfReaderContent(initData) {
+    const src = initData?.src || DEFAULT_PDF_DATA_URI;
+    const name = initData?.name || "Sample.pdf";
+    return `<div class="pdf-reader">
+                <div class="pdf-toolbar">
+                    <label class="task-btn file-btn">Open File<input type="file" accept="application/pdf" class="pdf-file-input"></label>
+                    <input type="text" class="pdf-url-input" placeholder="Paste PDF URL and click Load" value="">
+                    <button class="task-btn pdf-load-btn">Load</button>
+                    <div class="pdf-status">Loaded ${name}</div>
+                </div>
+                <div class="pdf-viewer">
+                    <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
+                </div>
+            </div>`;
   }
   getCalcContent() {
     return `<div class="calc-grid"><div class="calc-display" id="calc-disp" data-val="0">0</div><div class="calc-btn" onclick="calcInput(event, 'C')">C</div><div class="calc-btn" onclick="calcInput(event, '/')">/</div><div class="calc-btn" onclick="calcInput(event, '*')">*</div><div class="calc-btn" onclick="calcInput(event, '-')">-</div><div class="calc-btn" onclick="calcInput(event, '7')">7</div><div class="calc-btn" onclick="calcInput(event, '8')">8</div><div class="calc-btn" onclick="calcInput(event, '9')">9</div><div class="calc-btn op" onclick="calcInput(event, '+')">+</div><div class="calc-btn" onclick="calcInput(event, '4')">4</div><div class="calc-btn" onclick="calcInput(event, '5')">5</div><div class="calc-btn" onclick="calcInput(event, '6')">6</div><div class="calc-btn op" style="grid-row:span 2" onclick="calcInput(event, '=')">=</div><div class="calc-btn" onclick="calcInput(event, '1')">1</div><div class="calc-btn" onclick="calcInput(event, '2')">2</div><div class="calc-btn" onclick="calcInput(event, '3')">3</div><div class="calc-btn" style="grid-column: span 2" onclick="calcInput(event, '0')">0</div><div class="calc-btn" onclick="calcInput(event, '.')">.</div></div>`;
@@ -1681,6 +1713,47 @@ function initFileManager(w) {
   w.currentDirObj = w.cD;
   rFT(w);
   rFL(w);
+}
+
+function initPdfReader(win, initData) {
+  const fileInput = win.querySelector(".pdf-file-input");
+  const urlInput = win.querySelector(".pdf-url-input");
+  const loadBtn = win.querySelector(".pdf-load-btn");
+  const frame = win.querySelector(".pdf-frame");
+  const status = win.querySelector(".pdf-status");
+
+  const loadDocument = (src, label) => {
+    if (!src) {
+      frame.src = "";
+      status.textContent = "No document loaded";
+      return;
+    }
+    frame.src = src;
+    status.textContent = `Loaded ${label}`;
+  };
+
+  const initialSrc = initData?.src || DEFAULT_PDF_DATA_URI;
+  loadDocument(initialSrc, initData?.name || "Sample.pdf");
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadDocument(ev.target.result, file.name);
+    reader.readAsDataURL(file);
+  });
+
+  loadBtn?.addEventListener("click", () => {
+    const url = urlInput?.value.trim();
+    if (url) loadDocument(url, url);
+  });
+
+  urlInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadBtn?.click();
+    }
+  });
 }
 
 function rFT(w) {
