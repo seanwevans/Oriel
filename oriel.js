@@ -22,6 +22,7 @@ const ICONS = {
   clipboard: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="6" width="20" height="22" fill="white" stroke="black"/><rect x="10" y="4" width="12" height="4" fill="#c0c0c0" stroke="black"/><line x1="10" y1="12" x2="22" y2="12" stroke="gray"/><line x1="10" y1="16" x2="22" y2="16" stroke="gray"/></svg>`,
   reversi: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#008000" stroke="black"/><circle cx="16" cy="16" r="8" fill="red"/><circle cx="16" cy="16" r="4" fill="blue"/></svg>`,
   mplayer: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 6h24v20H4z" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="12" fill="black"/><path d="M12 24l8 0l-4 4z" fill="#000"/></svg>`,
+  browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -109,6 +110,10 @@ const MOCK_FS = {
             type: "file",
             app: "control"
           },
+          "WEB.EXE": {
+            type: "file",
+            app: "browser"
+          },
           "TINYC.EXE": {
             type: "file",
             app: "compiler"
@@ -141,6 +146,8 @@ const MOCK_FS = {
     }
   }
 };
+const BROWSER_HOME = "https://example.com/";
+const browserSessions = {};
 // --- KERNEL & SCHEDULER SIMULATION ---
 class SimulatedKernel {
   constructor() {
@@ -321,6 +328,7 @@ class WindowManager {
     if (type === "control") content = this.getControlPanelContent();
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
+    if (type === "browser") content = this.getBrowserContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -351,6 +359,7 @@ class WindowManager {
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
+    if (type === "browser") initBrowser(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
@@ -362,6 +371,7 @@ class WindowManager {
       const minIcon = document.getElementById("min-" + id);
       if (minIcon) minIcon.remove();
       this.windows.splice(index, 1);
+      delete browserSessions[id];
       // Kill Process
       kernel.unregisterProcess(id);
       refreshAllTaskManagers();
@@ -588,12 +598,32 @@ class WindowManager {
                         ${ICONS.console}
                         <div class="prog-label">Console</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
+                        ${ICONS.browser}
+                        <div class="prog-label">Browser</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
                         ${ICONS.readme}
                         <div class="prog-label">Read Me</div>
                     </div>
                 </div>
             `;
+  }
+  getBrowserContent() {
+    return `<div class="browser-layout">
+              <div class="browser-toolbar">
+                <button class="browser-btn" data-action="back" title="Back">◀</button>
+                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+                <button class="browser-btn" data-action="home" title="Home">⌂</button>
+                <input class="browser-url" type="text" placeholder="https://example.com" spellcheck="false">
+                <button class="browser-btn go-btn" data-action="go">Go</button>
+              </div>
+              <div class="browser-view">
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
   }
   getTaskManContent() {
     return `
@@ -826,6 +856,110 @@ function setWallpaper() {
   } else {
     body.style.backgroundImage = "none";
   }
+}
+function initBrowser(win) {
+  const urlInput = win.querySelector(".browser-url");
+  const frame = win.querySelector(".browser-frame");
+  const status = win.querySelector(".browser-status");
+  const backBtn = win.querySelector('[data-action="back"]');
+  const fwdBtn = win.querySelector('[data-action="forward"]');
+  const refreshBtn = win.querySelector('[data-action="refresh"]');
+  const homeBtn = win.querySelector('[data-action="home"]');
+  const goBtn = win.querySelector('[data-action="go"]');
+  const sessionId = win.dataset.id;
+
+  if (!urlInput || !frame || !status) return;
+
+  browserSessions[sessionId] = {
+    history: [],
+    index: -1
+  };
+
+  const setStatus = (text) => {
+    status.textContent = text;
+  };
+
+  const normalizeUrl = (raw) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
+  const updateNavState = () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const hasBack = session.index > 0;
+    const hasForward = session.index < session.history.length - 1;
+    if (backBtn) backBtn.disabled = !hasBack;
+    if (fwdBtn) fwdBtn.disabled = !hasForward;
+  };
+
+  const loadUrl = (rawUrl, pushHistory = true) => {
+    const url = normalizeUrl(rawUrl);
+    const session = browserSessions[sessionId];
+    if (!url || !session) return;
+    if (pushHistory) {
+      session.history = session.history.slice(0, session.index + 1);
+      session.history.push(url);
+      session.index = session.history.length - 1;
+    }
+    urlInput.value = url;
+    frame.src = url;
+    setStatus(`Loading ${url}...`);
+    updateNavState();
+  };
+
+  if (backBtn)
+    backBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index <= 0) return;
+      session.index -= 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = target;
+      setStatus(`Loading ${target}...`);
+      updateNavState();
+    };
+
+  if (fwdBtn)
+    fwdBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index >= session.history.length - 1) return;
+      session.index += 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = target;
+      setStatus(`Loading ${target}...`);
+      updateNavState();
+    };
+
+  if (refreshBtn)
+    refreshBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index < 0) return;
+      const target = session.history[session.index];
+      frame.src = target;
+      setStatus(`Refreshing ${target}...`);
+    };
+
+  if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
+  if (goBtn) goBtn.onclick = () => loadUrl(urlInput.value);
+
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadUrl(urlInput.value);
+  });
+
+  frame.addEventListener("load", () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const currentUrl = session.history[session.index] || "";
+    setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
+  });
+
+  loadUrl(BROWSER_HOME);
 }
 // --- TASK MANAGER & SCHEDULER LOGIC ---
 let selT = {};
