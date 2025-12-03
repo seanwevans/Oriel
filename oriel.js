@@ -712,7 +712,7 @@ class WindowManager {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
   }
   getNotepadContent(txt) {
     return `<textarea class="notepad-area" spellcheck="false">${
@@ -1639,6 +1639,7 @@ function initControlPanel(w) {
   menu.innerHTML = `
     <div class="menu-item cp-menu-item active" data-view="desktop">Desktop</div>
     <div class="menu-item cp-menu-item" data-view="color">Colors</div>
+    <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
 
@@ -1646,6 +1647,7 @@ function initControlPanel(w) {
     <div class="cp-menu-bar">
       <button class="task-btn cp-tab-btn active" data-view="desktop">Desktop</button>
       <button class="task-btn cp-tab-btn" data-view="color">Colors</button>
+      <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
     <div class="cp-view-area"></div>
@@ -1670,6 +1672,7 @@ function initControlPanel(w) {
     setActive(view);
     if (view === "desktop") openCPDesktop(viewArea);
     else if (view === "color") openCPColor(viewArea);
+    else if (view === "fonts") openCPFonts(viewArea);
     else renderHome();
   };
 
@@ -1682,6 +1685,83 @@ function initControlPanel(w) {
   });
 
   switchView("desktop");
+}
+
+function openCPFonts(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "fonts")
+      );
+  }
+
+  const fontOptions = ["Inter", "Roboto", "Open Sans", "Press Start 2P", "VT323"]
+    .map((f) => `<option value="${f}">${f}</option>`)
+    .join("");
+
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection()">Apply</button></div></div></div>`;
+
+  const select = body.querySelector("#cp-font-select");
+  const custom = body.querySelector("#cp-font-custom");
+  const preview = body.querySelector("#cp-font-preview-text");
+
+  const updatePreview = () => {
+    const font = (custom?.value.trim() || select?.value || "Segoe UI").trim();
+    const family = `'${font}', sans-serif`;
+    if (preview) {
+      preview.style.fontFamily = family;
+      preview.textContent = `The quick brown fox jumps over the lazy dog. (${font})`;
+    }
+  };
+
+  select?.addEventListener("change", updatePreview);
+  custom?.addEventListener("input", updatePreview);
+  updatePreview();
+}
+
+function loadGoogleFont(fontName) {
+  if (!fontName) return;
+  const encodedName = fontName.trim().replace(/\s+/g, "+");
+  const href = `https://fonts.googleapis.com/css2?family=${encodedName}:wght@400;700&display=swap`;
+  let link = document.getElementById("cp-google-font-link");
+  if (!link) {
+    link = document.createElement("link");
+    link.id = "cp-google-font-link";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+  }
+  link.href = href;
+}
+
+function applyFontSelection() {
+  const custom = document.getElementById("cp-font-custom");
+  const select = document.getElementById("cp-font-select");
+  const chosen = (custom?.value.trim() || select?.value || "").trim();
+  if (!chosen) return;
+  loadGoogleFont(chosen);
+  const family = `'${chosen}', sans-serif`;
+  document.documentElement.style.setProperty("--font-main", family);
+  const preview = document.getElementById("cp-font-preview-text");
+  if (preview) {
+    preview.style.fontFamily = family;
+    preview.textContent = `The quick brown fox jumps over the lazy dog. (${chosen})`;
+  }
 }
 
 function openCPColor(target, containerOverride) {
