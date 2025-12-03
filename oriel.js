@@ -1869,36 +1869,52 @@ async function runCompiler(e) {
   output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
 }
 
-function runPython(e) {
+async function runPython(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#python-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
-  const lines = [];
-  try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No script provided.");
-    } else {
-      lines.push("Running Python 1.0 interpreter...");
-      const printRegex = /print\s*\(([^\)]*)\)/g;
-      const printed = [];
-      let match;
-      while ((match = printRegex.exec(code))) {
-        const raw = match[1].trim();
-        const textMatch = raw.match(/^\s*["'`](.*)["'`]\s*$/);
-        printed.push(textMatch ? textMatch[1] : raw);
-      }
-      lines.push("Program output:");
-      lines.push(printed.length ? printed.join("\n") : "(no output)");
-    }
-  } catch (err) {
-    lines.push(`Execution failed: ${err.message}`);
+  const code = editor?.value || "";
+
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No script provided.</pre>`;
+    return;
   }
 
-  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+  const body = {
+    source: code,
+    options: {
+      executeParameters: { args: [], stdin: "" },
+      compilerOptions: {},
+      filters: { execute: true },
+      tools: []
+    }
+  };
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  try {
+    const response = await fetch("https://godbolt.org/api/compiler/python312/compile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || response.statusText);
+
+    const pre = document.createElement("pre");
+    pre.textContent = text;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  } catch (err) {
+    const pre = document.createElement("pre");
+    pre.textContent = `Execution failed: ${err.message}`;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  }
 }
 
 function calcInput(e, v) {
