@@ -22,6 +22,7 @@ const ICONS = {
   clipboard: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="6" width="20" height="22" fill="white" stroke="black"/><rect x="10" y="4" width="12" height="4" fill="#c0c0c0" stroke="black"/><line x1="10" y1="12" x2="22" y2="12" stroke="gray"/><line x1="10" y1="16" x2="22" y2="16" stroke="gray"/></svg>`,
   reversi: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#008000" stroke="black"/><circle cx="16" cy="16" r="8" fill="red"/><circle cx="16" cy="16" r="4" fill="blue"/></svg>`,
   mplayer: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 6h24v20H4z" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="12" fill="black"/><path d="M12 24l8 0l-4 4z" fill="#000"/></svg>`,
+  browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -112,6 +113,10 @@ const MOCK_FS = {
             type: "file",
             app: "control"
           },
+          "WEB.EXE": {
+            type: "file",
+            app: "browser"
+          },
           "TINYC.EXE": {
             type: "file",
             app: "compiler"
@@ -152,6 +157,8 @@ const MOCK_FS = {
     }
   }
 };
+const BROWSER_HOME = "https://example.com/";
+const browserSessions = {};
 // --- KERNEL & SCHEDULER SIMULATION ---
 class SimulatedKernel {
   constructor() {
@@ -333,6 +340,7 @@ class WindowManager {
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
+    if (type === "browser") content = this.getBrowserContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -360,10 +368,12 @@ class WindowManager {
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
     if (type === "control") initControlPanel(winEl);
+    if (type === "console") initConsole(winEl);
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
     if (type === "pdfreader") initPdfReader(winEl, initData);
+    if (type === "browser") initBrowser(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
@@ -375,6 +385,7 @@ class WindowManager {
       const minIcon = document.getElementById("min-" + id);
       if (minIcon) minIcon.remove();
       this.windows.splice(index, 1);
+      delete browserSessions[id];
       // Kill Process
       kernel.unregisterProcess(id);
       refreshAllTaskManagers();
@@ -605,12 +616,32 @@ class WindowManager {
                         ${ICONS.console}
                         <div class="prog-label">Console</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
+                        ${ICONS.browser}
+                        <div class="prog-label">Browser</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
                         ${ICONS.readme}
                         <div class="prog-label">Read Me</div>
                     </div>
                 </div>
             `;
+  }
+  getBrowserContent() {
+    return `<div class="browser-layout">
+              <div class="browser-toolbar">
+                <button class="browser-btn" data-action="back" title="Back">◀</button>
+                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+                <button class="browser-btn" data-action="home" title="Home">⌂</button>
+                <input class="browser-url" type="text" placeholder="https://example.com" spellcheck="false">
+                <button class="browser-btn go-btn" data-action="go">Go</button>
+              </div>
+              <div class="browser-view">
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
   }
   getTaskManContent() {
     return `
@@ -678,7 +709,7 @@ class WindowManager {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\WINDOWS></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
+    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
@@ -858,6 +889,110 @@ function setWallpaper() {
   } else {
     body.style.backgroundImage = "none";
   }
+}
+function initBrowser(win) {
+  const urlInput = win.querySelector(".browser-url");
+  const frame = win.querySelector(".browser-frame");
+  const status = win.querySelector(".browser-status");
+  const backBtn = win.querySelector('[data-action="back"]');
+  const fwdBtn = win.querySelector('[data-action="forward"]');
+  const refreshBtn = win.querySelector('[data-action="refresh"]');
+  const homeBtn = win.querySelector('[data-action="home"]');
+  const goBtn = win.querySelector('[data-action="go"]');
+  const sessionId = win.dataset.id;
+
+  if (!urlInput || !frame || !status) return;
+
+  browserSessions[sessionId] = {
+    history: [],
+    index: -1
+  };
+
+  const setStatus = (text) => {
+    status.textContent = text;
+  };
+
+  const normalizeUrl = (raw) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
+  const updateNavState = () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const hasBack = session.index > 0;
+    const hasForward = session.index < session.history.length - 1;
+    if (backBtn) backBtn.disabled = !hasBack;
+    if (fwdBtn) fwdBtn.disabled = !hasForward;
+  };
+
+  const loadUrl = (rawUrl, pushHistory = true) => {
+    const url = normalizeUrl(rawUrl);
+    const session = browserSessions[sessionId];
+    if (!url || !session) return;
+    if (pushHistory) {
+      session.history = session.history.slice(0, session.index + 1);
+      session.history.push(url);
+      session.index = session.history.length - 1;
+    }
+    urlInput.value = url;
+    frame.src = url;
+    setStatus(`Loading ${url}...`);
+    updateNavState();
+  };
+
+  if (backBtn)
+    backBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index <= 0) return;
+      session.index -= 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = target;
+      setStatus(`Loading ${target}...`);
+      updateNavState();
+    };
+
+  if (fwdBtn)
+    fwdBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index >= session.history.length - 1) return;
+      session.index += 1;
+      const target = session.history[session.index];
+      urlInput.value = target;
+      frame.src = target;
+      setStatus(`Loading ${target}...`);
+      updateNavState();
+    };
+
+  if (refreshBtn)
+    refreshBtn.onclick = () => {
+      const session = browserSessions[sessionId];
+      if (!session || session.index < 0) return;
+      const target = session.history[session.index];
+      frame.src = target;
+      setStatus(`Refreshing ${target}...`);
+    };
+
+  if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
+  if (goBtn) goBtn.onclick = () => loadUrl(urlInput.value);
+
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadUrl(urlInput.value);
+  });
+
+  frame.addEventListener("load", () => {
+    const session = browserSessions[sessionId];
+    if (!session) return;
+    const currentUrl = session.history[session.index] || "";
+    setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
+  });
+
+  loadUrl(BROWSER_HOME);
 }
 // --- TASK MANAGER & SCHEDULER LOGIC ---
 let selT = {};
@@ -1865,33 +2000,230 @@ function clearPaint(el) {
   c.getContext("2d").fillRect(0, 0, c.width, c.height);
 }
 
-function handleConsoleKey(e) {
-  if (e.key === "Enter") e.target.value = "";
+function initConsole(w) {
+  w.consoleState = {
+    cwd: "C:\\",
+    history: [],
+    historyIndex: null
+  };
+  updateConsolePrompt(w);
+  const input = w.querySelector(".console-input");
+  if (input) input.focus();
 }
 
-function runCompiler(e) {
+function getConsoleState(w) {
+  if (!w.consoleState) initConsole(w);
+  return w.consoleState;
+}
+
+function updateConsolePrompt(w) {
+  const state = getConsoleState(w);
+  const prompt = w.querySelector(".console-line span");
+  if (prompt) prompt.textContent = `${state.cwd}>`;
+}
+
+function getPathSegments(pathStr) {
+  if (!pathStr) return [];
+  const cleaned = pathStr.replace(/^[A-Za-z]:/, "").replace(/^\\+/, "");
+  return cleaned ? cleaned.split(/\\+/).filter(Boolean) : [];
+}
+
+function resolveConsolePath(targetPath, cwd) {
+  let baseSegments = getPathSegments(cwd);
+  let remaining = targetPath || "";
+  const driveMatch = remaining.match(/^([A-Za-z]):/);
+  if (driveMatch) {
+    if (driveMatch[1].toUpperCase() !== "C") return { path: null, node: null };
+    baseSegments = [];
+    remaining = remaining.slice(driveMatch[0].length);
+  }
+  if (remaining.startsWith("\\")) {
+    baseSegments = [];
+    remaining = remaining.replace(/^\\+/, "");
+  }
+  const additional = getPathSegments(remaining);
+  const segments = [...baseSegments];
+  additional.forEach((seg) => {
+    if (!seg || seg === ".") return;
+    if (seg === "..") segments.pop();
+    else segments.push(seg.toUpperCase());
+  });
+  let node = MOCK_FS["C\\"] || MOCK_FS["C:\\"];
+  segments.forEach((seg) => {
+    if (!node || !node.children) return;
+    const key = Object.keys(node.children).find(
+      (k) => k.toUpperCase() === seg
+    );
+    node = key ? node.children[key] : null;
+  });
+  const normalizedPath =
+    "C:\\" + (segments.length ? segments.join("\\") : "");
+  return { path: normalizedPath.replace(/\\\\+/g, "\\"), node };
+}
+
+function appendConsoleLine(w, text = "") {
+  const output = w.querySelector(".console-output");
+  if (!output) return;
+  const line = document.createElement("div");
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function processConsoleCommand(w, input) {
+  const state = getConsoleState(w);
+  appendConsoleLine(w, `${state.cwd}>${input}`);
+  if (!input.trim()) {
+    updateConsolePrompt(w);
+    return;
+  }
+  const [rawCmd, ...rest] = input.trim().split(/\s+/);
+  const cmd = rawCmd.toLowerCase();
+  const argLine = rest.join(" ");
+  const lowerArgs = argLine.trim();
+  if (cmd === "cls") {
+    const output = w.querySelector(".console-output");
+    if (output) output.innerHTML = "";
+    return;
+  }
+  if (cmd === "help") {
+    [
+      "Egg Oriel Console Commands:",
+      "HELP - Show this help text",
+      "DIR  - List files and folders",
+      "CD   - Change directory",
+      "CLS  - Clear the screen",
+      "ECHO - Print text"
+    ].forEach((line) => appendConsoleLine(w, line));
+  } else if (cmd === "dir") {
+    const { node } = resolveConsolePath(lowerArgs || state.cwd, state.cwd);
+    if (!node || node.type !== "dir") {
+      appendConsoleLine(w, "File Not Found");
+    } else {
+      const entries = Object.keys(node.children || {});
+      entries.sort();
+      entries.forEach((key) => appendConsoleLine(w, key));
+      if (!entries.length) appendConsoleLine(w, "(empty)");
+    }
+  } else if (cmd === "echo") {
+    appendConsoleLine(w, lowerArgs);
+  } else if (cmd === "cd") {
+    if (!lowerArgs) {
+      appendConsoleLine(w, state.cwd);
+    } else {
+      const { path, node } = resolveConsolePath(lowerArgs, state.cwd);
+      if (node && node.type === "dir" && path) {
+        state.cwd = path;
+        updateConsolePrompt(w);
+      } else {
+        appendConsoleLine(w, "The system cannot find the path specified.");
+      }
+    }
+  } else {
+    appendConsoleLine(
+      w,
+      `'${rawCmd}' is not recognized as an internal or external command.`
+    );
+  }
+}
+
+function handleConsoleKey(e) {
+  const win = e.target.closest(".window");
+  if (!win) return;
+  const state = getConsoleState(win);
+  if (e.key === "Enter") {
+    e.preventDefault();
+    processConsoleCommand(win, e.target.value);
+    if (e.target.value.trim()) {
+      state.history.push(e.target.value.trim());
+    }
+    state.historyIndex = null;
+    e.target.value = "";
+    setTimeout(() => e.target.focus(), 0);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!state.history.length) return;
+    if (state.historyIndex === null) state.historyIndex = state.history.length - 1;
+    else if (state.historyIndex > 0) state.historyIndex--;
+    e.target.value = state.history[state.historyIndex] || "";
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (state.historyIndex === null) return;
+    if (state.historyIndex < state.history.length - 1) state.historyIndex++;
+    else state.historyIndex = null;
+    e.target.value =
+      state.historyIndex === null ? "" : state.history[state.historyIndex];
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  }
+}
+
+async function runCompiler(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#compiler-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
+  const code = editor?.value || "";
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No source code provided.</pre>`;
+    return;
+  }
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  const payload = {
+    source: code,
+    options: {
+      userArguments: "",
+      compilerOptions: { executorRequest: true },
+      filters: { execute: true },
+      executeParameters: { args: [] }
+    }
+  };
+
   const lines = [];
   try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No source code provided.");
-    } else {
-      lines.push("Compiling Tiny C...");
-      if (!/int\s+main\s*\(/.test(code)) {
-        throw new Error("error: missing int main() entry point");
-      }
-      lines.push("Build succeeded.");
-      const printfMatch = code.match(/printf\s*\(\s*\"([^\"]*)\"/);
-      const programOutput = printfMatch ? printfMatch[1] : "(no output)";
-      lines.push("Program output:");
-      lines.push(programOutput);
+    const res = await fetch("https://godbolt.org/api/compiler/g131/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(`compiler service responded with ${res.status}`);
     }
+
+    const data = await res.json();
+    const compilerStdout = (data.stdout || []).map((s) => s.text).join("\n").trim();
+    const compilerStderr = (data.stderr || []).map((s) => s.text).join("\n").trim();
+    const execStdout = (data.execResult?.stdout || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const execStderr = (data.execResult?.stderr || [])
+      .map((s) => s.text)
+      .join("\n")
+      .trim();
+    const exitCode = data.execResult?.code ?? data.code;
+
+    lines.push("Compilation via Compiler Explorer (gcc 13.1)");
+    if (compilerStdout || compilerStderr) {
+      lines.push("Compiler output:");
+      if (compilerStdout) lines.push(compilerStdout);
+      if (compilerStderr) lines.push(compilerStderr);
+    }
+    lines.push(`Exit code: ${exitCode}`);
+    if (execStderr) {
+      lines.push("Stderr:");
+      lines.push(execStderr);
+    }
+    lines.push("Program output:");
+    lines.push(execStdout || "(no output)");
   } catch (err) {
     lines.push(`Compilation failed: ${err.message}`);
   }
@@ -1899,36 +2231,52 @@ function runCompiler(e) {
   output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
 }
 
-function runPython(e) {
+async function runPython(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#python-out");
   const editor = win?.querySelector(".compiler-editor");
 
   if (!output) return;
 
-  const lines = [];
-  try {
-    const code = editor?.value || "";
-    if (!code.trim()) {
-      lines.push("No script provided.");
-    } else {
-      lines.push("Running Python 1.0 interpreter...");
-      const printRegex = /print\s*\(([^\)]*)\)/g;
-      const printed = [];
-      let match;
-      while ((match = printRegex.exec(code))) {
-        const raw = match[1].trim();
-        const textMatch = raw.match(/^\s*["'`](.*)["'`]\s*$/);
-        printed.push(textMatch ? textMatch[1] : raw);
-      }
-      lines.push("Program output:");
-      lines.push(printed.length ? printed.join("\n") : "(no output)");
-    }
-  } catch (err) {
-    lines.push(`Execution failed: ${err.message}`);
+  const code = editor?.value || "";
+
+  if (!code.trim()) {
+    output.innerHTML = `<pre>No script provided.</pre>`;
+    return;
   }
 
-  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+  const body = {
+    source: code,
+    options: {
+      executeParameters: { args: [], stdin: "" },
+      compilerOptions: {},
+      filters: { execute: true },
+      tools: []
+    }
+  };
+
+  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+
+  try {
+    const response = await fetch("https://godbolt.org/api/compiler/python312/compile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || response.statusText);
+
+    const pre = document.createElement("pre");
+    pre.textContent = text;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  } catch (err) {
+    const pre = document.createElement("pre");
+    pre.textContent = `Execution failed: ${err.message}`;
+    output.innerHTML = "";
+    output.appendChild(pre);
+  }
 }
 
 function calcInput(e, v) {
