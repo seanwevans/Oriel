@@ -686,7 +686,7 @@ class WindowManager {
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
-                <iframe class="browser-frame" src="about:blank" sandbox="allow-same-origin allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
                 <div class="browser-status">Enter a URL to begin browsing.</div>
               </div>
             </div>`;
@@ -760,7 +760,7 @@ class WindowManager {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
+    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
@@ -1857,7 +1857,7 @@ function loadChessLibrary() {
     chessLibPromise = new Promise((resolve, reject) => {
       if (window.Chess) return resolve(window.Chess);
       const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js";
+      s.src = "./vendor/chess.min.js";
       s.onload = () => resolve(window.Chess);
       s.onerror = (e) => reject(e);
       document.head.appendChild(s);
