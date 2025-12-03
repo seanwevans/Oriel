@@ -1107,7 +1107,36 @@ function handleConsoleKey(e) {
   if (e.key === "Enter") e.target.value = "";
 }
 
-function runCompiler(e) {}
+function runCompiler(e) {
+  const w = e.target.closest(".window");
+  const editor = w?.querySelector(".compiler-editor");
+  const output = w?.querySelector("#compiler-out");
+
+  if (!output) return;
+
+  const src = editor?.value || "";
+  if (!src.trim()) {
+    output.textContent = "Compilation failed: no source provided.";
+    return;
+  }
+
+  if (!/\b(main)\s*\(/.test(src)) {
+    output.textContent = "Compilation failed: missing main() entry point.";
+    return;
+  }
+
+  let programOut = "";
+  const printfRegex = /printf\s*\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+  let match;
+  while ((match = printfRegex.exec(src))) {
+    const rendered = match[1].replace(/\\n/g, "\n");
+    programOut += rendered;
+  }
+
+  output.textContent =
+    "Compilation succeeded.\n\nProgram output:\n" +
+    (programOut ? programOut : "(no output)");
+}
 
 function runPython(e) {}
 
