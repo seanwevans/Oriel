@@ -905,27 +905,546 @@ function endTask(e) {
 }
 // --- OTHER LOGIC (Preserved) ---
 function initReversi(w) {
-  /* ... */
+  const board = w.querySelector("#reversi-board");
+  const status = w.querySelector(".reversi-status");
+  let grid = Array(8)
+    .fill()
+    .map(() => Array(8).fill(0));
+  let turn = 1;
+  grid[3][3] = 2;
+  grid[3][4] = 1;
+  grid[4][3] = 1;
+  grid[4][4] = 2;
+
+  const render = () => {
+    board.innerHTML = "";
+    grid.forEach((row, ri) => {
+      row.forEach((cell, ci) => {
+        const cellDiv = document.createElement("div");
+        cellDiv.className = "reversi-cell";
+        if (cell !== 0) {
+          const piece = document.createElement("div");
+          piece.className = "reversi-piece " + (cell === 1 ? "red" : "blue");
+          cellDiv.appendChild(piece);
+        }
+        cellDiv.onclick = () => {
+          if (turn === 1) makeMove(ri, ci, 1);
+        };
+        board.appendChild(cellDiv);
+      });
+    });
+    status.innerText =
+      turn === 1 ? "Your Turn (Red)" : "Computer Thinking...";
+  };
+
+  const isValid = (r, c, color) => {
+    if (grid[r][c] !== 0) return false;
+    const opp = color === 1 ? 2 : 1;
+    const dirs = [
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, -1],
+      [0, 1],
+      [1, -1],
+      [1, 0],
+      [1, 1]
+    ];
+
+    for (let d of dirs) {
+      let nr = r + d[0];
+      let nc = c + d[1];
+      let found = 0;
+      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && grid[nr][nc] === opp) {
+        nr += d[0];
+        nc += d[1];
+        found++;
+      }
+      if (
+        found > 0 &&
+        nr >= 0 &&
+        nr < 8 &&
+        nc >= 0 &&
+        nc < 8 &&
+        grid[nr][nc] === color
+      )
+        return true;
+    }
+    return false;
+  };
+
+  const makeMove = (r, c, color) => {
+    if (!isValid(r, c, color)) return;
+    grid[r][c] = color;
+    const opp = color === 1 ? 2 : 1;
+    const dirs = [
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, -1],
+      [0, 1],
+      [1, -1],
+      [1, 0],
+      [1, 1]
+    ];
+    dirs.forEach((d) => {
+      let nr = r + d[0];
+      let nc = c + d[1];
+      const path = [];
+      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && grid[nr][nc] === opp) {
+        path.push([nr, nc]);
+        nr += d[0];
+        nc += d[1];
+      }
+      if (
+        path.length > 0 &&
+        nr >= 0 &&
+        nr < 8 &&
+        nc >= 0 &&
+        nc < 8 &&
+        grid[nr][nc] === color
+      ) {
+        path.forEach(([pr, pc]) => (grid[pr][pc] = color));
+      }
+    });
+    turn = color === 1 ? 2 : 1;
+    render();
+    if (turn === 2) setTimeout(cpuMove, 500);
+  };
+
+  const cpuMove = () => {
+    let best = null;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (isValid(r, c, 2)) {
+          best = { r, c };
+        }
+      }
+    }
+    if (best) makeMove(best.r, best.c, 2);
+    else {
+      turn = 1;
+      render();
+    }
+  };
+
+  render();
 }
 
 function initMediaPlayer(w) {
-  /* ... */
+  const canvas = w.querySelector("#mplayer-canvas");
+  const ctx = canvas.getContext("2d");
+  let interval = null;
+  let x = 50;
+  let y = 50;
+  let dx = 2;
+  let dy = 2;
+
+  const animate = () => {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#0F0";
+    ctx.font = "20px Arial";
+    ctx.fillText("DVD", x, y);
+    x += dx;
+    y += dy;
+    if (x < 0 || x > canvas.width - 40) dx = -dx;
+    if (y < 20 || y > canvas.height) dy = -dy;
+  };
+
+  w.toggleMedia = (btn, action) => {
+    if (action === "play") {
+      if (!interval) interval = setInterval(animate, 30);
+    } else if (action === "pause") {
+      clearInterval(interval);
+      interval = null;
+    } else {
+      clearInterval(interval);
+      interval = null;
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      x = 50;
+      y = 50;
+    }
+  };
+  window.toggleMedia = w.toggleMedia;
 }
 
 function initSolitaire(w) {
-  /* ... */
+  const SUITS = ["h", "d", "c", "s"];
+  const RANKS = [
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "J",
+    "Q",
+    "K"
+  ];
+  let stock = [];
+  let waste = [];
+  let f = { h: [], d: [], c: [], s: [] };
+  let t = [[], [], [], [], [], [], []];
+  let sel = null;
+
+  const createDeck = () => {
+    const deck = [];
+    SUITS.forEach((suit) =>
+      RANKS.forEach((rank, i) =>
+        deck.push({
+          s: suit,
+          r: rank,
+          v: i + 1,
+          u: false,
+          c: suit === "h" || suit === "d" ? "red" : "black"
+        })
+      )
+    );
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
+  };
+
+  const deal = () => {
+    stock = createDeck();
+    t = [[], [], [], [], [], [], []];
+    for (let i = 0; i < 7; i++) {
+      for (let j = i; j < 7; j++) {
+        const card = stock.pop();
+        if (i === j) card.u = true;
+        t[j].push(card);
+      }
+    }
+    render();
+  };
+
+  const elS = w.querySelector("#sol-stock");
+  const elW = w.querySelector("#sol-waste");
+  const elT = w.querySelector("#sol-tableau");
+  const elF = {
+    h: w.querySelector("#sol-f-h"),
+    d: w.querySelector("#sol-f-d"),
+    c: w.querySelector("#sol-f-c"),
+    s: w.querySelector("#sol-f-s")
+  };
+
+  const renderCard = (card, cb) => {
+    const d = document.createElement("div");
+    d.className = "card " + (card.u ? card.c : "back");
+    if (sel && sel.card === card) d.classList.add("selected");
+    if (card.u) {
+      d.innerHTML = `<div style="text-align:left">${card.r}</div><div class="card-center">${{
+        h: "♥",
+        d: "♦",
+        c: "♣",
+        s: "♠"
+      }[card.s]}</div><div style="text-align:right">${card.r}</div>`;
+    }
+    d.onclick = (e) => {
+      e.stopPropagation();
+      cb();
+    };
+    return d;
+  };
+
+  const render = () => {
+    elS.innerHTML = "";
+    if (stock.length > 0)
+      elS.appendChild(
+        renderCard(
+          { u: false },
+          () => {
+            if (stock.length > 0) {
+              const card = stock.pop();
+              card.u = true;
+              waste.push(card);
+              sel = null;
+              render();
+            }
+          }
+        )
+      );
+    else
+      elS.onclick = () => {
+        while (waste.length > 0) {
+          const card = waste.pop();
+          card.u = false;
+          stock.push(card);
+        }
+        sel = null;
+        render();
+      };
+
+    elW.innerHTML = "";
+    if (waste.length > 0) {
+      const top = waste[waste.length - 1];
+      elW.appendChild(renderCard(top, () => selectCard(top, "waste")));
+    }
+
+    SUITS.forEach((suit) => {
+      elF[suit].innerHTML = "";
+      if (f[suit].length > 0) {
+        const top = f[suit][f[suit].length - 1];
+        const d = renderCard(top, () => tryFoundation(suit));
+        d.style.position = "static";
+        elF[suit].appendChild(d);
+      } else {
+        elF[suit].innerHTML = `<div style="text-align:center;color:#006000;margin-top:35px;font-size:24px;">${{
+          h: "♥",
+          d: "♦",
+          c: "♣",
+          s: "♠"
+        }[suit]}</div>`;
+        elF[suit].onclick = () => tryFoundation(suit);
+      }
+    });
+
+    elT.innerHTML = "";
+    t.forEach((col, ci) => {
+      const cd = document.createElement("div");
+      cd.className = "sol-col";
+      cd.onclick = () => tryTableau(ci);
+      col.forEach((card, i) => {
+        const d = renderCard(card, () => {
+          if (card.u) selectCard(card, "tableau", ci, i);
+          else if (i === col.length - 1) {
+            card.u = true;
+            render();
+          }
+        });
+        d.style.top = i * 25 + "px";
+        cd.appendChild(d);
+      });
+      elT.appendChild(cd);
+    });
+  };
+
+  const selectCard = (card, loc, col, idx) => {
+    if (sel && sel.card === card) sel = null;
+    else sel = { card, loc, col, idx };
+    render();
+  };
+
+  const tryTableau = (toCol) => {
+    if (!sel) return;
+    const dest = t[toCol];
+    const movingCard = sel.card;
+    let valid = false;
+    if (dest.length === 0) {
+      if (movingCard.r === "K") valid = true;
+    } else {
+      const top = dest[dest.length - 1];
+      if (top.c !== movingCard.c && top.v === movingCard.v + 1) valid = true;
+    }
+    if (valid) {
+      let moving = [];
+      if (sel.loc === "waste") moving.push(waste.pop());
+      else moving = t[sel.col].splice(sel.idx);
+      t[toCol].push(...moving);
+      sel = null;
+      render();
+    }
+  };
+
+  const tryFoundation = (suit) => {
+    if (!sel) return;
+    const movingCard = sel.card;
+    const pile = f[suit];
+    if (movingCard.s === suit && movingCard.v === pile.length + 1) {
+      let canMove = false;
+      if (sel.loc === "waste") canMove = true;
+      if (sel.loc === "tableau" && sel.idx === t[sel.col].length - 1) canMove = true;
+      if (canMove) {
+        if (sel.loc === "waste") waste.pop();
+        else t[sel.col].pop();
+        pile.push(movingCard);
+        sel = null;
+        render();
+      }
+    }
+  };
+
+  deal();
 }
 
 function initWrite(w) {
-  /* ... */
+  w.querySelectorAll(".fmt-btn").forEach((btn) => {
+    btn.onclick = () => {
+      document.execCommand(btn.dataset.cmd, false, null);
+      w.querySelector(".write-editor").focus();
+    };
+  });
 }
 
 function initCardfile(w) {
-  /* ... */
+  const key = "w31-cards";
+  const stored = localStorage.getItem(key);
+  w.cards = stored
+    ? JSON.parse(stored)
+    : [
+        {
+          id: 1,
+          header: "Welcome",
+          content: "This is Cardfile."
+        }
+      ];
+  if (w.cards.length === 0)
+    w.cards.push({
+      id: Date.now(),
+      header: "New Card",
+      content: ""
+    });
+  w.activeCardId = w.cards[0].id;
+
+  const listEl = w.querySelector("#card-index-list");
+  const headerEl = w.querySelector("#card-header-display");
+  const contentEl = w.querySelector("#card-content-edit");
+
+  const render = () => {
+    w.cards.sort((a, b) => a.header.localeCompare(b.header));
+    listEl.innerHTML = "";
+    w.cards.forEach((card) => {
+      const d = document.createElement("div");
+      d.className = "cardfile-item " + (card.id === w.activeCardId ? "sel" : "");
+      d.innerHTML =
+        ICONS.cardfile + `<span>${card.header || "(blank)"}</span>`;
+      d.onclick = () => {
+        w.activeCardId = card.id;
+        render();
+      };
+      listEl.appendChild(d);
+    });
+    const active = w.cards.find((c) => c.id === w.activeCardId);
+    if (active) {
+      headerEl.value = active.header;
+      contentEl.value = active.content;
+    }
+    localStorage.setItem(key, JSON.stringify(w.cards));
+  };
+
+  headerEl.oninput = () => {
+    const active = w.cards.find((c) => c.id === w.activeCardId);
+    if (active) {
+      active.header = headerEl.value;
+      render();
+    }
+  };
+  contentEl.oninput = () => {
+    const active = w.cards.find((c) => c.id === w.activeCardId);
+    if (active) {
+      active.content = contentEl.value;
+      localStorage.setItem(key, JSON.stringify(w.cards));
+    }
+  };
+
+  w.querySelector("#card-add").onclick = () => {
+    const nc = { id: Date.now(), header: "New Card", content: "" };
+    w.cards.push(nc);
+    w.activeCardId = nc.id;
+    render();
+  };
+  w.querySelector("#card-del").onclick = () => {
+    if (w.cards.length > 1) {
+      w.cards = w.cards.filter((c) => c.id !== w.activeCardId);
+      w.activeCardId = w.cards[0].id;
+      render();
+    }
+  };
+
+  render();
 }
 
 function initClock(w) {
-  /* ... */
+  const canvas = w.querySelector(".clock-canvas");
+  const ctx = canvas.getContext("2d");
+  const digital = w.querySelector(".clock-digital");
+  const layout = w.querySelector(".clock-layout");
+  let analogMode = true;
+
+  const formatTime = (date) => {
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+
+  const drawAnalog = (date) => {
+    const wH = canvas.width;
+    const center = wH / 2;
+    ctx.clearRect(0, 0, wH, wH);
+    ctx.fillStyle = "#f5f5f5";
+    ctx.fillRect(0, 0, wH, wH);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center, center, center - 10, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI / 6) * i;
+      const inner = center - 15;
+      const outer = center - 5;
+      ctx.beginPath();
+      ctx.moveTo(
+        center + inner * Math.sin(angle),
+        center - inner * Math.cos(angle)
+      );
+      ctx.lineTo(
+        center + outer * Math.sin(angle),
+        center - outer * Math.cos(angle)
+      );
+      ctx.stroke();
+    }
+
+    const sec = date.getSeconds();
+    const min = date.getMinutes();
+    const hr = date.getHours() % 12;
+
+    const drawHand = (value, max, length, width, color) => {
+      const angle = (Math.PI * 2 * (value / max)) - Math.PI / 2;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.lineTo(
+        center + length * Math.cos(angle),
+        center + length * Math.sin(angle)
+      );
+      ctx.stroke();
+    };
+
+    drawHand(hr + min / 60, 12, center - 55, 4, "#000");
+    drawHand(min + sec / 60, 60, center - 35, 3, "#000");
+    drawHand(sec, 60, center - 25, 2, "red");
+  };
+
+  const render = () => {
+    const now = new Date();
+    if (analogMode) {
+      canvas.style.display = "block";
+      digital.style.display = "none";
+      drawAnalog(now);
+    } else {
+      canvas.style.display = "none";
+      digital.style.display = "block";
+      digital.innerText = formatTime(now);
+    }
+  };
+
+  layout?.addEventListener("dblclick", () => {
+    analogMode = !analogMode;
+    render();
+  });
+
+  render();
+  setInterval(render, 1000);
 }
 
 function initControlPanel(w) {
@@ -1193,15 +1712,84 @@ function deleteDbRecord(b, i) {
 }
 
 function initPaint(w) {
-  /* ... */
+  const c = w.querySelector("canvas"),
+    ctx = c.getContext("2d"),
+    p = w.querySelector("#paint-palette");
+  w.pS = {
+    d: false,
+    t: "brush",
+    c: "#000",
+    lx: 0,
+    ly: 0
+  };
+  ctx.fillStyle = "#FFF";
+  ctx.fillRect(0, 0, c.width, c.height);
+  const cols = [
+    "#000",
+    "#FFF",
+    "#808080",
+    "#C0C0C0",
+    "#800000",
+    "#F00",
+    "#808000",
+    "#FF0",
+    "#008000",
+    "#0F0",
+    "#008080",
+    "#0FF",
+    "#000080",
+    "#00F",
+    "#800080",
+    "#F0F"
+  ];
+  cols.forEach((x) => {
+    const s = document.createElement("div");
+    s.className = "color-swatch";
+    s.style.background = x;
+    s.onclick = () => {
+      w.querySelectorAll(".color-swatch").forEach((z) =>
+        z.classList.remove("active")
+      );
+      s.classList.add("active");
+      w.pS.c = x;
+    };
+    p.appendChild(s);
+  });
+  c.onmousedown = (e) => {
+    w.pS.d = true;
+    const r = c.getBoundingClientRect();
+    w.pS.lx = e.clientX - r.left;
+    w.pS.ly = e.clientY - r.top;
+  };
+  c.onmousemove = (e) => {
+    if (!w.pS.d) return;
+    const r = c.getBoundingClientRect(),
+      x = e.clientX - r.left,
+      y = e.clientY - r.top;
+    ctx.beginPath();
+    ctx.moveTo(w.pS.lx, w.pS.ly);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = w.pS.t === "eraser" ? "#FFF" : w.pS.c;
+    ctx.lineWidth = w.pS.t === "eraser" ? 10 : 2;
+    ctx.stroke();
+    w.pS.lx = x;
+    w.pS.ly = y;
+  };
+  window.onmouseup = () => {
+    if (w.pS) w.pS.d = false;
+  };
 }
 
-function selectPaintTool(e, t) {
-  /* ... */
+function selectPaintTool(el, t) {
+  const w = el.closest(".window");
+  w.querySelectorAll(".tool-btn").forEach((b) => b.classList.remove("active"));
+  el.classList.add("active");
+  w.pS.t = t;
 }
 
-function clearPaint(e) {
-  /* ... */
+function clearPaint(el) {
+  const c = el.closest(".window").querySelector("canvas");
+  c.getContext("2d").fillRect(0, 0, c.width, c.height);
 }
 
 function handleConsoleKey(e) {
@@ -1332,532 +1920,6 @@ function clickMine(i, g) {
       g.children[i].style.color = ["blue", "green", "red"][n - 1];
     }
   }
-}
-// -- Restoration of compressed functions --
-// Reversi
-function initReversi(win) {
-  const b = win.querySelector("#reversi-board"),
-    s = win.querySelector(".reversi-status");
-  let bd = Array(8)
-      .fill()
-      .map(() => Array(8).fill(0)),
-    t = 1;
-  bd[3][3] = 2;
-  bd[3][4] = 1;
-  bd[4][3] = 1;
-  bd[4][4] = 2;
-  const rn = () => {
-    b.innerHTML = "";
-    bd.forEach((r, ri) => {
-      r.forEach((c, ci) => {
-        const d = document.createElement("div");
-        d.className = "reversi-cell";
-        if (c !== 0) {
-          const p = document.createElement("div");
-          p.className = "reversi-piece " + (c === 1 ? "red" : "blue");
-          d.appendChild(p);
-        }
-        d.onclick = () => {
-          if (t === 1) mv(ri, ci, 1);
-        };
-        b.appendChild(d);
-      });
-    });
-    s.innerText = t === 1 ? "Your Turn (Red)" : "Computer Thinking...";
-  };
-  const iv = (r, c, cl) => {
-    if (bd[r][c] !== 0) return false;
-    const o = cl === 1 ? 2 : 1,
-      ds = [
-        [-1, -1],
-        [-1, 0],
-        [-1, 1],
-        [0, -1],
-        [0, 1],
-        [1, -1],
-        [1, 0],
-        [1, 1]
-      ];
-    for (let d of ds) {
-      let nr = r + d[0],
-        nc = c + d[1],
-        f = 0;
-      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && bd[nr][nc] === o) {
-        nr += d[0];
-        nc += d[1];
-        f++;
-      }
-      if (f > 0 && nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && bd[nr][nc] === cl)
-        return true;
-    }
-    return false;
-  };
-  const mv = (r, c, cl) => {
-    if (!iv(r, c, cl)) return;
-    bd[r][c] = cl;
-    const o = cl === 1 ? 2 : 1,
-      ds = [
-        [-1, -1],
-        [-1, 0],
-        [-1, 1],
-        [0, -1],
-        [0, 1],
-        [1, -1],
-        [1, 0],
-        [1, 1]
-      ];
-    ds.forEach((d) => {
-      let nr = r + d[0],
-        nc = c + d[1],
-        p = [];
-      while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && bd[nr][nc] === o) {
-        p.push([nr, nc]);
-        nr += d[0];
-        nc += d[1];
-      }
-      if (
-        p.length > 0 &&
-        nr >= 0 &&
-        nr < 8 &&
-        nc >= 0 &&
-        nc < 8 &&
-        bd[nr][nc] === cl
-      ) {
-        p.forEach((x) => (bd[x[0]][x[1]] = cl));
-      }
-    });
-    t = o;
-    rn();
-    if (t === 2) setTimeout(cm, 500);
-  };
-  const cm = () => {
-    let ms = [];
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++) if (iv(r, c, 2)) ms.push([r, c]);
-    if (ms.length > 0) {
-      const m = ms[Math.floor(Math.random() * ms.length)];
-      mv(m[0], m[1], 2);
-    } else {
-      t = 1;
-      rn();
-    }
-  };
-  rn();
-}
-// Solitaire
-function initSolitaire(w) {
-  /* ... (Assuming Solitaire Logic from previous turn is correctly injected or preserved if file was edited) ... */
-}
-// Paint
-function initPaint(w) {
-  const c = w.querySelector("canvas"),
-    ctx = c.getContext("2d"),
-    p = w.querySelector("#paint-palette");
-  w.pS = {
-    d: false,
-    t: "brush",
-    c: "#000",
-    lx: 0,
-    ly: 0
-  };
-  ctx.fillStyle = "#FFF";
-  ctx.fillRect(0, 0, c.width, c.height);
-  const cols = [
-    "#000",
-    "#FFF",
-    "#808080",
-    "#C0C0C0",
-    "#800000",
-    "#F00",
-    "#808000",
-    "#FF0",
-    "#008000",
-    "#0F0",
-    "#008080",
-    "#0FF",
-    "#000080",
-    "#00F",
-    "#800080",
-    "#F0F"
-  ];
-  cols.forEach((x) => {
-    const s = document.createElement("div");
-    s.className = "color-swatch";
-    s.style.background = x;
-    s.onclick = () => {
-      w.querySelectorAll(".color-swatch").forEach((z) =>
-        z.classList.remove("active")
-      );
-      s.classList.add("active");
-      w.pS.c = x;
-    };
-    p.appendChild(s);
-  });
-  c.onmousedown = (e) => {
-    w.pS.d = true;
-    const r = c.getBoundingClientRect();
-    w.pS.lx = e.clientX - r.left;
-    w.pS.ly = e.clientY - r.top;
-  };
-  c.onmousemove = (e) => {
-    if (!w.pS.d) return;
-    const r = c.getBoundingClientRect(),
-      x = e.clientX - r.left,
-      y = e.clientY - r.top;
-    ctx.beginPath();
-    ctx.moveTo(w.pS.lx, w.pS.ly);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = w.pS.t === "eraser" ? "#FFF" : w.pS.c;
-    ctx.lineWidth = w.pS.t === "eraser" ? 10 : 2;
-    ctx.stroke();
-    w.pS.lx = x;
-    w.pS.ly = y;
-  };
-  window.onmouseup = () => {
-    if (w.pS) w.pS.d = false;
-  };
-}
-
-function selectPaintTool(el, t) {
-  const w = el.closest(".window");
-  w.querySelectorAll(".tool-btn").forEach((b) => b.classList.remove("active"));
-  el.classList.add("active");
-  w.pS.t = t;
-}
-
-function clearPaint(el) {
-  const c = el.closest(".window").querySelector("canvas");
-  c.getContext("2d").fillRect(0, 0, c.width, c.height);
-}
-// Media Player
-function initMediaPlayer(win) {
-  const cv = win.querySelector("#mplayer-canvas"),
-    ctx = cv.getContext("2d");
-  let i = null,
-    x = 50,
-    y = 50,
-    dx = 2,
-    dy = 2;
-
-  function a() {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.fillStyle = "#0F0";
-    ctx.font = "20px Arial";
-    ctx.fillText("DVD", x, y);
-    x += dx;
-    y += dy;
-    if (x < 0 || x > cv.width - 40) dx = -dx;
-    if (y < 20 || y > cv.height) dy = -dy;
-  }
-  win.toggleMedia = (b, act) => {
-    if (act === "play") {
-      if (!i) i = setInterval(a, 30);
-    } else if (act === "pause") {
-      clearInterval(i);
-      i = null;
-    } else {
-      clearInterval(i);
-      i = null;
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, cv.width, cv.height);
-      x = 50;
-      y = 50;
-    }
-  };
-  window.toggleMedia = win.toggleMedia;
-}
-// Write
-function initWrite(win) {
-  win.querySelectorAll(".fmt-btn").forEach((b) => {
-    b.onclick = () => {
-      document.execCommand(b.dataset.cmd, false, null);
-      win.querySelector(".write-editor").focus();
-    };
-  });
-}
-// Cardfile
-function initCardfile(win) {
-  const k = "w31-cards",
-    s = localStorage.getItem(k);
-  win.cards = s
-    ? JSON.parse(s)
-    : [
-        {
-          id: 1,
-          header: "Welcome",
-          content: "This is Cardfile."
-        }
-      ];
-  if (win.cards.length === 0)
-    win.cards.push({
-      id: Date.now(),
-      header: "New Card",
-      content: ""
-    });
-  win.activeCardId = win.cards[0].id;
-  const l = win.querySelector("#card-index-list"),
-    h = win.querySelector("#card-header-display"),
-    c = win.querySelector("#card-content-edit");
-  const r = () => {
-    win.cards.sort((a, b) => a.header.localeCompare(b.header));
-    l.innerHTML = "";
-    let act = win.cards.find((x) => x.id === win.activeCardId) || win.cards[0];
-    win.activeCardId = act.id;
-    win.cards.forEach((x) => {
-      const i = document.createElement("div");
-      i.className = "card-index-item " + (x.id === act.id ? "active" : "");
-      i.innerText = x.header;
-      i.onclick = () => {
-        sv();
-        win.activeCardId = x.id;
-        r();
-      };
-      l.appendChild(i);
-    });
-    h.innerText = act.header;
-    c.value = act.content;
-  };
-  const sv = () => {
-    const a = win.cards.find((x) => x.id === win.activeCardId);
-    if (a) {
-      a.content = c.value;
-      localStorage.setItem(k, JSON.stringify(win.cards));
-    }
-  };
-  win.querySelector("#card-add-btn").onclick = () => {
-    win.cards.push({
-      id: Date.now(),
-      header: "New Card",
-      content: ""
-    });
-    sv();
-    r();
-  };
-  win.querySelector("#card-del-btn").onclick = () => {
-    const i = win.cards.findIndex((x) => x.id === win.activeCardId);
-    if (i > -1) {
-      win.cards.splice(i, 1);
-      if (win.cards.length === 0)
-        win.cards.push({
-          id: Date.now(),
-          header: "Empty",
-          content: ""
-        });
-      sv();
-      r();
-    }
-  };
-  h.ondblclick = () => {
-    const a = win.cards.find((x) => x.id === win.activeCardId);
-    if (a) {
-      const i = document.createElement("input");
-      i.value = a.header;
-      h.innerHTML = "";
-      h.appendChild(i);
-      i.focus();
-      i.onblur = () => {
-        a.header = i.value || "Untitled";
-        sv();
-        r();
-      };
-      i.onkeydown = (e) => {
-        if (e.key === "Enter") i.blur();
-      };
-    }
-  };
-  c.oninput = sv;
-  r();
-}
-// Solitaire (Full Logic needed)
-function initSolitaire(win) {
-  const SUITS = ["h", "d", "c", "s"],
-    RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-  let stock = [],
-    waste = [],
-    f = {
-      h: [],
-      d: [],
-      c: [],
-      s: []
-    },
-    t = [[], [], [], [], [], [], []],
-    sel = null;
-  const cD = () => {
-    const d = [];
-    SUITS.forEach((s) =>
-      RANKS.forEach((r, i) =>
-        d.push({
-          s: s,
-          r: r,
-          v: i + 1,
-          u: false,
-          c: s === "h" || s === "d" ? "red" : "black"
-        })
-      )
-    );
-    for (let i = d.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [d[i], d[j]] = [d[j], d[i]];
-    }
-    return d;
-  };
-  const deal = () => {
-    stock = cD();
-    t = [[], [], [], [], [], [], []];
-    for (let i = 0; i < 7; i++) {
-      for (let j = i; j < 7; j++) {
-        const c = stock.pop();
-        if (i === j) c.u = true;
-        t[j].push(c);
-      }
-    }
-    render();
-  };
-  const elS = win.querySelector("#sol-stock"),
-    elW = win.querySelector("#sol-waste"),
-    elT = win.querySelector("#sol-tableau"),
-    elF = {
-      h: win.querySelector("#sol-f-h"),
-      d: win.querySelector("#sol-f-d"),
-      c: win.querySelector("#sol-f-c"),
-      s: win.querySelector("#sol-f-s")
-    };
-  const rC = (c, cb) => {
-    const d = document.createElement("div");
-    d.className = "card " + (c.u ? c.c : "back");
-    if (sel && sel.card === c) d.classList.add("selected");
-    if (c.u) {
-      d.innerHTML = `<div style="text-align:left">${
-        c.r
-      }</div><div class="card-center">${
-        { h: "♥", d: "♦", c: "♣", s: "♠" }[c.s]
-      }</div><div style="text-align:right">${c.r}</div>`;
-    }
-    d.onclick = (e) => {
-      e.stopPropagation();
-      cb();
-    };
-    return d;
-  };
-  const render = () => {
-    elS.innerHTML = "";
-    if (stock.length > 0)
-      elS.appendChild(
-        rC(
-          {
-            u: false
-          },
-          () => {
-            if (stock.length > 0) {
-              const c = stock.pop();
-              c.u = true;
-              waste.push(c);
-              sel = null;
-              render();
-            }
-          }
-        )
-      );
-    else
-      elS.onclick = () => {
-        while (waste.length > 0) {
-          const c = waste.pop();
-          c.u = false;
-          stock.push(c);
-        }
-        sel = null;
-        render();
-      };
-    elW.innerHTML = "";
-    if (waste.length > 0) {
-      const top = waste[waste.length - 1];
-      elW.appendChild(rC(top, () => sC(top, "waste")));
-    }
-    SUITS.forEach((s) => {
-      elF[s].innerHTML = "";
-      if (f[s].length > 0) {
-        const top = f[s][f[s].length - 1];
-        const d = rC(top, () => tryF(s));
-        d.style.position = "static";
-        elF[s].appendChild(d);
-      } else {
-        elF[
-          s
-        ].innerHTML = `<div style="text-align:center;color:#006000;margin-top:35px;font-size:24px;">${
-          { h: "♥", d: "♦", c: "♣", s: "♠" }[s]
-        }</div>`;
-        elF[s].onclick = () => tryF(s);
-      }
-    });
-    elT.innerHTML = "";
-    t.forEach((col, ci) => {
-      const cd = document.createElement("div");
-      cd.className = "sol-col";
-      cd.onclick = () => tryT(ci);
-      col.forEach((c, i) => {
-        const d = rC(c, () => {
-          if (c.u) sC(c, "tableau", ci, i);
-          else if (i === col.length - 1) {
-            c.u = true;
-            render();
-          }
-        });
-        d.style.top = i * 25 + "px";
-        cd.appendChild(d);
-      });
-      elT.appendChild(cd);
-    });
-  };
-  const sC = (c, l, col, idx) => {
-    if (sel && sel.card === c) sel = null;
-    else
-      sel = {
-        card: c,
-        loc: l,
-        col: col,
-        idx: idx
-      };
-    render();
-  };
-  const tryT = (toCol) => {
-    if (!sel) return;
-    const dest = t[toCol],
-      mc = sel.card;
-    let v = false;
-    if (dest.length === 0) {
-      if (mc.r === "K") v = true;
-    } else {
-      const top = dest[dest.length - 1];
-      if (top.c !== mc.c && top.v === mc.v + 1) v = true;
-    }
-    if (v) {
-      let mov = [];
-      if (sel.loc === "waste") mov.push(waste.pop());
-      else mov = t[sel.col].splice(sel.idx);
-      t[toCol].push(...mov);
-      sel = null;
-      render();
-    }
-  };
-  const tryF = (s) => {
-    if (!sel) return;
-    const mc = sel.card,
-      p = f[s];
-    if (mc.s === s && mc.v === p.length + 1) {
-      let cm = false;
-      if (sel.loc === "waste") cm = true;
-      if (sel.loc === "tableau" && sel.idx === t[sel.col].length - 1) cm = true;
-      if (cm) {
-        if (sel.loc === "waste") waste.pop();
-        else t[sel.col].pop();
-        p.push(mc);
-        sel = null;
-        render();
-      }
-    }
-  };
-  deal();
 }
 // Init Screensaver
 window.onload = initScreensaver;
