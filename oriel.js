@@ -674,6 +674,7 @@ class WindowManager {
                     <div class="simcity-log">Welcome to Micropolis! Place roads, homes, and power to grow your town.</div>
                 </div>
             `;
+  }
   getBrowserContent() {
     return `<div class="browser-layout">
               <div class="browser-toolbar">
