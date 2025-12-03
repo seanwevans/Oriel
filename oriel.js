@@ -22,6 +22,7 @@ const ICONS = {
   clipboard: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="6" width="20" height="22" fill="white" stroke="black"/><rect x="10" y="4" width="12" height="4" fill="#c0c0c0" stroke="black"/><line x1="10" y1="12" x2="22" y2="12" stroke="gray"/><line x1="10" y1="16" x2="22" y2="16" stroke="gray"/></svg>`,
   reversi: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#008000" stroke="black"/><circle cx="16" cy="16" r="8" fill="red"/><circle cx="16" cy="16" r="4" fill="blue"/></svg>`,
   mplayer: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 6h24v20H4z" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="12" fill="black"/><path d="M12 24l8 0l-4 4z" fill="#000"/></svg>`,
+  chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -60,6 +61,10 @@ const MOCK_FS = {
           "WINMINE.EXE": {
             type: "file",
             app: "mines"
+          },
+          "CHESS.EXE": {
+            type: "file",
+            app: "chess"
           },
           "SOL.EXE": {
             type: "file",
@@ -311,6 +316,7 @@ class WindowManager {
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
     if (type === "taskman") content = this.getTaskManContent();
+    if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = this.getPaintContent();
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "database") content = this.getDatabaseContent();
@@ -348,6 +354,7 @@ class WindowManager {
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
     if (type === "control") initControlPanel(winEl);
+    if (type === "chess") initChess(winEl);
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
@@ -357,7 +364,10 @@ class WindowManager {
   closeWindow(id) {
     const index = this.windows.findIndex((w) => w.id === id);
     if (index > -1) {
-      this.windows[index].el.remove();
+      const closingWin = this.windows[index];
+      if (typeof closingWin.el.chessCleanup === "function")
+        closingWin.el.chessCleanup();
+      closingWin.el.remove();
       // Remove minimized icon if exists
       const minIcon = document.getElementById("min-" + id);
       if (minIcon) minIcon.remove();
@@ -540,6 +550,10 @@ class WindowManager {
                         ${ICONS.solitaire}
                         <div class="prog-label">Solitaire</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('chess', 'Chess', 640, 520)">
+                        ${ICONS.chess}
+                        <div class="prog-label">Chess</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('reversi', 'Reversi', 300, 340)">
                         ${ICONS.reversi}
                         <div class="prog-label">Reversi</div>
@@ -616,6 +630,9 @@ class WindowManager {
   // ... [Previous Content Methods] ...
   getReversiContent() {
     return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
+  }
+  getChessContent() {
+    return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
     return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas></div><div class="mplayer-controls"><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
@@ -1538,6 +1555,270 @@ function applyTheme() {
     r.setProperty("--win-teal", "#008080");
     r.setProperty("--win-gray", "#C0C0C0");
   }
+}
+
+let chessLibPromise = null;
+
+function loadChessLibrary() {
+  if (!chessLibPromise) {
+    chessLibPromise = new Promise((resolve, reject) => {
+      if (window.Chess) return resolve(window.Chess);
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js";
+      s.onload = () => resolve(window.Chess);
+      s.onerror = (e) => reject(e);
+      document.head.appendChild(s);
+    });
+  }
+  return chessLibPromise;
+}
+
+function initStockfishEngine(w) {
+  if (w.chessWorkerReady) return Promise.resolve(w.chessWorker);
+  if (w.chessWorkerInit) return w.chessWorkerInit;
+  w.chessWorkerInit = new Promise((resolve, reject) => {
+    try {
+      const worker = new Worker(
+        "https://cdn.jsdelivr.net/npm/stockfish@16.1.1/src/stockfish.js"
+      );
+      w.chessWorker = worker;
+      const onMsg = (event) => {
+        const msg = String(event.data || "");
+        if (msg.includes("uciok")) worker.postMessage("isready");
+        if (msg.includes("readyok")) {
+          worker.removeEventListener("message", onMsg);
+          w.chessWorkerReady = true;
+          resolve(worker);
+        }
+      };
+      worker.addEventListener("message", onMsg);
+      worker.onerror = (e) => reject(e);
+      worker.postMessage("uci");
+      worker.postMessage("setoption name Skill Level value 5");
+      worker.postMessage("ucinewgame");
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return w.chessWorkerInit;
+}
+
+function initChess(w) {
+  const boardEl = w.querySelector(".chess-board"),
+    statusEl = w.querySelector(".chess-status"),
+    movesEl = w.querySelector(".chess-moves"),
+    fenInput = w.querySelector("#chess-fen"),
+    newBtn = w.querySelector(".chess-new"),
+    copyBtn = w.querySelector(".chess-copy"),
+    pasteBtn = w.querySelector(".chess-paste"),
+    loadBtn = w.querySelector(".chess-load");
+  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const symbols = {
+    p: "♟",
+    r: "♜",
+    n: "♞",
+    b: "♝",
+    q: "♛",
+    k: "♚"
+  };
+  let game = null;
+  let selected = null;
+  let legalTargets = [];
+  let userTurn = true;
+
+  const setStatus = (msg) => (statusEl.innerText = msg);
+
+  const renderMoves = () => {
+    movesEl.innerHTML = "";
+    const hist = game ? game.history({ verbose: true }) : [];
+    for (let i = 0; i < hist.length; i += 2) {
+      const white = hist[i];
+      const black = hist[i + 1];
+      const row = document.createElement("div");
+      row.className = "chess-move-row";
+      row.innerHTML = `<span class="mv-num">${i / 2 + 1}.</span><span class="mv-white">${
+        white ? white.san : ""
+      }</span><span class="mv-black">${black ? black.san : ""}</span>`;
+      movesEl.appendChild(row);
+    }
+    movesEl.scrollTop = movesEl.scrollHeight;
+  };
+
+  const renderBoard = () => {
+    if (!game) return;
+    boardEl.innerHTML = "";
+    const boardState = game.board();
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const square = files[col] + (8 - row);
+        const cell = document.createElement("div");
+        cell.className =
+          "chess-square " + ((row + col) % 2 === 0 ? "light" : "dark");
+        if (square === selected) cell.classList.add("selected");
+        if (legalTargets.includes(square)) cell.classList.add("hint");
+        cell.dataset.square = square;
+        const piece = boardState[row][col];
+        if (piece) {
+          const span = document.createElement("span");
+          span.className = "chess-piece";
+          span.innerText = symbols[piece.type];
+          if (piece.color === "w") span.classList.add("white");
+          cell.appendChild(span);
+        }
+        boardEl.appendChild(cell);
+      }
+    }
+    fenInput.value = game.fen();
+  };
+
+  const resetSelection = () => {
+    selected = null;
+    legalTargets = [];
+  };
+
+  const syncState = (fromPlayer) => {
+    renderBoard();
+    renderMoves();
+    if (game.game_over()) {
+      const res = game.in_checkmate()
+        ? fromPlayer
+          ? "Checkmate! You win."
+          : "Checkmate! Computer wins."
+        : "Game over.";
+      setStatus(res);
+      userTurn = false;
+      return;
+    }
+    if (fromPlayer) {
+      userTurn = false;
+      setStatus("Computer thinking...");
+      requestEngineMove();
+    } else {
+      userTurn = true;
+      setStatus("Your move (White)");
+    }
+  };
+
+  const applyEngineMove = (uci) => {
+    try {
+      const move = game.move({
+        from: uci.slice(0, 2),
+        to: uci.slice(2, 4),
+        promotion: "q"
+      });
+      if (move) resetSelection();
+      syncState(false);
+    } catch (e) {
+      setStatus("Engine move failed");
+      userTurn = true;
+    }
+  };
+
+  const requestEngineMove = () => {
+    initStockfishEngine(w)
+      .then((worker) => {
+        const listener = (event) => {
+          const msg = String(event.data || "");
+          if (msg.startsWith("bestmove")) {
+            const parts = msg.split(" ");
+            const best = parts[1];
+            worker.removeEventListener("message", listener);
+            applyEngineMove(best);
+          }
+        };
+        worker.addEventListener("message", listener);
+        worker.postMessage("position fen " + game.fen());
+        worker.postMessage("go movetime 800");
+      })
+      .catch(() => {
+        setStatus("Engine unavailable");
+        userTurn = true;
+      });
+  };
+
+  const selectSquare = (square) => {
+    if (!game || !userTurn) return;
+    const piece = game.get(square);
+    if (selected === square) {
+      resetSelection();
+      renderBoard();
+      return;
+    }
+    if (selected) {
+      const move = game.move({ from: selected, to: square, promotion: "q" });
+      if (move) {
+        resetSelection();
+        syncState(true);
+        return;
+      }
+    }
+    if (piece && piece.color === "w") {
+      selected = square;
+      legalTargets = game
+        .moves({ square, verbose: true })
+        .map((m) => m.to);
+    } else {
+      resetSelection();
+    }
+    renderBoard();
+  };
+
+  boardEl.addEventListener("click", (e) => {
+    const target = e.target.closest(".chess-square");
+    if (target?.dataset.square) selectSquare(target.dataset.square);
+  });
+
+  newBtn.onclick = () => {
+    if (!game) return;
+    game.reset();
+    resetSelection();
+    initStockfishEngine(w).catch(() => {});
+    syncState(false);
+  };
+
+  copyBtn.onclick = () => {
+    fenInput.select();
+    document.execCommand("copy");
+  };
+
+  pasteBtn.onclick = async () => {
+    if (navigator.clipboard?.readText) {
+      try {
+        fenInput.value = await navigator.clipboard.readText();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  };
+
+  loadBtn.onclick = () => {
+    if (!game) return;
+    const fen = fenInput.value.trim();
+    try {
+      const ok = game.load(fen);
+      if (ok) {
+        resetSelection();
+        syncState(false);
+        return;
+      }
+    } catch (e) {}
+    alert("Invalid FEN string");
+  };
+
+  w.chessCleanup = () => {
+    if (w.chessWorker) w.chessWorker.terminate();
+  };
+
+  loadChessLibrary()
+    .then((ChessClass) => {
+      game = new ChessClass();
+      resetSelection();
+      renderBoard();
+      renderMoves();
+      setStatus("Your move (White)");
+      initStockfishEngine(w).catch(() => setStatus("Engine unavailable"));
+    })
+    .catch(() => setStatus("Failed to load chess.js"));
 }
 
 function initFileManager(w) {
