@@ -710,7 +710,7 @@ class WindowManager {
     return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
   getDatabaseContent() {
-    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
+    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
 const wm = new WindowManager();
@@ -1844,6 +1844,32 @@ function deleteDbRecord(b, i) {
   w.dbData.splice(i, 1);
   localStorage.setItem("w31-db", JSON.stringify(w.dbData));
   renderDbTable(w);
+}
+
+function exportDbToCsv(b) {
+  const w = b.closest(".window");
+  const headers = ["Name", "Phone", "Email"];
+  const rows = w.dbData || [];
+  const csvLines = [
+    headers,
+    ...rows.map((r) => [r.name || "", r.phone || "", r.email || ""])
+  ].map((line) =>
+    line
+      .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+      .join(",")
+  );
+
+  const blob = new Blob([csvLines.join("\r\n")], {
+    type: "text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "data_manager_export.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function initPaint(w) {
