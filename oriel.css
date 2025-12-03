@@ -1042,6 +1042,25 @@ body {
   height: 100%;
 }
 
+.cp-menu-bar {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--win-gray);
+  border-bottom: 1px solid var(--win-gray-dark);
+}
+
+.cp-tab-btn.active,
+.cp-menu-item.active {
+  background: var(--win-blue);
+  color: white;
+}
+
+.cp-view-area {
+  height: calc(100% - 45px);
+  overflow: auto;
+}
+
 .control-icon {
   display: flex;
   flex-direction: column;

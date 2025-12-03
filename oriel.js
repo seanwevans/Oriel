@@ -757,15 +757,35 @@ function drawStars() {
   }
 }
 // --- CONTROL PANEL: DESKTOP ---
-function openCPDesktop(el) {
-  const w = el.closest(".window");
-  w.querySelector(".window-body").innerHTML = `
+function openCPDesktop(el, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && el?.classList?.contains("cp-view-area")) {
+    targetContainer = el;
+  }
+  if (!targetContainer && el?.closest) {
+    const area = el.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = el?.closest ? el.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (el instanceof HTMLElement ? el : null);
+  if (!body) return;
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "desktop")
+      );
+  }
+  body.innerHTML = `
             <div class="cp-settings-layout">
                 <div class="cp-section">
                     <div style="font-weight:bold;margin-bottom:5px;">Desktop Wallpaper</div>
                     <label style="display:block;font-size:12px;">Image URL:</label>
                     <input type="text" id="bg-url" style="width:100%;margin-bottom:10px;">
-                    
+
                     <label style="display:block;font-size:12px;">Display:</label>
                     <select id="bg-mode" style="width:100%;margin-bottom:10px;">
                         <option value="tile">Tile</option>
@@ -775,7 +795,7 @@ function openCPDesktop(el) {
 
                     <div style="text-align:right;">
                         <button class="task-btn" onclick="setWallpaper()">Apply</button>
-                        <button class="task-btn" onclick="wm.closeWindow('${w.dataset.id}')">Close</button>
+                        <button class="task-btn" onclick="wm.closeWindow('${w ? w.dataset.id : ""}')">Close</button>
                     </div>
                 </div>
             </div>
@@ -905,13 +925,82 @@ function initClock(w) {
   /* ... */
 }
 
-function initControlPanel(w) {}
+function initControlPanel(w) {
+  const menu = w.querySelector(".menu-bar");
+  const body = w.querySelector(".window-body");
+  if (!menu || !body) return;
 
-function openCPColor(e) {
-  const w = e.closest(".window");
-  w.querySelector(
-    ".window-body"
-  ).innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><select id="cs-sel" style="width:100%"><option value="d">Default</option><option value="h">Hot Dog</option><option value="p">Plasma</option></select><button class="task-btn" onclick="applyTheme()">Apply</button></div></div>`;
+  menu.innerHTML = `
+    <div class="menu-item cp-menu-item active" data-view="desktop">Desktop</div>
+    <div class="menu-item cp-menu-item" data-view="color">Colors</div>
+    <div class="menu-item cp-menu-item" data-view="home">Home</div>
+  `;
+
+  body.innerHTML = `
+    <div class="cp-menu-bar">
+      <button class="task-btn cp-tab-btn active" data-view="desktop">Desktop</button>
+      <button class="task-btn cp-tab-btn" data-view="color">Colors</button>
+      <button class="task-btn cp-tab-btn" data-view="home">Home</button>
+    </div>
+    <div class="cp-view-area"></div>
+  `;
+
+  const viewArea = body.querySelector(".cp-view-area");
+
+  const renderHome = () => {
+    viewArea.innerHTML = wm.getControlPanelContent();
+  };
+
+  const setActive = (view) => {
+    body
+      .querySelectorAll(".cp-tab-btn")
+      .forEach((btn) => btn.classList.toggle("active", btn.dataset.view === view));
+    menu
+      .querySelectorAll(".cp-menu-item")
+      .forEach((btn) => btn.classList.toggle("active", btn.dataset.view === view));
+  };
+
+  const switchView = (view) => {
+    setActive(view);
+    if (view === "desktop") openCPDesktop(viewArea);
+    else if (view === "color") openCPColor(viewArea);
+    else renderHome();
+  };
+
+  body.querySelectorAll(".cp-tab-btn").forEach((btn) => {
+    btn.onclick = () => switchView(btn.dataset.view);
+  });
+
+  menu.querySelectorAll(".cp-menu-item").forEach((btn) => {
+    btn.onclick = () => switchView(btn.dataset.view);
+  });
+
+  switchView("desktop");
+}
+
+function openCPColor(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "color")
+      );
+  }
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><select id="cs-sel" style="width:100%"><option value="d">Default</option><option value="h">Hot Dog</option><option value="p">Plasma</option></select><button class="task-btn" onclick="applyTheme()">Apply</button></div></div>`;
 }
 
 function applyTheme() {
