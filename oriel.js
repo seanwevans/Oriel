@@ -348,6 +348,7 @@ class WindowManager {
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
     if (type === "control") initControlPanel(winEl);
+    if (type === "console") initConsole(winEl);
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
@@ -661,7 +662,7 @@ class WindowManager {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\WINDOWS></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
+    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off" autofocus></div></div>`;
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
@@ -1792,8 +1793,162 @@ function clearPaint(el) {
   c.getContext("2d").fillRect(0, 0, c.width, c.height);
 }
 
+function initConsole(w) {
+  w.consoleState = {
+    cwd: "C:\\",
+    history: [],
+    historyIndex: null
+  };
+  updateConsolePrompt(w);
+  const input = w.querySelector(".console-input");
+  if (input) input.focus();
+}
+
+function getConsoleState(w) {
+  if (!w.consoleState) initConsole(w);
+  return w.consoleState;
+}
+
+function updateConsolePrompt(w) {
+  const state = getConsoleState(w);
+  const prompt = w.querySelector(".console-line span");
+  if (prompt) prompt.textContent = `${state.cwd}>`;
+}
+
+function getPathSegments(pathStr) {
+  if (!pathStr) return [];
+  const cleaned = pathStr.replace(/^[A-Za-z]:/, "").replace(/^\\+/, "");
+  return cleaned ? cleaned.split(/\\+/).filter(Boolean) : [];
+}
+
+function resolveConsolePath(targetPath, cwd) {
+  let baseSegments = getPathSegments(cwd);
+  let remaining = targetPath || "";
+  const driveMatch = remaining.match(/^([A-Za-z]):/);
+  if (driveMatch) {
+    if (driveMatch[1].toUpperCase() !== "C") return { path: null, node: null };
+    baseSegments = [];
+    remaining = remaining.slice(driveMatch[0].length);
+  }
+  if (remaining.startsWith("\\")) {
+    baseSegments = [];
+    remaining = remaining.replace(/^\\+/, "");
+  }
+  const additional = getPathSegments(remaining);
+  const segments = [...baseSegments];
+  additional.forEach((seg) => {
+    if (!seg || seg === ".") return;
+    if (seg === "..") segments.pop();
+    else segments.push(seg.toUpperCase());
+  });
+  let node = MOCK_FS["C\\"] || MOCK_FS["C:\\"];
+  segments.forEach((seg) => {
+    if (!node || !node.children) return;
+    const key = Object.keys(node.children).find(
+      (k) => k.toUpperCase() === seg
+    );
+    node = key ? node.children[key] : null;
+  });
+  const normalizedPath =
+    "C:\\" + (segments.length ? segments.join("\\") : "");
+  return { path: normalizedPath.replace(/\\\\+/g, "\\"), node };
+}
+
+function appendConsoleLine(w, text = "") {
+  const output = w.querySelector(".console-output");
+  if (!output) return;
+  const line = document.createElement("div");
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function processConsoleCommand(w, input) {
+  const state = getConsoleState(w);
+  appendConsoleLine(w, `${state.cwd}>${input}`);
+  if (!input.trim()) {
+    updateConsolePrompt(w);
+    return;
+  }
+  const [rawCmd, ...rest] = input.trim().split(/\s+/);
+  const cmd = rawCmd.toLowerCase();
+  const argLine = rest.join(" ");
+  const lowerArgs = argLine.trim();
+  if (cmd === "cls") {
+    const output = w.querySelector(".console-output");
+    if (output) output.innerHTML = "";
+    return;
+  }
+  if (cmd === "help") {
+    [
+      "Egg Oriel Console Commands:",
+      "HELP - Show this help text",
+      "DIR  - List files and folders",
+      "CD   - Change directory",
+      "CLS  - Clear the screen",
+      "ECHO - Print text"
+    ].forEach((line) => appendConsoleLine(w, line));
+  } else if (cmd === "dir") {
+    const { node } = resolveConsolePath(lowerArgs || state.cwd, state.cwd);
+    if (!node || node.type !== "dir") {
+      appendConsoleLine(w, "File Not Found");
+    } else {
+      const entries = Object.keys(node.children || {});
+      entries.sort();
+      entries.forEach((key) => appendConsoleLine(w, key));
+      if (!entries.length) appendConsoleLine(w, "(empty)");
+    }
+  } else if (cmd === "echo") {
+    appendConsoleLine(w, lowerArgs);
+  } else if (cmd === "cd") {
+    if (!lowerArgs) {
+      appendConsoleLine(w, state.cwd);
+    } else {
+      const { path, node } = resolveConsolePath(lowerArgs, state.cwd);
+      if (node && node.type === "dir" && path) {
+        state.cwd = path;
+        updateConsolePrompt(w);
+      } else {
+        appendConsoleLine(w, "The system cannot find the path specified.");
+      }
+    }
+  } else {
+    appendConsoleLine(
+      w,
+      `'${rawCmd}' is not recognized as an internal or external command.`
+    );
+  }
+}
+
 function handleConsoleKey(e) {
-  if (e.key === "Enter") e.target.value = "";
+  const win = e.target.closest(".window");
+  if (!win) return;
+  const state = getConsoleState(win);
+  if (e.key === "Enter") {
+    e.preventDefault();
+    processConsoleCommand(win, e.target.value);
+    if (e.target.value.trim()) {
+      state.history.push(e.target.value.trim());
+    }
+    state.historyIndex = null;
+    e.target.value = "";
+    setTimeout(() => e.target.focus(), 0);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!state.history.length) return;
+    if (state.historyIndex === null) state.historyIndex = state.history.length - 1;
+    else if (state.historyIndex > 0) state.historyIndex--;
+    e.target.value = state.history[state.historyIndex] || "";
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (state.historyIndex === null) return;
+    if (state.historyIndex < state.history.length - 1) state.historyIndex++;
+    else state.historyIndex = null;
+    e.target.value =
+      state.historyIndex === null ? "" : state.history[state.historyIndex];
+    e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  }
 }
 
 function runCompiler(e) {
