@@ -1109,7 +1109,105 @@ function handleConsoleKey(e) {
 
 function runCompiler(e) {}
 
-function runPython(e) {}
+function runPython(e) {
+  const w = e.target.closest(".window");
+  const editor = w.querySelector(".compiler-editor");
+  const output = w.querySelector("#python-out");
+  const code = editor.value || "";
+  const lines = code.split("\n");
+  const buffer = [];
+
+  const writeOut = (msg) => buffer.push(String(msg));
+
+  const safeEval = (expr, env) => {
+    const keys = Object.keys(env);
+    const vals = Object.values(env);
+    return Function(
+      ...keys,
+      `"use strict"; return (${expr});`
+    )(...vals);
+  };
+
+  const collectBlock = (allLines, startIdx, blockIndent) => {
+    const block = [];
+    let idx = startIdx;
+    while (idx < allLines.length) {
+      const raw = allLines[idx];
+      if (raw.trim() === "") {
+        block.push("");
+        idx++;
+        continue;
+      }
+      const leading = raw.match(/^(\s*)/)[1].length;
+      if (leading < blockIndent) break;
+      block.push(raw.slice(blockIndent));
+      idx++;
+    }
+    return { block, nextIndex: idx };
+  };
+
+  const interpret = (srcLines, env = {}, currentIndent = 0, start = 0) => {
+    let idx = start;
+    while (idx < srcLines.length) {
+      const raw = srcLines[idx];
+      if (raw.trim() === "") {
+        idx++;
+        continue;
+      }
+      const leading = raw.match(/^(\s*)/)[1].length;
+      if (leading < currentIndent) break;
+      const content = raw.slice(currentIndent);
+
+      const forMatch = content.match(/^for\s+(\w+)\s+in\s+range\(([^)]+)\):\s*$/);
+      if (forMatch) {
+        const [, iterName, maxExpr] = forMatch;
+        const maxVal = Number(safeEval(maxExpr, env));
+        if (!Number.isFinite(maxVal) || maxVal < 0)
+          throw new Error("range() expects a non-negative number");
+
+        let blockIndent = null;
+        for (let j = idx + 1; j < srcLines.length; j++) {
+          if (srcLines[j].trim() === "") continue;
+          const nextLeading = srcLines[j].match(/^(\s*)/)[1].length;
+          if (nextLeading > leading) blockIndent = nextLeading;
+          break;
+        }
+        const indentForBlock = blockIndent ?? leading + 2;
+        const { block, nextIndex } = collectBlock(
+          srcLines,
+          idx + 1,
+          indentForBlock
+        );
+        for (let i = 0; i < maxVal; i++) {
+          env[iterName] = i;
+          interpret(block, env, 0, 0);
+        }
+        idx = nextIndex;
+        continue;
+      }
+
+      const printMatch = content.match(/^print\((.*)\)\s*$/);
+      if (printMatch) {
+        const expr = printMatch[1];
+        writeOut(safeEval(expr || "''", env));
+        idx++;
+        continue;
+      }
+
+      // Fallback: attempt to evaluate as JavaScript for quick mocks
+      safeEval(content, env);
+      idx++;
+    }
+    return idx;
+  };
+
+  try {
+    interpret(lines);
+    output.textContent = buffer.join("\n");
+  } catch (err) {
+    output.textContent = `Error: ${err.message}`;
+  }
+}
 
 function calcInput(e, v) {
   const d = e.target.closest(".window").querySelector("#calc-disp"),
