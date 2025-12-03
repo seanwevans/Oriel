@@ -932,6 +932,7 @@ function applyTheme() {
 function initFileManager(w) {
   w.cP = "C:\\";
   w.cD = MOCK_FS["C:\\"];
+  w.currentDirObj = w.cD;
   rFT(w);
   rFL(w);
 }
@@ -948,6 +949,7 @@ function rFT(w) {
       e.stopPropagation();
       w.cP = p;
       w.cD = o;
+      w.currentDirObj = o;
       rFT(w);
       rFL(w);
     };
@@ -981,7 +983,14 @@ function rFL(w) {
             : ICONS.file_txt
           : ICONS.folder) + `<span>${k}</span>`;
       r.ondblclick = () => {
-        if (i.app)
+        if (i.type === "dir") {
+          const np = w.cP === "C\\" ? w.cP + k : w.cP + "\\" + k;
+          w.cP = np;
+          w.cD = i;
+          w.currentDirObj = i;
+          rFT(w);
+          rFL(w);
+        } else if (i.app)
           wm.openWindow(i.app, i.app.toUpperCase(), 400, 300, i.content);
       };
       r.onclick = () => {
