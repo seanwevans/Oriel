@@ -1423,6 +1423,92 @@ body {
   border: 1px solid black;
 }
 
+.simcity-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.simcity-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #d0d0d0;
+  border: 1px solid #808080;
+  padding: 6px;
+  box-shadow: inset 1px 1px 0px white, inset -1px -1px 0px #808080;
+}
+
+.simcity-stats {
+  display: flex;
+  gap: 12px;
+  font-weight: bold;
+  font-family: var(--font-main);
+}
+
+.simcity-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.simcity-tools button {
+  border: 1px solid #808080;
+  background: #c0c0c0;
+  padding: 4px 8px;
+  cursor: pointer;
+  box-shadow: inset 1px 1px 0px white, inset -1px -1px 0px #808080;
+}
+
+.simcity-tools button.active {
+  background: #000080;
+  color: white;
+}
+
+.simcity-map {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  background: #3a5f2f;
+  border: 2px solid #444;
+  padding: 6px;
+}
+
+.simcity-cell {
+  width: 100%;
+  padding-bottom: 100%;
+  position: relative;
+  border: 1px solid #2b2b2b;
+}
+
+.simcity-cell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.tile-grass { background: #4caf50; }
+.tile-road { background: #b59b6a; }
+.tile-house { background: linear-gradient(135deg, #90caf9, #64b5f6); }
+.tile-power { background: linear-gradient(135deg, #fbc02d, #ffb74d); }
+.tile-park { background: #66bb6a; }
+
+.simcity-log {
+  background: #1f1f1f;
+  color: #d8ffd8;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px;
+  height: 70px;
+  overflow: auto;
+  border: 1px solid #000;
+  white-space: pre-line;
+}
+
 #screensaver {
   position: fixed;
   top: 0;
