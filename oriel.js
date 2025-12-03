@@ -370,9 +370,12 @@ class WindowManager {
   minimizeWindow(id) {
     const win = this.windows.find((w) => w.id === id);
     if (!win) return;
+    if (win.minimized) return;
     win.el.style.display = "none";
     win.minimized = true;
     // Create Icon at bottom
+    const existing = document.getElementById("min-" + id);
+    if (existing) existing.remove();
     const icon = document.createElement("div");
     icon.id = "min-" + id;
     icon.className = "desktop-icon minimized";
