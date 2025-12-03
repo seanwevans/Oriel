@@ -1165,6 +1165,17 @@ body {
   padding: 10px;
 }
 
+.cp-font-preview {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  border-right-color: var(--win-gray-light);
+  border-bottom-color: var(--win-gray-light);
+  padding: 8px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+
 .cp-row {
   display: flex;
   justify-content: space-between;
