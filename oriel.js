@@ -1107,9 +1107,67 @@ function handleConsoleKey(e) {
   if (e.key === "Enter") e.target.value = "";
 }
 
-function runCompiler(e) {}
+function runCompiler(e) {
+  const win = e?.target?.closest(".window") || document.querySelector(".window.active");
+  const output = win?.querySelector("#compiler-out");
+  const editor = win?.querySelector(".compiler-editor");
 
-function runPython(e) {}
+  if (!output) return;
+
+  const lines = [];
+  try {
+    const code = editor?.value || "";
+    if (!code.trim()) {
+      lines.push("No source code provided.");
+    } else {
+      lines.push("Compiling Tiny C...");
+      if (!/int\s+main\s*\(/.test(code)) {
+        throw new Error("error: missing int main() entry point");
+      }
+      lines.push("Build succeeded.");
+      const printfMatch = code.match(/printf\s*\(\s*\"([^\"]*)\"/);
+      const programOutput = printfMatch ? printfMatch[1] : "(no output)";
+      lines.push("Program output:");
+      lines.push(programOutput);
+    }
+  } catch (err) {
+    lines.push(`Compilation failed: ${err.message}`);
+  }
+
+  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+}
+
+function runPython(e) {
+  const win = e?.target?.closest(".window") || document.querySelector(".window.active");
+  const output = win?.querySelector("#python-out");
+  const editor = win?.querySelector(".compiler-editor");
+
+  if (!output) return;
+
+  const lines = [];
+  try {
+    const code = editor?.value || "";
+    if (!code.trim()) {
+      lines.push("No script provided.");
+    } else {
+      lines.push("Running Python 1.0 interpreter...");
+      const printRegex = /print\s*\(([^\)]*)\)/g;
+      const printed = [];
+      let match;
+      while ((match = printRegex.exec(code))) {
+        const raw = match[1].trim();
+        const textMatch = raw.match(/^\s*["'`](.*)["'`]\s*$/);
+        printed.push(textMatch ? textMatch[1] : raw);
+      }
+      lines.push("Program output:");
+      lines.push(printed.length ? printed.join("\n") : "(no output)");
+    }
+  } catch (err) {
+    lines.push(`Execution failed: ${err.message}`);
+  }
+
+  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+}
 
 function calcInput(e, v) {
   const d = e.target.closest(".window").querySelector("#calc-disp"),
