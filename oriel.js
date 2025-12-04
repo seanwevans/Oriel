@@ -357,6 +357,10 @@ class WindowManager {
         closingWin.el.chessCleanup();
       if (typeof closingWin.el.skifreeCleanup === "function")
         closingWin.el.skifreeCleanup();
+      if (closingWin.el.doomCI) {
+        closingWin.el.doomCI.exit();
+        closingWin.el.doomCI = null;
+      }
       closingWin.el.remove();
       // Remove minimized icon if exists
       const minIcon = document.getElementById("min-" + id);
@@ -679,7 +683,7 @@ class WindowManager {
   getDoomContent() {
     return `
       <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
-        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></div>
+        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></canvas>
       </div>
     `;
   }
@@ -2521,34 +2525,26 @@ function loadJsDos() {
   return jsDosLoadPromise;
 }
 
-const originalTitle = "My Custom Title"; 
-
-// Redefine the 'title' property on the document object
-Object.defineProperty(document, 'title', {
-    get: function() {
-        return originalTitle; // Always return the original title
-    },
-    set: function(value) {
-        // You can log the attempts to change the title if you want, 
-        // but it will not actually change the title.
-        console.log("js-dos tried to change the title to:", value);
-    },
-    configurable: false // Prevents further redefinitions
-});
-
 function initDoom(win) {
   const container = win.querySelector("#doom-container");
   if (!container) return;
 
+  const savedTitle = document.title;
+  const restoreTitle = () => { document.title = savedTitle; };
+  
   loadJsDos()
     .then(() => {
       return window.Dos(container, {
         style: "none",
         wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
       }).ready((fs, main) => {
+        restoreTitle();
         fs.extract("https://js-dos.com/cdn/upload/DOOM-@evilution.zip").then(() => {
-          main(["-c", "cd doom", "-c", "DOOM"]).then((ci) => {
+          restoreTitle();
+          main(["-c", "cd doom", "-c", "doom"]).then((ci) => {
             win.doomCI = ci;
+            restoreTitle();
+            setTimeout(restoreTitle, 100);
           });
         });
       });
