@@ -1008,6 +1008,136 @@ body {
   z-index: 10;
 }
 
+.ps-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  background: var(--win-gray);
+}
+
+.ps-topbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background: linear-gradient(180deg, #fdfdfd 0%, #cfcfcf 100%);
+  border: 1px solid var(--win-gray-shadow);
+}
+
+.ps-status {
+  margin-left: auto;
+  font-size: 12px;
+  color: #222;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px inset var(--win-gray-shadow);
+}
+
+.ps-body {
+  display: grid;
+  grid-template-columns: 120px 1fr 220px;
+  gap: 8px;
+  padding: 0 6px 6px 6px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ps-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #d8d8d8;
+  border: 1px solid var(--win-gray-shadow);
+  padding: 6px;
+  box-shadow: inset 1px 1px 0 #fff;
+}
+
+.ps-tool {
+  padding: 6px;
+  font-size: 12px;
+  text-align: left;
+  border: 2px solid var(--win-gray);
+  border-top-color: #fff;
+  border-left-color: #fff;
+  border-right-color: #000;
+  border-bottom-color: #000;
+  background: #efefef;
+  cursor: pointer;
+}
+
+.ps-tool.active {
+  background: #fff;
+  border: 2px solid #000;
+  border-bottom-color: #fff;
+  border-right-color: #fff;
+}
+
+.ps-canvas-wrap {
+  background: #707070;
+  border: 1px solid var(--win-gray-shadow);
+  overflow: auto;
+  padding: 10px;
+  box-shadow: inset 1px 1px 0 #fff;
+}
+
+.ps-canvas {
+  display: block;
+  background: repeating-linear-gradient(45deg, #fafafa 0, #fafafa 10px, #f0f0f0 10px, #f0f0f0 20px);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: crosshair;
+}
+
+.ps-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #dcdcdc;
+  padding: 8px;
+  border: 1px solid var(--win-gray-shadow);
+  box-shadow: inset 1px 1px 0 #fff;
+  overflow-y: auto;
+}
+
+.ps-panel-group {
+  border: 1px solid var(--win-gray-shadow);
+  padding: 8px;
+  background: #f5f5f5;
+  box-shadow: inset 1px 1px 0 #fff;
+  font-size: 12px;
+}
+
+.ps-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ps-swatch {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #000;
+  cursor: pointer;
+  box-shadow: 0 1px 0 #fff inset;
+}
+
+.ps-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.ps-hint {
+  margin-top: 6px;
+  color: #333;
+  font-size: 11px;
+  background: #fffbe6;
+  padding: 6px;
+  border: 1px dashed #c29b00;
+}
+
 /* Database Styles */
 .db-layout {
   display: flex;
