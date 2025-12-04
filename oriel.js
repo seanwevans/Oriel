@@ -3668,4 +3668,27 @@ function stopMinesTimer() {
   }
 }
 
-window.onload = initScreensaver;
+function initSplash() {
+  const splash = document.getElementById("splash-screen");
+  if (!splash) return;
+  
+  const removeSplash = () => {
+    splash.style.opacity = "0";
+    setTimeout(() => {
+        splash.style.display = "none";
+    }, 200); 
+  };
+  
+  const timer = setTimeout(removeSplash, 5000);
+  
+  splash.addEventListener("click", () => {
+    clearTimeout(timer);
+    removeSplash();
+  });
+}
+
+
+window.onload = () => {
+    initSplash();
+    initScreensaver();    
+};

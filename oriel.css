@@ -1898,3 +1898,151 @@ body {
 .mv-num {
   font-weight: bold;
 }
+
+/* Splash Screen Styles */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    z-index: 20000; /* Higher than screensaver (9999) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.splash-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* The Windows Flag */
+.win-logo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: 80px;
+    height: 80px;
+    gap: 4px;
+    transform: skewX(-10deg);
+}
+
+.win-pane {
+    width: 100%;
+    height: 100%;
+    border: 1px solid black;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+}
+
+.win-pane.red { background-color: #cf6060; border-radius: 10px 0 0 0; }
+.win-pane.green { background-color: #11fc11; border-radius: 0 10px 0 0; }
+.win-pane.blue { background-color: #3131ee; border-radius: 0 0 0 10px; }
+.win-pane.yellow { background-color: #eeee00; border-radius: 0 0 10px 0; }
+
+/* The Text */
+.splash-text {
+    color: white;
+    font-family: "Times New Roman", serif;
+}
+
+.splash-text h1 {
+    font-size: 42px;
+    margin: 0;
+    font-weight: normal;
+    line-height: 1;
+}
+
+.splash-text h1 .win-font {
+    font-weight: bold;
+    font-size: 56px;
+    display: block;
+}
+
+.splash-version {
+    font-family: "Arial", sans-serif;
+    font-size: 14px;
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.v-rect {
+    border: 1px solid white;
+    padding: 1px 4px;
+    font-size: 10px;
+}
+
+/* --- Splash Screen Layout Updates --- */
+#splash-screen {
+    /* Existing styles remain... */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column; /* Ensure vertical stacking */
+}
+
+.splash-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px; /* Space between logo and loading bar */
+}
+
+/* Ensure the logo/text row stays horizontal */
+.splash-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* --- Windows XP Loader Styles --- */
+.xp-load-container {
+    width: 250px;
+    height: 16px;
+    border: 2px solid #b2b2b2;
+    border-radius: 4px;
+    background: black;
+    padding: 2px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #505050; /* Double border effect */
+}
+
+.xp-load-bar {
+    width: 15px;
+    height: 100%;
+    background: linear-gradient(180deg, #2b60de 0%, #7da2f5 30%, #2b60de 100%);
+    position: absolute;
+    top: 0;
+    border-radius: 2px;
+    opacity: 0;
+    animation: xp-load 2.5s infinite linear;
+    box-shadow: 0 0 4px #2b60de;
+}
+
+/* Stagger the three blocks */
+.xp-load-bar:nth-child(1) { animation-delay: 0s; }
+.xp-load-bar:nth-child(2) { animation-delay: 0.15s; }
+.xp-load-bar:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes xp-load {
+    0% {
+        left: -20px;
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
