@@ -1736,11 +1736,55 @@ body {
   overflow: hidden;
 }
 
+.mplayer-overlay {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px;
+}
+
+.mplayer-track-label {
+  color: #e0ffe6;
+  font-family: "Lucida Console", monospace;
+  font-size: 12px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.mplayer-seek-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c0ffd8;
+  font-size: 12px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.mplayer-seek {
+  flex-grow: 1;
+}
+
+.mplayer-time {
+  min-width: 42px;
+  text-align: center;
+}
+
 .mplayer-controls {
   display: flex;
   gap: 5px;
   border-top: 1px solid white;
   padding-top: 5px;
+}
+
+.mplayer-track-select {
+  flex-grow: 1;
+  height: 24px;
+  border: 1px solid #808080;
+  background: #fff;
+  font-size: 12px;
+  padding: 0 4px;
 }
 
 .mplayer-btn {

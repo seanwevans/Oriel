@@ -153,6 +153,49 @@ let systemVolume = loadStoredVolume();
 let lastNonZeroVolume = systemVolume || 0.7;
 const activeMediaElements = new Set();
 
+function generateToneUrl(freq, duration = 1.2, sampleRate = 22050) {
+  const sampleCount = Math.floor(sampleRate * duration);
+  const buffer = new ArrayBuffer(44 + sampleCount * 2);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+
+  const writeString = (offset, str) => {
+    for (let i = 0; i < str.length; i++) bytes[offset + i] = str.charCodeAt(i);
+  };
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + sampleCount * 2, true);
+  writeString(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, "data");
+  view.setUint32(40, sampleCount * 2, true);
+
+  for (let i = 0; i < sampleCount; i++) {
+    const sample = Math.sin((2 * Math.PI * freq * i) / sampleRate) * 0.35;
+    view.setInt16(44 + i * 2, sample * 32767, true);
+  }
+
+  return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+}
+
+let mediaPlayerTracks = null;
+function getMediaPlayerTracks() {
+  if (!mediaPlayerTracks) {
+    mediaPlayerTracks = [
+      { name: "Synth Bell (C5)", url: generateToneUrl(523.25, 1.2) },
+      { name: "Retro Chime (E4)", url: generateToneUrl(329.63, 1.5) },
+      { name: "Soft Drone (A3)", url: generateToneUrl(220, 2) }
+    ];
+  }
+  return mediaPlayerTracks;
+}
+
 function getSystemVolume() {
   return systemVolume;
 }
@@ -869,7 +912,7 @@ class WindowManager {
     return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas></div><div class="mplayer-controls"><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
   }
   getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
@@ -1732,37 +1775,121 @@ function initReversi(w) {
 function initMediaPlayer(w) {
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
+
+  const selectEl = w.querySelector(".mplayer-track-select");
+  const seekEl = w.querySelector(".mplayer-seek");
+  const currentEl = w.querySelector(".mplayer-current");
+  const durationEl = w.querySelector(".mplayer-duration");
+  const trackNameEl = w.querySelector(".mplayer-track-name");
+  const audio = new Audio();
+  registerMediaElement(audio);
+
+  const tracks = getMediaPlayerTracks();
+  tracks.forEach((t, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = t.name;
+    selectEl.appendChild(opt);
+  });
+
   let interval = null;
   let x = 50;
   let y = 50;
   let dx = 2;
   let dy = 2;
+  let currentTrack = 0;
+
+  const formatTime = (seconds) => {
+    if (!isFinite(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   const animate = () => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#0F0";
-    ctx.font = "20px Arial";
-    ctx.fillText("DVD", x, y);
+    ctx.fillStyle = "#00ff6a";
+    ctx.font = "20px 'Courier New', monospace";
+    ctx.fillText("ORIEL DVD", x, y);
     x += dx;
     y += dy;
-    if (x < 0 || x > canvas.width - 40) dx = -dx;
-    if (y < 20 || y > canvas.height) dy = -dy;
+    if (x < 0 || x > canvas.width - 100) dx = -dx;
+    if (y < 20 || y > canvas.height - 10) dy = -dy;
   };
+
+  const stopVisual = () => {
+    clearInterval(interval);
+    interval = null;
+  };
+
+  const resetVisual = () => {
+    stopVisual();
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    x = 50;
+    y = 50;
+  };
+
+  const updateSeek = () => {
+    if (!audio.duration) return;
+    seekEl.value = Math.floor((audio.currentTime / audio.duration) * 100);
+    currentEl.textContent = formatTime(audio.currentTime);
+    durationEl.textContent = formatTime(audio.duration);
+  };
+
+  const loadTrack = (index) => {
+    currentTrack = index;
+    const track = tracks[currentTrack];
+    audio.src = track.url;
+    audio.currentTime = 0;
+    trackNameEl.textContent = track.name;
+    seekEl.value = 0;
+    currentEl.textContent = "0:00";
+    durationEl.textContent = "0:00";
+  };
+
+  selectEl.addEventListener("change", (e) => {
+    loadTrack(parseInt(e.target.value, 10));
+    registerMediaElement(audio);
+    audio.play();
+    interval = interval || setInterval(animate, 30);
+  });
+
+  seekEl.addEventListener("input", () => {
+    if (!audio.duration) return;
+    audio.currentTime = (parseFloat(seekEl.value) / 100) * audio.duration;
+  });
+
+  audio.addEventListener("timeupdate", updateSeek);
+  audio.addEventListener("loadedmetadata", updateSeek);
+  audio.addEventListener("ended", () => {
+    stopVisual();
+    audio.currentTime = 0;
+    seekEl.value = 0;
+    currentEl.textContent = formatTime(0);
+  });
+
+  loadTrack(currentTrack);
+  selectEl.value = "0";
 
   w.toggleMedia = (btn, action) => {
     if (action === "play") {
+      registerMediaElement(audio);
+      audio.play();
       if (!interval) interval = setInterval(animate, 30);
     } else if (action === "pause") {
-      clearInterval(interval);
-      interval = null;
+      audio.pause();
+      stopVisual();
     } else {
-      clearInterval(interval);
-      interval = null;
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      x = 50;
-      y = 50;
+      audio.pause();
+      audio.currentTime = 0;
+      seekEl.value = 0;
+      currentEl.textContent = formatTime(0);
+      stopVisual();
+      resetVisual();
     }
   };
   window.toggleMedia = w.toggleMedia;
