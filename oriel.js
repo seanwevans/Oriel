@@ -1,4 +1,3 @@
-// --- ICONS (Inline SVGs for pixel art look) ---
 const ICONS = {
   progman: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="24" fill="#c0c0c0" stroke="black"/><rect x="4" y="8" width="24" height="16" fill="white" stroke="black"/><rect x="6" y="10" width="4" height="4" fill="#000080"/><rect x="14" y="10" width="4" height="4" fill="#000080"/><rect x="22" y="10" width="4" height="4" fill="#000080"/><rect x="6" y="18" width="4" height="4" fill="#000080"/><rect x="14" y="18" width="4" height="4" fill="#000080"/><rect x="22" y="18" width="4" height="4" fill="#000080"/></svg>`,
   notepad: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M6 4h14l6 6v18H6z" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#c0c0c0" stroke="black"/><line x1="10" y1="12" x2="22" y2="12" stroke="blue"/><line x1="10" y1="16" x2="22" y2="16" stroke="black"/><line x1="10" y1="20" x2="22" y2="20" stroke="black"/><line x1="10" y1="24" x2="22" y2="24" stroke="black"/></svg>`,
@@ -33,150 +32,97 @@ const ICONS = {
   readme: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M10 8h12M10 12h12M10 16h12M10 20h8" stroke="black" stroke-width="2"/></svg>`,
   help: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#FFFF00" stroke="black"/><text x="16" y="22" font-size="20" text-anchor="middle" font-weight="bold" font-family="serif">?</text></svg>`,
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
-  pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`
+  pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
+  doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
 };
+
 const DEFAULT_PDF_DATA_URI =
   "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
-// --- MOCK FILE SYSTEM ---
-const MOCK_FS = {
+
+const FS_STORAGE_KEY = "oriel-fs-v1";
+
+const DEFAULT_FS = {
   "C:\\": {
     type: "dir",
     children: {
       ORIEL: {
         type: "dir",
         children: {
-          SYSTEM: {
-            type: "dir",
-            children: {}
-          },
-          "CALC.EXE": {
-            type: "file",
-            app: "calc"
-          },
-          "NOTEPAD.EXE": {
-            type: "file",
-            app: "notepad"
-          },
-          "WRITE.EXE": {
-            type: "file",
-            app: "write"
-          },
-          "CARDFILE.EXE": {
-            type: "file",
-            app: "cardfile"
-          },
-          "WINMINE.EXE": {
-            type: "file",
-            app: "mines"
-          },
-          "CHESS.EXE": {
-            type: "file",
-            app: "chess"
-          },
-          "SOL.EXE": {
-            type: "file",
-            app: "solitaire"
-          },
-          "REVERSI.EXE": {
-            type: "file",
-            app: "reversi"
-          },
-          "PBRUSH.EXE": {
-            type: "file",
-            app: "paint"
-          },
-          "MPLAYER.EXE": {
-            type: "file",
-            app: "mplayer"
-          },
-          "SKIFREE.EXE": {
-            type: "file",
-            app: "skifree"
-          },
-          "SIMCITY.EXE": {
-            type: "file",
-            app: "simcity"
-          },
-          "WINFILE.EXE": {
-            type: "file",
-            app: "winfile"
-          },
-          "TASKMAN.EXE": {
-            type: "file",
-            app: "taskman"
-          },
-          "CLIPBRD.EXE": {
-            type: "file",
-            app: "clipbrd"
-          },
-          "DATAMGR.EXE": {
-            type: "file",
-            app: "database"
-          },
-          "CHARMAP.EXE": {
-            type: "file",
-            app: "charmap"
-          },
-          "SOUNDREC.EXE": {
-            type: "file",
-            app: "soundrec"
-          },
-          "CLOCK.EXE": {
-            type: "file",
-            app: "clock"
-          },
-          "CONTROL.EXE": {
-            type: "file",
-            app: "control"
-          },
-          "WEB.EXE": {
-            type: "file",
-            app: "browser"
-          },
-          "TINYC.EXE": {
-            type: "file",
-            app: "compiler"
-          },
-          "PYTHON.EXE": {
-            type: "file",
-            app: "python"
-          },
-          "CONSOLE.EXE": {
-            type: "file",
-            app: "console"
-          }
+          SYSTEM: { type: "dir", children: {} },
+          "CALC.EXE": { type: "file", app: "calc" },
+          "NOTEPAD.EXE": { type: "file", app: "notepad" },
+          "DOOM.EXE": { type: "file", app: "doom" },
+          "WRITE.EXE": { type: "file", app: "write" },
+          "CARDFILE.EXE": { type: "file", app: "cardfile" },
+          "WINMINE.EXE": { type: "file", app: "mines" },
+          "CHESS.EXE": { type: "file", app: "chess" },
+          "SOL.EXE": { type: "file", app: "solitaire" },
+          "REVERSI.EXE": { type: "file", app: "reversi" },
+          "PBRUSH.EXE": { type: "file", app: "paint" },
+          "MPLAYER.EXE": { type: "file", app: "mplayer" },
+          "SKIFREE.EXE": { type: "file", app: "skifree" },
+          "SIMCITY.EXE": { type: "file", app: "simcity" },
+          "WINFILE.EXE": { type: "file", app: "winfile" },
+          "TASKMAN.EXE": { type: "file", app: "taskman" },
+          "CLIPBRD.EXE": { type: "file", app: "clipbrd" },
+          "DATAMGR.EXE": { type: "file", app: "database" },
+          "CHARMAP.EXE": { type: "file", app: "charmap" },
+          "SOUNDREC.EXE": { type: "file", app: "soundrec" },
+          "CLOCK.EXE": { type: "file", app: "clock" },
+          "CONTROL.EXE": { type: "file", app: "control" },
+          "WEB.EXE": { type: "file", app: "browser" },
+          "TINYC.EXE": { type: "file", app: "compiler" },
+          "PYTHON.EXE": { type: "file", app: "python" },
+          "CONSOLE.EXE": { type: "file", app: "console" }
         }
       },
       DOCUMENTS: {
         type: "dir",
         children: {
-          "README.TXT": {
-            type: "file",
-            app: "notepad",
-            content: "Welcome to Oriel 1.0!"
-          },
-          "TODO.TXT": {
-            type: "file",
-            app: "notepad",
-            content: "- Buy Milk\n- Install DOOM"
-          },
-          "MANUAL.PDF": {
-            type: "file",
-            app: "pdfreader",
-            content: {
-              name: "Manual.pdf",
-              src: DEFAULT_PDF_DATA_URI
-            }
-          }
+          "README.TXT": { type: "file", app: "notepad", content: "Welcome to Oriel 1.0!" },
+          "TODO.TXT": { type: "file", app: "notepad", content: "- Buy Milk\n- Install DOOM" },
+          "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } }
         }
       }
     }
   }
 };
+
+function loadFileSystem() {
+  const stored = localStorage.getItem(FS_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : DEFAULT_FS;
+}
+
+function saveFileSystem() {
+  localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(MOCK_FS));
+}
+
+const MOCK_FS = loadFileSystem();
+
+function createFolder(btn) {
+  const win = btn.closest(".window");
+  const input = win.querySelector("#new-folder-name");
+  const name = input.value.trim();
+  if (name && win.currentDirObj) {
+    if (win.currentDirObj.children[name]) {
+      alert("Folder already exists!");
+      return;
+    }
+    win.currentDirObj.children[name] = {
+      type: "dir",
+      children: {}
+    };
+    saveFileSystem(); // Save changes
+    input.value = "";
+    rFT(win);
+    rFL(win);
+  }
+}
+
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
-// --- KERNEL & SCHEDULER SIMULATION ---
+
 class SimulatedKernel {
   constructor() {
     this.processes = [];
@@ -235,8 +181,9 @@ class SimulatedKernel {
     refreshAllProcessViews();
   }
 }
+
 const kernel = new SimulatedKernel();
-// --- WINDOW MANAGER ---
+
 class WindowManager {
   constructor() {
     this.desktop = document.getElementById("desktop");
@@ -360,7 +307,8 @@ class WindowManager {
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
-    if (type === "browser") content = this.getBrowserContent();
+    if (type === "browser") content = this.getBrowserContent();    
+    if (type === "doom") content = this.getDoomContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -397,6 +345,7 @@ class WindowManager {
     if (type === "taskman") initTaskMan(winEl);
     if (type === "pdfreader") initPdfReader(winEl, initData);
     if (type === "browser") initBrowser(winEl);
+    if (type === "doom") initDoom(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
@@ -668,6 +617,10 @@ class WindowManager {
                         ${ICONS.readme}
                         <div class="prog-label">Read Me</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('doom', 'DOOM', 640, 400)">
+                        ${ICONS.doom}
+                    <div class="prog-label">DOOM</div>
+            </div>
                 </div>
             `;
   }
@@ -722,6 +675,20 @@ class WindowManager {
                 <div class="browser-status">Enter a URL to begin browsing.</div>
               </div>
             </div>`;
+  }
+  getDoomContent() {
+    return `
+      <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
+        <div id="doom-container" style="width:640px;height:400px;background:#111;"></div>
+        <script>
+          if(!window.Dos) {
+            const script = document.createElement('script');
+            script.src = "https://js-dos.com/6.22/current/js-dos.js";
+            document.head.appendChild(script);
+          }
+        </script>
+      </div>
+    `;
   }
   getTaskManContent() {
     return `
@@ -853,8 +820,9 @@ class WindowManager {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
+
 const wm = new WindowManager();
-// --- SCREENSAVER LOGIC ---
+
 let saverActive = false;
 let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
@@ -862,18 +830,20 @@ const sCtx = saverCanvas.getContext("2d");
 const screensaverDiv = document.getElementById("screensaver");
 let screensaverType = "starfield";
 let screensaverTimeout = 60;
-// Starfield vars
+
 let stars = [];
-const numStars = 100;
+const numStars = 500;
 let sInterval = null;
-// Pipes vars
+
 let pipes = [];
+
 const pipeDirections = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
   { x: 0, y: 1 },
   { x: 0, y: -1 }
 ];
+
 const PIPE_COLORS = ["#4bc0ff", "#ff6b6b", "#50fa7b", "#f1fa8c"];
 
 function initScreensaver() {
@@ -1038,7 +1008,7 @@ function drawPipes() {
     pipe.y = nextY;
   });
 }
-// --- CONTROL PANEL: DESKTOP ---
+
 function openCPDesktop(el, containerOverride) {
   let targetContainer = containerOverride;
   if (!targetContainer && el?.classList?.contains("cp-view-area")) {
@@ -1193,6 +1163,7 @@ function previewScreensaver() {
   idleTime = 0;
   startScreensaver(chosen);
 }
+
 function initBrowser(win) {
   const urlInput = win.querySelector(".browser-url");
   const frame = win.querySelector(".browser-frame");
@@ -1309,7 +1280,7 @@ function initBrowser(win) {
 
   loadUrl(BROWSER_HOME);
 }
-// --- TASK MANAGER & SCHEDULER LOGIC ---
+
 let selT = {};
 
 function initTaskMan(win) {
@@ -1385,7 +1356,7 @@ function endTask(e) {
   const targetId = selT[winId];
   if (targetId) wm.closeWindow(targetId);
 }
-// --- OTHER LOGIC (Preserved) ---
+
 function initReversi(w) {
   const board = w.querySelector("#reversi-board");
   const status = w.querySelector(".reversi-status");
@@ -2519,7 +2490,7 @@ function rFL(w) {
       v.appendChild(r);
     });
 }
-// Create Folder Function
+
 function createFolder(btn) {
   const win = btn.closest(".window");
   const input = win.querySelector("#new-folder-name");
@@ -2539,11 +2510,124 @@ function createFolder(btn) {
   }
 }
 
+function initDoom(win) {
+  const container = win.querySelector("#doom-container");
+  
+  // Wait for script to load if it hasn't yet
+  const checkDos = setInterval(() => {
+    if (window.Dos) {
+      clearInterval(checkDos);
+      startDoom();
+    }
+  }, 100);
+
+  function startDoom() {
+    // Basic Shareware Doom config via JS-DOS
+    window.Dos(container, {
+        style: "none",
+        wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
+    }).ready((fs, main) => {
+      fs.extract("https://js-dos.com/6.22/current/doom.zip").then(() => {
+        main(["-c", "cd doom", "-c", "doom.exe"]).then((ci) => {
+            win.doomCI = ci; // Store to exit later if needed
+        });
+      });
+    });
+  }
+}
+
 function initSoundRecorder(w) {
-  /* shortened */
-  const bR = w.querySelector("#btn-rec");
-  bR.onclick = () => {
-    w.querySelector("#sound-status").innerText = "Recording (Fake)...";
+  const canvas = w.querySelector(".sound-wave-canvas");
+  const ctx = canvas.getContext("2d");
+  const status = w.querySelector("#sound-status");
+  
+  let mediaRecorder;
+  let audioChunks = [];
+  let audioBlob = null;
+  let audioUrl = null;
+  let audioCtx;
+  let analyser;
+  let dataArray;
+  let source;
+  let streamRef;
+  let animationId;
+
+  // Visualization Loop
+  function draw() {
+    if (!analyser) return;
+    animationId = requestAnimationFrame(draw);
+    analyser.getByteTimeDomainData(dataArray);
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#0f0"; // Green wave
+    ctx.beginPath();
+    const sliceWidth = canvas.width / dataArray.length;
+    let x = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = (v * canvas.height) / 2;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+  }
+
+  // RECORD
+  w.querySelector("#btn-rec").onclick = async () => {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef = stream;
+      
+      // Setup Visualizer
+      analyser = audioCtx.createAnalyser();
+      source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 256;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      draw();
+
+      // Setup Recorder
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+      mediaRecorder.onstop = () => {
+        audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        audioUrl = URL.createObjectURL(audioBlob);
+        status.innerText = "Stopped. Ready to play.";
+        cancelAnimationFrame(animationId);
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
+      };
+
+      mediaRecorder.start();
+      status.innerText = "Recording...";
+      status.style.color = "red";
+    } catch (err) {
+      status.innerText = "Error: Mic access denied.";
+    }
+  };
+
+  // STOP
+  w.querySelector("#btn-stop").onclick = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      if (streamRef) streamRef.getTracks().forEach(track => track.stop());
+      status.style.color = "black";
+    }
+  };
+
+  // PLAY
+  w.querySelector("#btn-play").onclick = () => {
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play();
+      status.innerText = "Playing...";
+      audio.onended = () => { status.innerText = "Ready"; };
+    }
   };
 }
 
@@ -3045,6 +3129,7 @@ function calcInput(e, v) {
   } else d.dataset.val = val === "0" && !"+-*/".includes(v) ? v : val + v;
   d.innerText = d.dataset.val;
 }
+
 function initSkiFree(win) {
   const canvas = win.querySelector(".skifree-canvas");
   const layout = win.querySelector(".skifree-layout");
@@ -3053,7 +3138,7 @@ function initSkiFree(win) {
   const statusEl = win.querySelector(".skifree-status");
   const resetBtn = win.querySelector(".skifree-reset");
 
-  if (!canvas || !layout || !scoreEl || !speedEl || !statusEl) return;
+  if (!canvas || !layout) return;
 
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
@@ -3061,6 +3146,7 @@ function initSkiFree(win) {
   const pressed = {};
   const obstacles = [];
   const skier = { x: width / 2, y: height - 50, vx: 0, jumpTimer: 0 };
+  let monster = null; // Monster Object
   let speed = 2.2;
   let score = 0;
   let playing = true;
@@ -3069,22 +3155,20 @@ function initSkiFree(win) {
 
   layout.focus();
 
+  // Inputs
   const onKeyDown = (e) => {
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
       e.preventDefault();
       pressed[e.key] = true;
     }
   };
-
-  const onKeyUp = (e) => {
-    if (pressed[e.key]) pressed[e.key] = false;
-  };
-
+  const onKeyUp = (e) => { if (pressed[e.key]) pressed[e.key] = false; };
   layout.addEventListener("keydown", onKeyDown);
   layout.addEventListener("keyup", onKeyUp);
 
   const resetCourse = () => {
     obstacles.length = 0;
+    monster = null;
     score = 0;
     speed = 2.2;
     skier.x = width / 2;
@@ -3093,146 +3177,117 @@ function initSkiFree(win) {
     playing = true;
     statusEl.textContent = "Carving fresh powder";
     scoreEl.textContent = "0";
-    speedEl.textContent = "0";
     lastTs = 0;
     layout.focus();
   };
 
   const spawnObstacle = () => {
     const type = Math.random() < 0.7 ? "tree" : "rock";
-    const x = 16 + Math.random() * (width - 32);
-    const y = -30 - Math.random() * 120;
+    const x = Math.random() * width;
+    const y = -50;
     obstacles.push({ x, y, type });
   };
 
-  const drawSkier = () => {
-    const baseY = skier.y - (skier.jumpTimer > 0 ? 12 : 0);
-    ctx.save();
-    ctx.translate(skier.x, baseY);
-    ctx.fillStyle = "#ff4040";
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-6, 12);
-    ctx.lineTo(0, -6);
-    ctx.lineTo(6, 12);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(0, -10, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = "#000";
-    ctx.beginPath();
-    ctx.moveTo(-10, 14);
-    ctx.lineTo(10, 18);
-    ctx.moveTo(-10, 18);
-    ctx.lineTo(10, 22);
-    ctx.stroke();
-    ctx.restore();
+  const drawEntity = (x, y, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x - 5, y - 10, 10, 20); // Simple box representation
   };
 
-  const drawObstacle = (o) => {
-    if (o.type === "tree") {
-      ctx.fillStyle = "#4a2d0f";
-      ctx.fillRect(o.x - 2, o.y + 6, 4, 10);
-      ctx.fillStyle = "#0f6b2f";
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y - 12);
-      ctx.lineTo(o.x - 10, o.y + 8);
-      ctx.lineTo(o.x + 10, o.y + 8);
-      ctx.closePath();
-      ctx.fill();
-    } else {
-      ctx.fillStyle = "#6f6f6f";
-      ctx.beginPath();
-      ctx.arc(o.x, o.y + 10, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#9c9c9c";
-      ctx.beginPath();
-      ctx.arc(o.x + 2, o.y + 8, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  };
-
-  const render = () => {
-    ctx.fillStyle = "#f5fbff";
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.strokeStyle = "#d0e6f2";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < height; i += 16) {
-      ctx.beginPath();
-      ctx.moveTo(0, i + (score % 16));
-      ctx.lineTo(width, i + (score % 16));
-      ctx.stroke();
+  // MONSTER LOGIC
+  const updateMonster = (dt) => {
+    if (!monster && score > 2000) { // Spawn threshold
+      monster = { x: Math.random() < 0.5 ? 0 : width, y: -100, speed: 0 };
+      statusEl.textContent = "RUN! IT'S THE MONSTER!";
+      statusEl.style.color = "red";
     }
 
-    obstacles.forEach(drawObstacle);
-    drawSkier();
+    if (monster) {
+      monster.speed = speed + 20; // Always faster than you
+      // Chase logic
+      const dx = skier.x - monster.x;
+      const dy = skier.y - monster.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      monster.x += (dx / dist) * monster.speed * dt;
+      monster.y += (dy / dist) * monster.speed * dt;
 
-    if (!playing) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(0, height / 2 - 18, width, 36);
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 14px var(--font-main)";
-      ctx.textAlign = "center";
-      ctx.fillText("Wiped out! Press Restart.", width / 2, height / 2 + 4);
-    }
-  };
+      // Draw Monster
+      ctx.fillStyle = "grey";
+      ctx.fillRect(monster.x - 10, monster.y - 20, 20, 40); // Big grey box
+      ctx.fillStyle = "red"; // Eyes
+      ctx.fillRect(monster.x - 5, monster.y - 15, 3, 3);
+      ctx.fillRect(monster.x + 2, monster.y - 15, 3, 3);
 
-  const update = (dt) => {
-    const steer = (pressed["ArrowRight"] ? 1 : 0) - (pressed["ArrowLeft"] ? 1 : 0);
-    skier.vx += steer * 160 * dt;
-    skier.vx *= 0.9;
-    skier.x = Math.max(10, Math.min(width - 10, skier.x + skier.vx * dt));
-
-    const targetSpeed = pressed["ArrowDown"] ? 1.6 : 3.2;
-    speed += (targetSpeed - speed) * 0.6 * dt;
-
-    if (pressed["ArrowUp"] && skier.jumpTimer <= 0) {
-      skier.jumpTimer = 0.7;
-      statusEl.textContent = "Jump!";
-    }
-    skier.jumpTimer = Math.max(0, skier.jumpTimer - dt);
-
-    score += speed * dt * 25;
-    scoreEl.textContent = Math.floor(score).toString();
-    speedEl.textContent = `${(speed * 10).toFixed(1)} mph`;
-    if (skier.jumpTimer <= 0 && statusEl.textContent === "Jump!") {
-      statusEl.textContent = "Skiing";
-    }
-
-    if (Math.random() < 0.04) spawnObstacle();
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      obstacles[i].y += speed * 60 * dt;
-      if (obstacles[i].y > height + 30) obstacles.splice(i, 1);
-    }
-
-    if (skier.jumpTimer <= 0) {
-      for (const o of obstacles) {
-        const dx = o.x - skier.x;
-        const dy = o.y - skier.y;
-        if (Math.abs(dx) < 14 && Math.abs(dy) < 18) {
-          playing = false;
-          statusEl.textContent = "Wiped out";
-        }
+      // Eat logic
+      if (dist < 20) {
+        playing = false;
+        statusEl.textContent = "CHOMP! Game Over.";
       }
     }
   };
 
-  const loop = (ts) => {
-    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0;
-    lastTs = ts;
-    if (playing) update(dt);
-    render();
-    raf = requestAnimationFrame(loop);
+  const drawGame = () => {
+    // Clear
+    ctx.fillStyle = "#f5fbff";
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw Skier
+    ctx.fillStyle = "red";
+    ctx.fillRect(skier.x - 4, skier.y - 10, 8, 20);
+
+    // Draw Obstacles
+    obstacles.forEach(o => {
+      ctx.fillStyle = o.type === "tree" ? "green" : "grey";
+      if(o.type === "tree") {
+          ctx.beginPath(); ctx.moveTo(o.x, o.y-10); ctx.lineTo(o.x-5, o.y+5); ctx.lineTo(o.x+5, o.y+5); ctx.fill();
+      } else {
+          ctx.beginPath(); ctx.arc(o.x, o.y, 5, 0, Math.PI*2); ctx.fill();
+      }
+    });
   };
 
-  resetBtn?.addEventListener("click", resetCourse);
+  const update = (dt) => {
+    if (!playing) return;
+
+    // Skier Physics
+    const steer = (pressed["ArrowRight"] ? 1 : 0) - (pressed["ArrowLeft"] ? 1 : 0);
+    skier.vx += steer * 150 * dt;
+    skier.vx *= 0.9;
+    skier.x = Math.max(0, Math.min(width, skier.x + skier.vx * dt));
+
+    // Speed & Score
+    const targetSpeed = pressed["ArrowDown"] ? 1.5 : 3.0;
+    speed += (targetSpeed - speed) * 0.5 * dt;
+    score += speed * dt * 10;
+    scoreEl.textContent = Math.floor(score);
+    speedEl.textContent = (speed * 10).toFixed(0) + " mph";
+
+    // Obstacles
+    if (Math.random() < 0.05) spawnObstacle();
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].y += speed * 50 * dt;
+      // Collision
+      const dx = obstacles[i].x - skier.x;
+      const dy = obstacles[i].y - skier.y;
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        playing = false;
+        statusEl.textContent = "Wiped Out!";
+      }
+      if (obstacles[i].y > height + 50) obstacles.splice(i, 1);
+    }
+    
+    updateMonster(dt);
+  };
+
+  const loop = (ts) => {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.1) : 0;
+    lastTs = ts;
+    update(dt);
+    drawGame();
+    if (playing || monster) raf = requestAnimationFrame(loop); // Keep drawing if monster eats you
+  };
+
+  resetBtn.onclick = resetCourse;
   resetCourse();
   raf = requestAnimationFrame(loop);
 
@@ -3242,6 +3297,7 @@ function initSkiFree(win) {
     layout.removeEventListener("keyup", onKeyUp);
   };
 }
+
 function initSimCity(w) {
   const map = w.querySelector(".simcity-map");
   const fundsEl = w.querySelector(".simcity-funds");
@@ -3361,6 +3417,7 @@ function initSimCity(w) {
   setTool("road");
   updateStats();
 }
+
 const MINES_ROWS = 9;
 const MINES_COLS = 9;
 const MINES_COUNT = 10;
@@ -3571,5 +3628,5 @@ function stopMinesTimer() {
     mineTimer = null;
   }
 }
-// Init Screensaver
+
 window.onload = initScreensaver;
