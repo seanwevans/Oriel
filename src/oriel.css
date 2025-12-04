@@ -3359,20 +3359,20 @@ body {
     width: 80px;
     height: 80px;
     gap: 4px;
-    transform: skewX(-10deg);
+    transform: skewX(-10deg);    
 }
 
 .win-pane {
     width: 100%;
     height: 100%;
     border: 1px solid black;
-    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);    
 }
 
-.win-pane.red { background-color: #cf6060; border-radius: 10px 0 0 0; }
-.win-pane.green { background-color: #11fc11; border-radius: 0 10px 0 0; }
-.win-pane.blue { background-color: #3131ee; border-radius: 0 0 0 10px; }
-.win-pane.yellow { background-color: #eeee00; border-radius: 0 0 10px 0; }
+.win-pane.red { background-color: #cf6060; border-radius: 30px 0 0 0; }
+.win-pane.green { background-color: #11fc11; border-radius: 0 30px 0 0; }
+.win-pane.blue { background-color: #3131ee; border-radius: 0 0 0 30px; }
+.win-pane.yellow { background-color: #eeee00; border-radius: 0 0 30px 0; }
 
 .splash-text {
     color: white;
