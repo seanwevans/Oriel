@@ -35,10 +35,19 @@ const ICONS = {
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
   volume: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 12h6l8-6v20l-8-6H4z" fill="#c0c0c0" stroke="black"/><path d="M21 10c2 2 2 10 0 12M24 7c4 4 4 14 0 18" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+  markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`
 };
 
 const DEFAULT_PDF_DATA_URI =
   "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
+
+const DEFAULT_MD_SAMPLE = 
+  `# Welcome to Markdown Viewer\n\n
+  This is a simple markdown previewer. 
+  Try editing the text on the left and watch the preview update.\n\n
+  ## Features\n
+  - Headings, lists, and links\n
+  - **Bold** and *italic* text\n`;
 
 const FS_STORAGE_KEY = "oriel-fs-v1";
 
@@ -82,7 +91,8 @@ const DEFAULT_FS = {
         children: {
           "README.TXT": { type: "file", app: "notepad", content: "Welcome to Oriel 1.0!" },
           "TODO.TXT": { type: "file", app: "notepad", content: "- Buy Milk\n- Install DOOM" },
-          "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } }
+          "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } },
+          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE }
         }
       }
     }
@@ -381,7 +391,8 @@ class WindowManager {
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
-    if (type === "browser") content = this.getBrowserContent();    
+    if (type === "markdown") content = this.getMarkdownContent(initData);
+    if (type === "browser") content = this.getBrowserContent();
     if (type === "doom") content = this.getDoomContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
@@ -418,6 +429,7 @@ class WindowManager {
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
     if (type === "pdfreader") initPdfReader(winEl, initData);
+    if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
     if (type === "doom") initDoom(winEl);
     // Refresh logic
@@ -663,6 +675,10 @@ class WindowManager {
                         ${ICONS.pdfreader}
                         <div class="prog-label">PDF Reader</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('markdown', 'Markdown Viewer', 700, 500)">
+                        ${ICONS.markdown}
+                        <div class="prog-label">Markdown</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('clipbrd', 'Clipboard', 300, 250)">
                         ${ICONS.clipboard}
                         <div class="prog-label">Clipboard</div>
@@ -875,6 +891,20 @@ class WindowManager {
                 </div>
                 <div class="pdf-viewer">
                     <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
+                </div>
+            </div>`;
+  }
+  getMarkdownContent(initData) {
+    const initialText = typeof initData === "string" ? initData : initData || DEFAULT_MD_SAMPLE;
+    return `<div class="md-viewer">
+                <div class="md-toolbar">
+                    <label class="task-btn file-btn">Open .md<input type="file" accept=".md,text/markdown" class="md-file-input"></label>
+                    <button class="task-btn md-sample-btn">Sample</button>
+                    <div class="md-status">Ready</div>
+                </div>
+                <div class="md-body">
+                    <textarea class="md-input" spellcheck="false" placeholder="Paste Markdown here">${initialText}</textarea>
+                    <div class="md-preview" aria-live="polite"></div>
                 </div>
             </div>`;
   }
@@ -2552,6 +2582,83 @@ function initFileManager(w) {
   rFL(w);
 }
 
+function renderMarkdown(text) {
+  const escapeHtml = (str) =>
+    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const applyInline = (str) => {
+    let html = escapeHtml(str);
+    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    html = html.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    return html;
+  };
+
+  const lines = text.split(/\r?\n/);
+  const output = [];
+  let inList = false;
+  let inCode = false;
+
+  lines.forEach((line) => {
+    if (line.trim().startsWith("```")) {
+      if (inCode) output.push("</code></pre>");
+      else output.push("<pre><code>");
+      inCode = !inCode;
+      return;
+    }
+
+    if (inCode) {
+      output.push(escapeHtml(line));
+      return;
+    }
+
+    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      if (inList) {
+        output.push("</ul>");
+        inList = false;
+      }
+      const level = headingMatch[1].length;
+      const content = applyInline(headingMatch[2].trim());
+      output.push(`<h${level}>${content}</h${level}>`);
+      return;
+    }
+
+    const listMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+    if (listMatch) {
+      if (!inList) {
+        output.push("<ul>");
+        inList = true;
+      }
+      output.push(`<li>${applyInline(listMatch[1].trim())}</li>`);
+      return;
+    }
+
+    if (inList && line.trim() === "") {
+      output.push("</ul>");
+      inList = false;
+      return;
+    }
+
+    if (inList) {
+      output.push("</ul>");
+      inList = false;
+    }
+
+    if (line.trim() !== "") {
+      output.push(`<p>${applyInline(line.trim())}</p>`);
+    }
+  });
+
+  if (inList) output.push("</ul>");
+  if (inCode) output.push("</code></pre>");
+
+  return output.join("\n");
+}
+
 function initPdfReader(win, initData) {
   const fileInput = win.querySelector(".pdf-file-input");
   const urlInput = win.querySelector(".pdf-url-input");
@@ -2590,6 +2697,48 @@ function initPdfReader(win, initData) {
       e.preventDefault();
       loadBtn?.click();
     }
+  });
+}
+
+function initMarkdownViewer(win, initData) {
+  const textarea = win.querySelector(".md-input");
+  const preview = win.querySelector(".md-preview");
+  const status = win.querySelector(".md-status");
+  const fileInput = win.querySelector(".md-file-input");
+  const sampleBtn = win.querySelector(".md-sample-btn");
+
+  const updatePreview = (label) => {
+    if (!textarea || !preview) return;
+    const html = renderMarkdown(textarea.value);
+    preview.innerHTML = html || '<p class="md-empty">Nothing to preview.</p>';
+    if (status) status.textContent = label ? `Loaded ${label}` : "Preview ready";
+  };
+
+  const initialLabel =
+    typeof initData === "object" && initData?.name
+      ? initData.name
+      : initData
+      ? "Markdown"
+      : "Sample";
+  updatePreview(initialLabel);
+
+  textarea?.addEventListener("input", () => updatePreview());
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !textarea) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      textarea.value = ev.target.result;
+      updatePreview(file.name);
+    };
+    reader.readAsText(file);
+  });
+
+  sampleBtn?.addEventListener("click", () => {
+    if (!textarea) return;
+    textarea.value = DEFAULT_MD_SAMPLE;
+    updatePreview("Sample");
   });
 }
 
