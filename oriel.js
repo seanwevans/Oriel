@@ -2110,13 +2110,15 @@ let chessLibPromise = null;
 
 function loadChessLibrary() {
   if (!chessLibPromise) {
-    chessLibPromise = new Promise((resolve, reject) => {
-      if (window.Chess) return resolve(window.Chess);
-      const s = document.createElement("script");
-      s.src = "./vendor/chess.min.js";
-      s.onload = () => resolve(window.Chess);
-      s.onerror = (e) => reject(e);
-      document.head.appendChild(s);
+    chessLibPromise = new Promise((resolve, reject) => {      
+      if (window.Chess) return resolve(window.Chess);      
+      import("./vendor/chess.min.js")
+        .then((module) => {          
+          resolve(module.Chess);
+        })
+        .catch((e) => {          
+          reject(e);
+        });
     });
   }
   return chessLibPromise;
