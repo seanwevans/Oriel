@@ -23,6 +23,7 @@ const ICONS = {
   reversi: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#008000" stroke="black"/><circle cx="16" cy="16" r="8" fill="red"/><circle cx="16" cy="16" r="4" fill="blue"/></svg>`,
   mplayer: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 6h24v20H4z" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="12" fill="black"/><path d="M12 24l8 0l-4 4z" fill="#000"/></svg>`,
   simcity: `<svg viewBox='0 0 32 32' class='svg-icon'><rect x='4' y='12' width='24' height='14' fill='#87ceeb' stroke='black'/><rect x='6' y='18' width='6' height='6' fill='#d3d3d3' stroke='black'/><rect x='14' y='14' width='6' height='10' fill='#a0d468' stroke='black'/><rect x='22' y='16' width='4' height='8' fill='#fdd835' stroke='black'/><rect x='4' y='10' width='24' height='2' fill='#8d6e63'/><rect x='2' y='24' width='28' height='4' fill='#6d4c41'/></svg>`,
+  skifree: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 26l20-20" stroke="#000080" stroke-width="2"/><path d="M6 22l12-12" stroke="#000080" stroke-width="2"/><circle cx="16" cy="10" r="3" fill="#ff4040" stroke="black"/><rect x="14" y="13" width="4" height="7" fill="#ffffff" stroke="black"/><path d="M14 16l-4 3" stroke="#000" stroke-width="2"/><path d="M18 16l4 3" stroke="#000" stroke-width="2"/><path d="M14 20l-4 6" stroke="#000" stroke-width="2"/><path d="M18 20l4 6" stroke="#000" stroke-width="2"/></svg>`,
   chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
@@ -86,6 +87,10 @@ const MOCK_FS = {
           "MPLAYER.EXE": {
             type: "file",
             app: "mplayer"
+          },
+          "SKIFREE.EXE": {
+            type: "file",
+            app: "skifree"
           },
           "SIMCITY.EXE": {
             type: "file",
@@ -344,6 +349,7 @@ class WindowManager {
     if (type === "paint") content = this.getPaintContent();
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = this.getSimCityContent();
+    if (type === "skifree") content = this.getSkiFreeContent();
     if (type === "database") content = this.getDatabaseContent();
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "charmap") content = this.getCharMapContent();
@@ -376,6 +382,7 @@ class WindowManager {
     if (type === "paint") initPaint(winEl);
     if (type === "mplayer") initMediaPlayer(winEl);
     if (type === "simcity") initSimCity(winEl);
+    if (type === "skifree") initSkiFree(winEl);
     if (type === "database") initDatabase(winEl);
     if (type === "soundrec") initSoundRecorder(winEl);
     if (type === "charmap") initCharMap(winEl);
@@ -398,6 +405,8 @@ class WindowManager {
       const closingWin = this.windows[index];
       if (typeof closingWin.el.chessCleanup === "function")
         closingWin.el.chessCleanup();
+      if (typeof closingWin.el.skifreeCleanup === "function")
+        closingWin.el.skifreeCleanup();
       closingWin.el.remove();
       // Remove minimized icon if exists
       const minIcon = document.getElementById("min-" + id);
@@ -602,6 +611,10 @@ class WindowManager {
                         ${ICONS.simcity}
                         <div class="prog-label">Micropolis</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('skifree', 'SkiFree', 520, 520)">
+                        ${ICONS.skifree}
+                        <div class="prog-label">SkiFree</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('soundrec', 'Sound Recorder', 300, 160)">
                         ${ICONS.soundrec}
                         <div class="prog-label">Sound Rec</div>
@@ -672,6 +685,20 @@ class WindowManager {
                     </div>
                     <div class="simcity-map"></div>
                     <div class="simcity-log">Welcome to Micropolis! Place roads, homes, and power to grow your town.</div>
+                </div>
+            `;
+  }
+  getSkiFreeContent() {
+    return `
+                <div class="skifree-layout" tabindex="0">
+                    <div class="skifree-hud">
+                        <div class="skifree-stat">Score: <span class="skifree-score">0</span></div>
+                        <div class="skifree-stat">Speed: <span class="skifree-speed">0</span></div>
+                        <div class="skifree-status">Ready to ski</div>
+                        <button class="task-btn skifree-reset">Restart</button>
+                    </div>
+                    <canvas class="skifree-canvas" width="320" height="360"></canvas>
+                    <div class="skifree-help">Use ← → to steer, ↑ to jump, ↓ to slow down. Avoid trees and rocks!</div>
                 </div>
             `;
   }
@@ -2216,8 +2243,11 @@ function rFL(w) {
           w.currentDirObj = i;
           rFT(w);
           rFL(w);
-        } else if (i.app)
-          wm.openWindow(i.app, i.app.toUpperCase(), 400, 300, i.content);
+        } else if (i.app) {
+          const size =
+            i.app === "skifree" ? { w: 520, h: 520 } : { w: 400, h: 300 };
+          wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
+        }
       };
       r.onclick = () => {
         w.querySelectorAll(".file-item").forEach((x) =>
@@ -2724,6 +2754,203 @@ function calcInput(e, v) {
     }
   } else d.dataset.val = val === "0" && !"+-*/".includes(v) ? v : val + v;
   d.innerText = d.dataset.val;
+}
+function initSkiFree(win) {
+  const canvas = win.querySelector(".skifree-canvas");
+  const layout = win.querySelector(".skifree-layout");
+  const scoreEl = win.querySelector(".skifree-score");
+  const speedEl = win.querySelector(".skifree-speed");
+  const statusEl = win.querySelector(".skifree-status");
+  const resetBtn = win.querySelector(".skifree-reset");
+
+  if (!canvas || !layout || !scoreEl || !speedEl || !statusEl) return;
+
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const pressed = {};
+  const obstacles = [];
+  const skier = { x: width / 2, y: height - 50, vx: 0, jumpTimer: 0 };
+  let speed = 2.2;
+  let score = 0;
+  let playing = true;
+  let lastTs = 0;
+  let raf = 0;
+
+  layout.focus();
+
+  const onKeyDown = (e) => {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.preventDefault();
+      pressed[e.key] = true;
+    }
+  };
+
+  const onKeyUp = (e) => {
+    if (pressed[e.key]) pressed[e.key] = false;
+  };
+
+  layout.addEventListener("keydown", onKeyDown);
+  layout.addEventListener("keyup", onKeyUp);
+
+  const resetCourse = () => {
+    obstacles.length = 0;
+    score = 0;
+    speed = 2.2;
+    skier.x = width / 2;
+    skier.vx = 0;
+    skier.jumpTimer = 0;
+    playing = true;
+    statusEl.textContent = "Carving fresh powder";
+    scoreEl.textContent = "0";
+    speedEl.textContent = "0";
+    lastTs = 0;
+    layout.focus();
+  };
+
+  const spawnObstacle = () => {
+    const type = Math.random() < 0.7 ? "tree" : "rock";
+    const x = 16 + Math.random() * (width - 32);
+    const y = -30 - Math.random() * 120;
+    obstacles.push({ x, y, type });
+  };
+
+  const drawSkier = () => {
+    const baseY = skier.y - (skier.jumpTimer > 0 ? 12 : 0);
+    ctx.save();
+    ctx.translate(skier.x, baseY);
+    ctx.fillStyle = "#ff4040";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-6, 12);
+    ctx.lineTo(0, -6);
+    ctx.lineTo(6, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(0, -10, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(-10, 14);
+    ctx.lineTo(10, 18);
+    ctx.moveTo(-10, 18);
+    ctx.lineTo(10, 22);
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const drawObstacle = (o) => {
+    if (o.type === "tree") {
+      ctx.fillStyle = "#4a2d0f";
+      ctx.fillRect(o.x - 2, o.y + 6, 4, 10);
+      ctx.fillStyle = "#0f6b2f";
+      ctx.beginPath();
+      ctx.moveTo(o.x, o.y - 12);
+      ctx.lineTo(o.x - 10, o.y + 8);
+      ctx.lineTo(o.x + 10, o.y + 8);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "#6f6f6f";
+      ctx.beginPath();
+      ctx.arc(o.x, o.y + 10, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#9c9c9c";
+      ctx.beginPath();
+      ctx.arc(o.x + 2, o.y + 8, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  const render = () => {
+    ctx.fillStyle = "#f5fbff";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = "#d0e6f2";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < height; i += 16) {
+      ctx.beginPath();
+      ctx.moveTo(0, i + (score % 16));
+      ctx.lineTo(width, i + (score % 16));
+      ctx.stroke();
+    }
+
+    obstacles.forEach(drawObstacle);
+    drawSkier();
+
+    if (!playing) {
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(0, height / 2 - 18, width, 36);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px var(--font-main)";
+      ctx.textAlign = "center";
+      ctx.fillText("Wiped out! Press Restart.", width / 2, height / 2 + 4);
+    }
+  };
+
+  const update = (dt) => {
+    const steer = (pressed["ArrowRight"] ? 1 : 0) - (pressed["ArrowLeft"] ? 1 : 0);
+    skier.vx += steer * 160 * dt;
+    skier.vx *= 0.9;
+    skier.x = Math.max(10, Math.min(width - 10, skier.x + skier.vx * dt));
+
+    const targetSpeed = pressed["ArrowDown"] ? 1.6 : 3.2;
+    speed += (targetSpeed - speed) * 0.6 * dt;
+
+    if (pressed["ArrowUp"] && skier.jumpTimer <= 0) {
+      skier.jumpTimer = 0.7;
+      statusEl.textContent = "Jump!";
+    }
+    skier.jumpTimer = Math.max(0, skier.jumpTimer - dt);
+
+    score += speed * dt * 25;
+    scoreEl.textContent = Math.floor(score).toString();
+    speedEl.textContent = `${(speed * 10).toFixed(1)} mph`;
+    if (skier.jumpTimer <= 0 && statusEl.textContent === "Jump!") {
+      statusEl.textContent = "Skiing";
+    }
+
+    if (Math.random() < 0.04) spawnObstacle();
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].y += speed * 60 * dt;
+      if (obstacles[i].y > height + 30) obstacles.splice(i, 1);
+    }
+
+    if (skier.jumpTimer <= 0) {
+      for (const o of obstacles) {
+        const dx = o.x - skier.x;
+        const dy = o.y - skier.y;
+        if (Math.abs(dx) < 14 && Math.abs(dy) < 18) {
+          playing = false;
+          statusEl.textContent = "Wiped out";
+        }
+      }
+    }
+  };
+
+  const loop = (ts) => {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0;
+    lastTs = ts;
+    if (playing) update(dt);
+    render();
+    raf = requestAnimationFrame(loop);
+  };
+
+  resetBtn?.addEventListener("click", resetCourse);
+  resetCourse();
+  raf = requestAnimationFrame(loop);
+
+  win.skifreeCleanup = () => {
+    cancelAnimationFrame(raf);
+    layout.removeEventListener("keydown", onKeyDown);
+    layout.removeEventListener("keyup", onKeyUp);
+  };
 }
 function initSimCity(w) {
   const map = w.querySelector(".simcity-map");
