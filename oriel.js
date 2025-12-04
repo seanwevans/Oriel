@@ -188,9 +188,21 @@ let mediaPlayerTracks = null;
 function getMediaPlayerTracks() {
   if (!mediaPlayerTracks) {
     mediaPlayerTracks = [
-      { name: "Synth Bell (C5)", url: generateToneUrl(523.25, 1.2) },
-      { name: "Retro Chime (E4)", url: generateToneUrl(329.63, 1.5) },
-      { name: "Soft Drone (A3)", url: generateToneUrl(220, 2) }
+      {
+        name: "Synth Bell (C5)",
+        url: generateToneUrl(523.25, 1.2),
+        type: "audio/wav"
+      },
+      {
+        name: "Retro Chime (E4)",
+        url: generateToneUrl(329.63, 1.5),
+        type: "audio/wav"
+      },
+      {
+        name: "Soft Drone (A3)",
+        url: generateToneUrl(220, 2),
+        type: "audio/wav"
+      }
     ];
   }
   return mediaPlayerTracks;
@@ -912,7 +924,7 @@ class WindowManager {
     return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
   }
   getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
@@ -1775,22 +1787,26 @@ function initReversi(w) {
 function initMediaPlayer(w) {
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
+  const video = w.querySelector(".mplayer-video");
 
   const selectEl = w.querySelector(".mplayer-track-select");
   const seekEl = w.querySelector(".mplayer-seek");
   const currentEl = w.querySelector(".mplayer-current");
   const durationEl = w.querySelector(".mplayer-duration");
   const trackNameEl = w.querySelector(".mplayer-track-name");
-  const audio = new Audio();
-  registerMediaElement(audio);
+  const fileInput = w.querySelector(".mplayer-file-input");
+  const fileNameEl = w.querySelector(".mplayer-file-name");
 
-  const tracks = getMediaPlayerTracks();
-  tracks.forEach((t, i) => {
+  registerMediaElement(video);
+
+  const tracks = [...getMediaPlayerTracks()];
+  const addOption = (track, index, prefix = "") => {
     const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = t.name;
+    opt.value = index;
+    opt.textContent = `${prefix}${track.name}`;
     selectEl.appendChild(opt);
-  });
+  };
+  tracks.forEach((t, i) => addOption(t, i));
 
   let interval = null;
   let x = 50;
@@ -1833,59 +1849,104 @@ function initMediaPlayer(w) {
     y = 50;
   };
 
+  const isVideoTrack = (track) => {
+    const type = (track.type || "").toLowerCase();
+    if (type.startsWith("video/")) return true;
+    const name = (track.name || "").toLowerCase();
+    return /(\.mp4|\.webm|\.ogv|\.mov|\.mkv)$/.test(name);
+  };
+
   const updateSeek = () => {
-    if (!audio.duration) return;
-    seekEl.value = Math.floor((audio.currentTime / audio.duration) * 100);
-    currentEl.textContent = formatTime(audio.currentTime);
-    durationEl.textContent = formatTime(audio.duration);
+    const duration = video.duration;
+    if (!isFinite(duration) || duration <= 0) {
+      seekEl.value = 0;
+      durationEl.textContent = formatTime(0);
+      currentEl.textContent = formatTime(video.currentTime || 0);
+      return;
+    }
+    seekEl.value = Math.floor((video.currentTime / duration) * 100);
+    currentEl.textContent = formatTime(video.currentTime);
+    durationEl.textContent = formatTime(duration);
   };
 
   const loadTrack = (index) => {
     currentTrack = index;
     const track = tracks[currentTrack];
-    audio.src = track.url;
-    audio.currentTime = 0;
+    const videoMode = isVideoTrack(track);
+    canvas.style.display = videoMode ? "none" : "block";
+    video.src = track.url;
+    video.currentTime = 0;
     trackNameEl.textContent = track.name;
     seekEl.value = 0;
     currentEl.textContent = "0:00";
     durationEl.textContent = "0:00";
+    if (!videoMode) {
+      resetVisual();
+    } else {
+      stopVisual();
+    }
   };
 
   selectEl.addEventListener("change", (e) => {
     loadTrack(parseInt(e.target.value, 10));
-    registerMediaElement(audio);
-    audio.play();
-    interval = interval || setInterval(animate, 30);
+    registerMediaElement(video);
+    video.play();
+    if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
   });
 
   seekEl.addEventListener("input", () => {
-    if (!audio.duration) return;
-    audio.currentTime = (parseFloat(seekEl.value) / 100) * audio.duration;
+    if (!video.duration || !isFinite(video.duration)) return;
+    video.currentTime = (parseFloat(seekEl.value) / 100) * video.duration;
   });
 
-  audio.addEventListener("timeupdate", updateSeek);
-  audio.addEventListener("loadedmetadata", updateSeek);
-  audio.addEventListener("ended", () => {
+  video.addEventListener("timeupdate", updateSeek);
+  video.addEventListener("loadedmetadata", updateSeek);
+  video.addEventListener("ended", () => {
     stopVisual();
-    audio.currentTime = 0;
+    video.currentTime = 0;
     seekEl.value = 0;
     currentEl.textContent = formatTime(0);
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (!fileInput.files || !fileInput.files.length) {
+      fileNameEl.textContent = "Load mp3 or video files from your computer to play them here.";
+      return;
+    }
+
+    let startIndex = tracks.length;
+    Array.from(fileInput.files).forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const entry = { name: file.name, url, type: file.type };
+      tracks.push(entry);
+      addOption(entry, tracks.length - 1, "Local: ");
+    });
+
+    selectEl.value = `${startIndex}`;
+    loadTrack(startIndex);
+    registerMediaElement(video);
+    video.play();
+    fileNameEl.textContent =
+      fileInput.files.length === 1
+        ? `Loaded ${fileInput.files[0].name}`
+        : `Loaded ${fileInput.files.length} files`;
   });
 
   loadTrack(currentTrack);
   selectEl.value = "0";
 
   w.toggleMedia = (btn, action) => {
+    const videoMode = canvas.style.display === "none";
     if (action === "play") {
-      registerMediaElement(audio);
-      audio.play();
-      if (!interval) interval = setInterval(animate, 30);
+      registerMediaElement(video);
+      video.play();
+      if (!videoMode && !interval) interval = setInterval(animate, 30);
     } else if (action === "pause") {
-      audio.pause();
+      video.pause();
       stopVisual();
     } else {
-      audio.pause();
-      audio.currentTime = 0;
+      video.pause();
+      video.currentTime = 0;
       seekEl.value = 0;
       currentEl.textContent = formatTime(0);
       stopVisual();
