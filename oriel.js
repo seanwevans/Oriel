@@ -1503,9 +1503,17 @@ function initSolitaire(w) {
     }
     if (valid) {
       let moving = [];
+      const fromCol = sel.col;
       if (sel.loc === "waste") moving.push(waste.pop());
       else moving = t[sel.col].splice(sel.idx);
       t[toCol].push(...moving);
+      if (sel.loc === "tableau") {
+        const origin = t[fromCol];
+        if (origin.length > 0) {
+          const topCard = origin[origin.length - 1];
+          if (!topCard.u) topCard.u = true;
+        }
+      }
       sel = null;
       render();
     }
@@ -1521,7 +1529,14 @@ function initSolitaire(w) {
       if (sel.loc === "tableau" && sel.idx === t[sel.col].length - 1) canMove = true;
       if (canMove) {
         if (sel.loc === "waste") waste.pop();
-        else t[sel.col].pop();
+        else {
+          t[sel.col].pop();
+          const origin = t[sel.col];
+          if (origin.length > 0) {
+            const topCard = origin[origin.length - 1];
+            if (!topCard.u) topCard.u = true;
+          }
+        }
         pile.push(movingCard);
         sel = null;
         render();
