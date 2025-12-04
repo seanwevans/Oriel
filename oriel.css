@@ -1325,6 +1325,135 @@ body {
   border: 1px solid #b0b0b0;
 }
 
+.rss-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.rss-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: 6px;
+  align-items: center;
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+  padding: 6px;
+  border: 1px solid var(--win-gray-shadow);
+}
+
+.rss-label {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.rss-url {
+  width: 100%;
+  height: 26px;
+  border: 1px solid var(--win-gray-dark);
+  padding: 2px 6px;
+  font-family: var(--font-main);
+}
+
+.rss-preset {
+  height: 26px;
+  border: 1px solid var(--win-gray-dark);
+}
+
+.rss-status {
+  font-size: 12px;
+  color: #003366;
+}
+
+.rss-status-error {
+  color: #a00000;
+  font-weight: bold;
+}
+
+.rss-body {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.rss-list {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rss-item {
+  padding: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: #f7f7f7;
+}
+
+.rss-item:hover {
+  border-color: var(--win-blue);
+  background: #eef3ff;
+}
+
+.rss-item.active {
+  border-color: var(--win-blue);
+  background: #dce6ff;
+}
+
+.rss-item-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.rss-item-date {
+  font-size: 12px;
+  color: #444;
+}
+
+.rss-empty {
+  font-size: 13px;
+  color: #333;
+  padding: 8px;
+}
+
+.rss-preview {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  padding: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rss-preview-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.rss-preview-meta {
+  font-size: 12px;
+  color: #555;
+}
+
+.rss-preview-text {
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.rss-preview-link {
+  font-size: 13px;
+  color: var(--win-blue);
+  text-decoration: underline;
+}
+
 .browser-layout {
   display: flex;
   flex-direction: column;
