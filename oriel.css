@@ -534,6 +534,7 @@ body {
 .console-line {
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .console-input {
@@ -544,6 +545,8 @@ body {
   font-size: 18px;
   outline: none;
   flex-grow: 1;
+  flex: 1;
+  min-width: 0; 
   margin-left: 5px;
   text-transform: uppercase;
 }
