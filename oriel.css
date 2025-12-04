@@ -3085,6 +3085,48 @@ body {
   cursor: none;
 }
 
+#bsod-overlay {
+  position: absolute;
+  inset: 0;
+  background: #0c4cb3;
+  color: #cddfff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+  padding: 40px;
+}
+
+#bsod-overlay.visible {
+  display: flex;
+}
+
+.bsod-content {
+  max-width: 720px;
+  line-height: 1.6;
+}
+
+.bsod-sad {
+  font-size: 96px;
+  margin-bottom: 24px;
+}
+
+.bsod-message {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.bsod-code {
+  font-family: monospace;
+  margin-bottom: 12px;
+}
+
+.bsod-footer {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
 #saver-canvas {
   width: 100%;
   height: 100%;

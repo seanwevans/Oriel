@@ -1376,6 +1376,8 @@ let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
 const sCtx = saverCanvas.getContext("2d");
 const screensaverDiv = document.getElementById("screensaver");
+const bsodOverlay = document.getElementById("bsod-overlay");
+const bsodCodeText = bsodOverlay?.querySelector(".bsod-code");
 let screensaverType = "starfield";
 let screensaverTimeout = 60;
 
@@ -1421,6 +1423,14 @@ function startScreensaver(forceType) {
   saverCanvas.width = window.innerWidth;
   saverCanvas.height = window.innerHeight;
   clearInterval(sInterval);
+
+  const shouldPrank = !forceType && Math.random() < 0.001;
+  if (shouldPrank) {
+    showFakeBsod();
+    return;
+  }
+
+  hideFakeBsod();
   if (saver === "pipes") {
     setupPipes();
     sInterval = setInterval(drawPipes, 50);
@@ -1434,6 +1444,21 @@ function stopScreensaver() {
   saverActive = false;
   screensaverDiv.style.display = "none";
   clearInterval(sInterval);
+  hideFakeBsod();
+}
+
+function showFakeBsod() {
+  if (!bsodOverlay) return;
+  const randomCode = Math.random().toString(16).slice(2, 8).toUpperCase();
+  if (bsodCodeText) bsodCodeText.textContent = `STOP CODE: ${randomCode}`;
+  bsodOverlay.classList.add("visible");
+  saverCanvas.style.display = "none";
+}
+
+function hideFakeBsod() {
+  if (!bsodOverlay) return;
+  bsodOverlay.classList.remove("visible");
+  saverCanvas.style.display = "block";
 }
 
 function setupStarfield() {
