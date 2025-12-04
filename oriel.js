@@ -8,6 +8,7 @@ const ICONS = {
   console: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="black" stroke="#c0c0c0"/><text x="8" y="20" font-family="monospace" font-weight="bold" font-size="14" fill="#c0c0c0">C:\></text></svg>`,
   taskman: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#c0c0c0" stroke="black"/><rect x="6" y="6" width="20" height="4" fill="#000080"/><rect x="6" y="12" width="20" height="14" fill="white" stroke="black"/><line x1="8" y1="16" x2="24" y2="16" stroke="black"/><line x1="8" y1="20" x2="24" y2="20" stroke="black"/></svg>`,
   paint: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M10 24c0 2 2 4 4 4s4-2 4-4v-8h-8v8z" fill="#c0c0c0" stroke="black"/><rect x="10" y="10" width="8" height="6" fill="black"/><path d="M14 4l-4 6h8l-4-6z" fill="#c0c0c0" stroke="black"/><circle cx="24" cy="24" r="6" fill="#ff0000" opacity="0.5"/><circle cx="8" cy="24" r="6" fill="#0000ff" opacity="0.5"/></svg>`,
+  photoshop: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" fill="#0b1d35" stroke="#00c8ff"/><rect x="6" y="6" width="20" height="20" fill="#112d4e" stroke="#00c8ff"/><text x="13" y="20" font-family="monospace" font-size="12" font-weight="bold" fill="#00c8ff">PS</text><rect x="18" y="10" width="6" height="2" fill="#00c8ff"/><rect x="18" y="14" width="6" height="2" fill="#00c8ff" opacity="0.7"/></svg>`,
   database: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M16 6c-8 0-12 2-12 4v12c0 2 4 4 12 4s12-2 12-4V10c0-2-4-4-12-4z" fill="#c0c0c0" stroke="black"/><ellipse cx="16" cy="10" rx="12" ry="4" fill="white" stroke="black"/><path d="M4 14c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/><path d="M4 18c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/></svg>`,
   soundrec: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="12" y="6" width="8" height="14" rx="4" fill="#404040" stroke="black"/><rect x="14" y="20" width="4" height="6" fill="#808080" stroke="black"/><rect x="10" y="26" width="12" height="2" fill="black"/><line x1="8" y1="12" x2="24" y2="12" stroke="#808080" stroke-width="2"/></svg>`,
   charmap: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#fff" stroke="black"/><text x="16" y="24" font-family="serif" font-size="24" text-anchor="middle" font-weight="bold">Ã</text></svg>`,
@@ -71,6 +72,7 @@ const DEFAULT_FS = {
           "SOL.EXE": { type: "file", app: "solitaire" },
           "REVERSI.EXE": { type: "file", app: "reversi" },
           "PBRUSH.EXE": { type: "file", app: "paint" },
+          "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
           "MPLAYER.EXE": { type: "file", app: "mplayer" },
           "SKIFREE.EXE": { type: "file", app: "skifree" },
           "LINERIDR.EXE": { type: "file", app: "linerider" },
@@ -431,6 +433,7 @@ class WindowManager {
     if (type === "mines") content = this.getMinesContent();
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
+    if (type === "photoshop") content = this.getPhotoshopContent();
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
@@ -474,6 +477,7 @@ class WindowManager {
     if (type === "solitaire") initSolitaire(winEl);
     if (type === "reversi") initReversi(winEl);
     if (type === "paint") initPaint(winEl);
+    if (type === "photoshop") initPhotoshop(winEl);
     if (type === "mplayer") initMediaPlayer(winEl);
     if (type === "simcity") initSimCity(winEl);
     if (type === "skifree") initSkiFree(winEl);
@@ -706,6 +710,10 @@ class WindowManager {
                     <div class="prog-icon" onclick="wm.openWindow('paint', 'Paintbrush', 500, 400)">
                         ${ICONS.paint}
                         <div class="prog-label">Paintbrush</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('photoshop', 'Photoshop 1.0', 760, 560)">
+                        ${ICONS.photoshop}
+                        <div class="prog-label">Photoshop</div>
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('mplayer', 'Media Player', 350, 250)">
                         ${ICONS.mplayer}
@@ -1037,6 +1045,55 @@ class WindowManager {
   }
   getPaintContent() {
     return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
+  }
+  getPhotoshopContent() {
+    return `
+                <div class="ps-layout">
+                    <div class="ps-topbar">
+                        <button class="task-btn" onclick="psTriggerOpen(this)">Open...</button>
+                        <button class="task-btn" onclick="psNewDocument(this)">New Canvas</button>
+                        <button class="task-btn" onclick="psExport(this)">Export PNG</button>
+                        <div class="ps-status">Tool: <span class="ps-tool-label">Brush</span> · Size: <span class="ps-size-label">6px</span></div>
+                        <input type="file" class="ps-file-input" accept="image/*" hidden />
+                    </div>
+                    <div class="ps-body">
+                        <div class="ps-toolbar">
+                            <button class="ps-tool active" data-tool="brush" onclick="setPsTool(this, 'brush')">Brush</button>
+                            <button class="ps-tool" data-tool="eraser" onclick="setPsTool(this, 'eraser')">Eraser</button>
+                            <button class="ps-tool" data-tool="fill" onclick="setPsTool(this, 'fill')">Fill</button>
+                            <button class="ps-tool" data-tool="rect" onclick="setPsTool(this, 'rect')">Rectangle</button>
+                            <button class="ps-tool" data-tool="picker" onclick="setPsTool(this, 'picker')">Eyedropper</button>
+                        </div>
+                        <div class="ps-canvas-wrap">
+                            <canvas class="ps-canvas" width="640" height="420"></canvas>
+                        </div>
+                        <div class="ps-panel">
+                            <div class="ps-panel-group">
+                                <label>Primary Color <input type="color" class="ps-color-primary" value="#1d7be3"></label>
+                                <label>Secondary <input type="color" class="ps-color-secondary" value="#ffffff"></label>
+                                <div class="ps-swatches"></div>
+                            </div>
+                            <div class="ps-panel-group">
+                                <label>Brush Size <input type="range" min="1" max="32" value="6" class="ps-size-slider" /></label>
+                                <div class="ps-filter-buttons">
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'grayscale')">Grayscale</button>
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'invert')">Invert</button>
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'contrast')">+ Contrast</button>
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'bright')">Brighten</button>
+                                </div>
+                                <div class="ps-filter-buttons">
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'sharpen')">Sharpen</button>
+                                    <button class="task-btn" onclick="psApplyFilter(this, 'fade')">Vintage Fade</button>
+                                </div>
+                            </div>
+                            <div class="ps-panel-group">
+                                <button class="task-btn" onclick="psFillCanvas(this)">Flood Fill Canvas</button>
+                                <div class="ps-hint">Tip: Click the canvas with the Eyedropper to sample colors like Photoshop 1.0.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
   }
   getDatabaseContent() {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
@@ -3362,6 +3419,242 @@ function exportDbToCsv(b) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function initPhotoshop(w) {
+  const canvas = w.querySelector(".ps-canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fdfdfd";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const swatchContainer = w.querySelector(".ps-swatches");
+  const palette = [
+    "#000000",
+    "#ffffff",
+    "#1d7be3",
+    "#f7c948",
+    "#e55381",
+    "#7dd87d",
+    "#8b5cf6",
+    "#ff7f11",
+    "#6dd3e7",
+    "#2c3e50"
+  ];
+  palette.forEach((c) => {
+    const sw = document.createElement("div");
+    sw.className = "ps-swatch";
+    sw.style.background = c;
+    sw.onclick = () => {
+      w.querySelector(".ps-color-primary").value = c;
+      w.ps.primary = c;
+      updatePsStatus(w);
+    };
+    swatchContainer.appendChild(sw);
+  });
+
+  w.ps = {
+    canvas,
+    ctx,
+    tool: "brush",
+    primary: w.querySelector(".ps-color-primary").value,
+    secondary: w.querySelector(".ps-color-secondary").value,
+    size: parseInt(w.querySelector(".ps-size-slider").value, 10),
+    drawing: false,
+    startX: 0,
+    startY: 0
+  };
+
+  const sizeSlider = w.querySelector(".ps-size-slider");
+  sizeSlider.addEventListener("input", (e) => {
+    w.ps.size = parseInt(e.target.value, 10) || 1;
+    updatePsStatus(w);
+  });
+
+  w.querySelector(".ps-color-primary").addEventListener("input", (e) => {
+    w.ps.primary = e.target.value;
+  });
+  w.querySelector(".ps-color-secondary").addEventListener("input", (e) => {
+    w.ps.secondary = e.target.value;
+  });
+
+  const fileInput = w.querySelector(".ps-file-input");
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fdfdfd";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+        const wScaled = img.width * scale;
+        const hScaled = img.height * scale;
+        const x = (canvas.width - wScaled) / 2;
+        const y = (canvas.height - hScaled) / 2;
+        ctx.drawImage(img, x, y, wScaled, hScaled);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const getPos = (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  };
+
+  const stopDrawing = () => {
+    if (w.ps) w.ps.drawing = false;
+  };
+
+  canvas.addEventListener("mousedown", (e) => {
+    const { x, y } = getPos(e);
+    if (w.ps.tool === "fill") {
+      ctx.fillStyle = w.ps.primary;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+    if (w.ps.tool === "picker") {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      const picked = `#${[pixel[0], pixel[1], pixel[2]]
+        .map((v) => v.toString(16).padStart(2, "0"))
+        .join("")}`;
+      w.ps.primary = picked;
+      w.querySelector(".ps-color-primary").value = picked;
+      updatePsStatus(w);
+      return;
+    }
+    w.ps.drawing = true;
+    w.ps.startX = x;
+    w.ps.startY = y;
+    if (w.ps.tool === "brush" || w.ps.tool === "eraser") {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (!w.ps.drawing) return;
+    const { x, y } = getPos(e);
+    if (w.ps.tool === "brush" || w.ps.tool === "eraser") {
+      ctx.lineWidth = w.ps.size;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = w.ps.tool === "eraser" ? w.ps.secondary : w.ps.primary;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  });
+
+  canvas.addEventListener("mouseup", (e) => {
+    if (!w.ps.drawing) return;
+    const { x, y } = getPos(e);
+    if (w.ps.tool === "rect") {
+      const width = x - w.ps.startX;
+      const height = y - w.ps.startY;
+      ctx.fillStyle = `${w.ps.primary}cc`;
+      ctx.strokeStyle = w.ps.primary;
+      ctx.lineWidth = Math.max(1, Math.floor(w.ps.size / 2));
+      ctx.fillRect(w.ps.startX, w.ps.startY, width, height);
+      ctx.strokeRect(w.ps.startX + 0.5, w.ps.startY + 0.5, width, height);
+    }
+    stopDrawing();
+  });
+
+  canvas.addEventListener("mouseleave", stopDrawing);
+  window.addEventListener("mouseup", stopDrawing);
+
+  updatePsStatus(w);
+}
+
+function updatePsStatus(w) {
+  const toolLabel = w.querySelector(".ps-tool-label");
+  const sizeLabel = w.querySelector(".ps-size-label");
+  if (toolLabel) toolLabel.textContent = w.ps.tool[0].toUpperCase() + w.ps.tool.slice(1);
+  if (sizeLabel) sizeLabel.textContent = `${w.ps.size}px`;
+}
+
+function setPsTool(btn, tool) {
+  const w = btn.closest(".window");
+  w.ps.tool = tool;
+  w.querySelectorAll(".ps-tool").forEach((b) => b.classList.remove("active"));
+  btn.classList.add("active");
+  updatePsStatus(w);
+}
+
+function psApplyFilter(btn, type) {
+  const w = btn.closest(".window");
+  const { ctx, canvas } = w.ps;
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = img.data;
+  for (let i = 0; i < data.length; i += 4) {
+    let [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+    if (type === "grayscale") {
+      const avg = (r + g + b) / 3;
+      r = g = b = avg;
+    } else if (type === "invert") {
+      r = 255 - r;
+      g = 255 - g;
+      b = 255 - b;
+    } else if (type === "contrast") {
+      const factor = 1.2;
+      r = Math.min(255, (r - 128) * factor + 128);
+      g = Math.min(255, (g - 128) * factor + 128);
+      b = Math.min(255, (b - 128) * factor + 128);
+    } else if (type === "bright") {
+      r = Math.min(255, r + 18);
+      g = Math.min(255, g + 18);
+      b = Math.min(255, b + 18);
+    } else if (type === "sharpen") {
+      const boost = (v) => Math.min(255, v * 1.08 + 10);
+      r = boost(r);
+      g = boost(g);
+      b = boost(b);
+    } else if (type === "fade") {
+      r = r * 0.9 + 12;
+      g = g * 0.9 + 8;
+      b = b * 0.8 + 18;
+    }
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+    data[i + 3] = a;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function psFillCanvas(btn) {
+  const w = btn.closest(".window");
+  const { ctx, canvas, primary } = w.ps;
+  ctx.fillStyle = primary;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function psTriggerOpen(btn) {
+  const w = btn.closest(".window");
+  w.querySelector(".ps-file-input").click();
+}
+
+function psNewDocument(btn) {
+  const w = btn.closest(".window");
+  const { ctx, canvas } = w.ps;
+  ctx.fillStyle = "#fdfdfd";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function psExport(btn) {
+  const w = btn.closest(".window");
+  const { canvas } = w.ps;
+  const url = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "oriel-photoshop.png";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 function initPaint(w) {
