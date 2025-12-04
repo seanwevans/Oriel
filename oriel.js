@@ -45,8 +45,315 @@ const ICONS = {
   papers: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="6" fill="#d8d8d8" stroke="#808080"/><path d="M8 12h10" stroke="#000080" stroke-width="2"/><rect x="6" y="16" width="10" height="8" fill="#f5f5f5" stroke="#808080"/><rect x="18" y="16" width="8" height="6" fill="#ffe0b2" stroke="#c07020"/><path d="M6 6l4-4h12l4 4" fill="#fff8e1" stroke="#c07020"/></svg>`,
   markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`,
   linerider: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="6" width="28" height="20" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 18l14-6l6 4l-14 6z" fill="#0080c0" stroke="black"/><circle cx="10" cy="12" r="3" fill="#ffcc00" stroke="black"/><path d="M8 22l10 4" stroke="#202020" stroke-width="2"/></svg>`,
-  volume: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 12h6l8-6v20l-8-6H4z" fill="#c0c0c0" stroke="black"/><path d="M21 10c2 2 2 10 0 12M24 7c4 4 4 14 0 18" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,  
+  volume: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 12h6l8-6v20l-8-6H4z" fill="#c0c0c0" stroke="black"/><path d="M21 10c2 2 2 10 0 12M24 7c4 4 4 14 0 18" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
 };
+
+const PROGRAMS = [
+  {
+    type: "notepad",
+    title: "Notepad",
+    width: 300,
+    height: 200,
+    icon: "notepad",
+    label: "Notepad"
+  },
+  {
+    type: "write",
+    title: "Write",
+    width: 500,
+    height: 400,
+    icon: "write",
+    label: "Write"
+  },
+  {
+    type: "winfile",
+    title: "File Manager",
+    width: 500,
+    height: 350,
+    icon: "winfile",
+    label: "File Mgr"
+  },
+  {
+    type: "cardfile",
+    title: "Cardfile",
+    width: 350,
+    height: 400,
+    icon: "cardfile",
+    label: "Cardfile"
+  },
+  {
+    type: "calc",
+    title: "Calculator",
+    width: 220,
+    height: 250,
+    icon: "calc",
+    label: "Calculator"
+  },
+  {
+    type: "mines",
+    title: "Minesweeper",
+    width: 240,
+    height: 320,
+    icon: "mines",
+    label: "Minesweeper"
+  },
+  {
+    type: "solitaire",
+    title: "Solitaire",
+    width: 600,
+    height: 450,
+    icon: "solitaire",
+    label: "Solitaire"
+  },
+  {
+    type: "chess",
+    title: "Chess",
+    width: 640,
+    height: 520,
+    icon: "chess",
+    label: "Chess"
+  },
+  {
+    type: "reversi",
+    title: "Reversi",
+    width: 300,
+    height: 340,
+    icon: "reversi",
+    label: "Reversi"
+  },
+  {
+    type: "paint",
+    title: "Paintbrush",
+    width: 500,
+    height: 400,
+    icon: "paint",
+    label: "Paintbrush"
+  },
+  {
+    type: "photoshop",
+    title: "Photoshop 1.0",
+    width: 760,
+    height: 560,
+    icon: "photoshop",
+    label: "Photoshop"
+  },
+  {
+    type: "mplayer",
+    title: "Media Player",
+    width: 350,
+    height: 250,
+    icon: "mplayer",
+    label: "Media Player"
+  },
+  {
+    type: "simcity",
+    title: "Micropolis",
+    width: 560,
+    height: 520,
+    icon: "simcity",
+    label: "Micropolis"
+  },
+  {
+    type: "skifree",
+    title: "SkiFree",
+    width: 520,
+    height: 520,
+    icon: "skifree",
+    label: "SkiFree"
+  },
+  {
+    type: "linerider",
+    title: "Line Rider",
+    width: 620,
+    height: 520,
+    icon: "linerider",
+    label: "Line Rider"
+  },
+  {
+    type: "soundrec",
+    title: "Sound Recorder",
+    width: 300,
+    height: 160,
+    icon: "soundrec",
+    label: "Sound Rec"
+  },
+  {
+    type: "radio",
+    title: "Radio",
+    width: 620,
+    height: 460,
+    icon: "radio",
+    label: "Radio"
+  },
+  {
+    type: "beatmaker",
+    title: "Beat Lab",
+    width: 720,
+    height: 420,
+    icon: "beatmaker",
+    label: "Beat Lab"
+  },
+  {
+    type: "clock",
+    title: "Clock",
+    width: 250,
+    height: 250,
+    icon: "clock",
+    label: "Clock"
+  },
+  {
+    type: "charmap",
+    title: "Character Map",
+    width: 460,
+    height: 380,
+    icon: "charmap",
+    label: "Char Map"
+  },
+  {
+    type: "control",
+    title: "Control Panel",
+    width: 400,
+    height: 300,
+    icon: "control",
+    label: "Control"
+  },
+  {
+    type: "imageviewer",
+    title: "Image Viewer",
+    width: 720,
+    height: 540,
+    icon: "imageviewer",
+    label: "Image View"
+  },
+  {
+    type: "pdfreader",
+    title: "PDF Reader",
+    width: 720,
+    height: 540,
+    icon: "pdfreader",
+    label: "PDF Reader"
+  },
+  {
+    type: "markdown",
+    title: "Markdown Viewer",
+    width: 700,
+    height: 500,
+    icon: "markdown",
+    label: "Markdown"
+  },
+  {
+    type: "clipbrd",
+    title: "Clipboard",
+    width: 300,
+    height: 250,
+    icon: "clipboard",
+    label: "Clipboard"
+  },
+  {
+    type: "taskman",
+    title: "Task List",
+    width: 320,
+    height: 350,
+    icon: "taskman",
+    label: "Task List"
+  },
+  {
+    type: "database",
+    title: "Data Manager",
+    width: 500,
+    height: 400,
+    icon: "database",
+    label: "Data Mgr"
+  },
+  {
+    type: "compiler",
+    title: "Tiny C",
+    width: 450,
+    height: 350,
+    icon: "ccompiler",
+    label: "Tiny C"
+  },
+  {
+    type: "python",
+    title: "Tiny Python",
+    width: 450,
+    height: 350,
+    icon: "python",
+    label: "Python"
+  },
+  {
+    type: "console",
+    title: "Console",
+    width: 500,
+    height: 350,
+    icon: "console",
+    label: "Console"
+  },
+  {
+    type: "hexedit",
+    title: "Hex Editor",
+    width: 720,
+    height: 520,
+    icon: "hexedit",
+    label: "Hex Editor"
+  },
+  {
+    type: "rss",
+    title: "RSS Reader",
+    width: 720,
+    height: 520,
+    icon: "rss",
+    label: "RSS Reader"
+  },
+  {
+    type: "browser",
+    title: "Web Browser",
+    width: 640,
+    height: 480,
+    icon: "browser",
+    label: "Browser"
+  },
+  {
+    type: "radiogarden",
+    title: "Radio Garden",
+    width: 720,
+    height: 520,
+    icon: "radiogarden",
+    label: "Radio Garden"
+  },
+  {
+    type: "irc",
+    title: "IRC Client",
+    width: 680,
+    height: 500,
+    icon: "irc",
+    label: "IRC"
+  },
+  {
+    type: "readme",
+    title: "Read Me",
+    width: 350,
+    height: 400,
+    icon: "readme",
+    label: "Read Me"
+  },
+  {
+    type: "doom",
+    title: "DOOM",
+    width: 640,
+    height: 400,
+    icon: "doom",
+    label: "DOOM"
+  },
+  {
+    type: "papers",
+    title: "Checkpoint",
+    width: 640,
+    height: 520,
+    icon: "papers",
+    label: "Checkpoint"
+  }
+];
 
 const DEFAULT_PDF_DATA_URI =
   "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
@@ -733,160 +1040,16 @@ class WindowManager {
   }
   // Content Generators
   getProgramManagerContent() {
+    const programIcons = PROGRAMS.map(
+      (prog) => `
+                    <div class="prog-icon" onclick="wm.openWindow('${prog.type}', '${prog.title}', ${prog.width}, ${prog.height})">
+                        ${ICONS[prog.icon] || ICONS.help}
+                        <div class="prog-label">${prog.label}</div>
+                    </div>`
+    ).join("");
     return `
                 <div class="prog-man-grid">
-                    <div class="prog-icon" onclick="wm.openWindow('notepad', 'Notepad', 300, 200)">
-                        ${ICONS.notepad}
-                        <div class="prog-label">Notepad</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('write', 'Write', 500, 400)">
-                        ${ICONS.write}
-                        <div class="prog-label">Write</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('winfile', 'File Manager', 500, 350)">
-                        ${ICONS.winfile}
-                        <div class="prog-label">File Mgr</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('cardfile', 'Cardfile', 350, 400)">
-                        ${ICONS.cardfile}
-                        <div class="prog-label">Cardfile</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('calc', 'Calculator', 220, 250)">
-                        ${ICONS.calc}
-                        <div class="prog-label">Calculator</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('mines', 'Minesweeper', 240, 320)">
-                        ${ICONS.mines}
-                        <div class="prog-label">Minesweeper</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('solitaire', 'Solitaire', 600, 450)">
-                        ${ICONS.solitaire}
-                        <div class="prog-label">Solitaire</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('chess', 'Chess', 640, 520)">
-                        ${ICONS.chess}
-                        <div class="prog-label">Chess</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('reversi', 'Reversi', 300, 340)">
-                        ${ICONS.reversi}
-                        <div class="prog-label">Reversi</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('paint', 'Paintbrush', 500, 400)">
-                        ${ICONS.paint}
-                        <div class="prog-label">Paintbrush</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('photoshop', 'Photoshop 1.0', 760, 560)">
-                        ${ICONS.photoshop}
-                        <div class="prog-label">Photoshop</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('mplayer', 'Media Player', 350, 250)">
-                        ${ICONS.mplayer}
-                        <div class="prog-label">Media Player</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('simcity', 'Micropolis', 560, 520)">
-                        ${ICONS.simcity}
-                        <div class="prog-label">Micropolis</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('skifree', 'SkiFree', 520, 520)">
-                        ${ICONS.skifree}
-                        <div class="prog-label">SkiFree</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('linerider', 'Line Rider', 620, 520)">
-                        ${ICONS.linerider}
-                        <div class="prog-label">Line Rider</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('soundrec', 'Sound Recorder', 300, 160)">
-                        ${ICONS.soundrec}
-                        <div class="prog-label">Sound Rec</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('radio', 'Radio', 620, 460)">
-                        ${ICONS.radio}
-                        <div class="prog-label">Radio</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('beatmaker', 'Beat Lab', 720, 420)">
-                        ${ICONS.beatmaker}
-                        <div class="prog-label">Beat Lab</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('clock', 'Clock', 250, 250)">
-                        ${ICONS.clock}
-                        <div class="prog-label">Clock</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('charmap', 'Character Map', 460, 380)">
-                        ${ICONS.charmap}
-                        <div class="prog-label">Char Map</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('control', 'Control Panel', 400, 300)">
-                        ${ICONS.control}
-                        <div class="prog-label">Control</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('imageviewer', 'Image Viewer', 720, 540)">
-                        ${ICONS.imageviewer}
-                        <div class="prog-label">Image View</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('pdfreader', 'PDF Reader', 720, 540)">
-                        ${ICONS.pdfreader}
-                        <div class="prog-label">PDF Reader</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('markdown', 'Markdown Viewer', 700, 500)">
-                        ${ICONS.markdown}
-                        <div class="prog-label">Markdown</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('clipbrd', 'Clipboard', 300, 250)">
-                        ${ICONS.clipboard}
-                        <div class="prog-label">Clipboard</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('taskman', 'Task List', 320, 350)">
-                        ${ICONS.taskman}
-                        <div class="prog-label">Task List</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('database', 'Data Manager', 500, 400)">
-                        ${ICONS.database}
-                        <div class="prog-label">Data Mgr</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('compiler', 'Tiny C', 450, 350)">
-                        ${ICONS.ccompiler}
-                        <div class="prog-label">Tiny C</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('python', 'Tiny Python', 450, 350)">
-                        ${ICONS.python}
-                        <div class="prog-label">Python</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('console', 'Console', 500, 350)">
-                        ${ICONS.console}
-                        <div class="prog-label">Console</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('hexedit', 'Hex Editor', 720, 520)">
-                        ${ICONS.hexedit}
-                        <div class="prog-label">Hex Editor</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('rss', 'RSS Reader', 720, 520)">
-                        ${ICONS.rss}
-                        <div class="prog-label">RSS Reader</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
-                        ${ICONS.browser}
-                        <div class="prog-label">Browser</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('radiogarden', 'Radio Garden', 720, 520)">
-                        ${ICONS.radiogarden}
-                        <div class="prog-label">Radio Garden</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('irc', 'IRC Client', 680, 500)">
-                        ${ICONS.irc}
-                        <div class="prog-label">IRC</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
-                        ${ICONS.readme}
-                        <div class="prog-label">Read Me</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('doom', 'DOOM', 640, 400)">
-                        ${ICONS.doom}
-                        <div class="prog-label">DOOM</div>
-                    </div>
-                    <div class="prog-icon" onclick="wm.openWindow('papers', 'Checkpoint', 640, 520)">
-                        ${ICONS.papers}
-                        <div class="prog-label">Checkpoint</div>
-                    </div>
+                    ${programIcons}
                 </div>
             `;
   }
