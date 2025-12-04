@@ -1560,7 +1560,7 @@ class WindowManager {
 }
 
 const wm = new WindowManager();
-
+window.wm = wm;
 let saverActive = false;
 let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
@@ -4433,25 +4433,6 @@ function rFL(w) {
       };
       v.appendChild(r);
     });
-}
-
-function createFolder(btn) {
-  const win = btn.closest(".window");
-  const input = win.querySelector("#new-folder-name");
-  const name = input.value.trim();
-  if (name && win.currentDirObj) {
-    if (win.currentDirObj.children[name]) {
-      alert("Folder already exists!");
-      return;
-    }
-    win.currentDirObj.children[name] = {
-      type: "dir",
-      children: {}
-    };
-    input.value = "";
-    rFT(win);
-    rFL(win);
-  }
 }
 
 let jsDosLoadPromise = null;
