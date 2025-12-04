@@ -6,6 +6,7 @@ const ICONS = {
   ccompiler: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M6 4h14l6 6v18H6z" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#c0c0c0" stroke="black"/><text x="14" y="22" font-family="serif" font-weight="bold" font-size="20" text-anchor="middle" fill="blue">C</text></svg>`,
   python: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M16 4c-4 0-4 2-4 2v2h4v1h-5c-4 0-4 4-4 4v2h2v-2c0-2 0-2 2-2h5c2 0 2-2 2-2V7c0-2-2-2-2-2h-1z" fill="#306998"/><path d="M16 28c4 0 4-2 4-2v-2h-4v-1h5c4 0 4-4 4-4v-2h-2v2c0 2 0 2-2 2h-5c-2 0-2 2-2 2v2c0 2 2 2 2 2h1z" fill="#FFD43B"/><circle cx="14" cy="7" r="1" fill="white"/><circle cx="18" cy="25" r="1" fill="white"/></svg>`,
   console: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="black" stroke="#c0c0c0"/><text x="8" y="20" font-family="monospace" font-weight="bold" font-size="14" fill="#c0c0c0">C:\></text></svg>`,
+  hexedit: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#101010" stroke="#c0c0c0"/><rect x="6" y="8" width="20" height="16" fill="#1e1e1e" stroke="#404040"/><text x="16" y="18" font-family="monospace" font-size="10" fill="#00ff90" text-anchor="middle">0xED</text></svg>`,
   taskman: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#c0c0c0" stroke="black"/><rect x="6" y="6" width="20" height="4" fill="#000080"/><rect x="6" y="12" width="20" height="14" fill="white" stroke="black"/><line x1="8" y1="16" x2="24" y2="16" stroke="black"/><line x1="8" y1="20" x2="24" y2="20" stroke="black"/></svg>`,
   paint: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M10 24c0 2 2 4 4 4s4-2 4-4v-8h-8v8z" fill="#c0c0c0" stroke="black"/><rect x="10" y="10" width="8" height="6" fill="black"/><path d="M14 4l-4 6h8l-4-6z" fill="#c0c0c0" stroke="black"/><circle cx="24" cy="24" r="6" fill="#ff0000" opacity="0.5"/><circle cx="8" cy="24" r="6" fill="#0000ff" opacity="0.5"/></svg>`,
   database: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M16 6c-8 0-12 2-12 4v12c0 2 4 4 12 4s12-2 12-4V10c0-2-4-4-12-4z" fill="#c0c0c0" stroke="black"/><ellipse cx="16" cy="10" rx="12" ry="4" fill="white" stroke="black"/><path d="M4 14c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/><path d="M4 18c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/></svg>`,
@@ -86,7 +87,8 @@ const DEFAULT_FS = {
           "WEB.EXE": { type: "file", app: "browser" },
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
-          "CONSOLE.EXE": { type: "file", app: "console" }
+          "CONSOLE.EXE": { type: "file", app: "console" },
+          "HEXEDIT.EXE": { type: "file", app: "hexedit" }
         }
       },
       DOCUMENTS: {
@@ -442,6 +444,7 @@ class WindowManager {
     if (type === "browser") content = this.getBrowserContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
+    if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -482,6 +485,7 @@ class WindowManager {
     if (type === "browser") initBrowser(winEl);
     if (type === "doom") initDoom(winEl);
     if (type === "papers") initPapersPlease(winEl);
+    if (type === "hexedit") initHexEditor(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
@@ -759,6 +763,10 @@ class WindowManager {
                         ${ICONS.console}
                         <div class="prog-label">Console</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('hexedit', 'Hex Editor', 720, 520)">
+                        ${ICONS.hexedit}
+                        <div class="prog-label">Hex Editor</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
                         ${ICONS.browser}
                         <div class="prog-label">Browser</div>
@@ -1014,6 +1022,26 @@ class WindowManager {
                 <div class="md-body">
                     <textarea class="md-input" spellcheck="false" placeholder="Paste Markdown here">${initialText}</textarea>
                     <div class="md-preview" aria-live="polite"></div>
+                </div>
+            </div>`;
+  }
+  getHexEditorContent() {
+    return `<div class="hex-layout">
+                <div class="hex-toolbar">
+                    <button class="task-btn hex-new">New</button>
+                    <label class="task-btn file-btn">Open File<input type="file" class="hex-file" accept="*/*"></label>
+                    <button class="task-btn hex-parse">Parse Hex</button>
+                    <button class="task-btn hex-from-ascii">From ASCII</button>
+                    <div class="hex-status">Ready</div>
+                </div>
+                <div class="hex-body">
+                    <textarea class="hex-offsets" readonly aria-label="Offsets"></textarea>
+                    <textarea class="hex-area" spellcheck="false" aria-label="Hex bytes"></textarea>
+                    <textarea class="hex-ascii" spellcheck="false" aria-label="ASCII view"></textarea>
+                </div>
+                <div class="hex-footer">
+                    <div class="hex-summary">0 bytes</div>
+                    <div class="hex-hint">Edit hex pairs, then click Parse Hex to refresh the ASCII view.</div>
                 </div>
             </div>`;
   }
@@ -2943,6 +2971,119 @@ function initMarkdownViewer(win, initData) {
     textarea.value = DEFAULT_MD_SAMPLE;
     updatePreview("Sample");
   });
+}
+
+function formatHexDump(bytes) {
+  const offsets = [];
+  const hexLines = [];
+  const asciiLines = [];
+
+  if (!bytes || !bytes.length)
+    return { offsetText: "000000", hexText: "", asciiText: "" };
+
+  for (let i = 0; i < bytes.length; i += 16) {
+    offsets.push(i.toString(16).padStart(6, "0"));
+    const hexPart = [];
+    const asciiPart = [];
+    for (let j = 0; j < 16; j++) {
+      const idx = i + j;
+      if (idx < bytes.length) {
+        const b = bytes[idx];
+        hexPart.push(b.toString(16).padStart(2, "0").toUpperCase());
+        asciiPart.push(b >= 32 && b <= 126 ? String.fromCharCode(b) : ".");
+      } else {
+        hexPart.push("  ");
+        asciiPart.push(" ");
+      }
+    }
+    hexLines.push(hexPart.join(" "));
+    asciiLines.push(asciiPart.join(""));
+  }
+
+  return {
+    offsetText: offsets.join("\n"),
+    hexText: hexLines.join("\n"),
+    asciiText: asciiLines.join("\n")
+  };
+}
+
+function parseHexString(str) {
+  const cleaned = (str || "").replace(/[^0-9a-fA-F]/g, "");
+  if (!cleaned) return new Uint8Array();
+  if (cleaned.length % 2 !== 0) return null;
+  const bytes = new Uint8Array(cleaned.length / 2);
+  for (let i = 0; i < cleaned.length; i += 2) {
+    bytes[i / 2] = parseInt(cleaned.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+function initHexEditor(win) {
+  const hexArea = win.querySelector(".hex-area");
+  const asciiArea = win.querySelector(".hex-ascii");
+  const offsetArea = win.querySelector(".hex-offsets");
+  const status = win.querySelector(".hex-status");
+  const summary = win.querySelector(".hex-summary");
+  const fileInput = win.querySelector(".hex-file");
+  const parseBtn = win.querySelector(".hex-parse");
+  const asciiBtn = win.querySelector(".hex-from-ascii");
+  const newBtn = win.querySelector(".hex-new");
+
+  const setStatus = (msg, isError = false) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.classList.toggle("error", isError);
+  };
+
+  const renderBytes = (bytes, label) => {
+    const data = bytes || new Uint8Array();
+    const dump = formatHexDump(data);
+    if (offsetArea) offsetArea.value = dump.offsetText;
+    if (hexArea) hexArea.value = dump.hexText;
+    if (asciiArea) asciiArea.value = dump.asciiText;
+    if (summary)
+      summary.textContent = `${data.length} byte${data.length === 1 ? "" : "s"}`;
+    setStatus(label || "Ready");
+  };
+
+  const loadSample = () => {
+    const sample = new TextEncoder().encode(
+      "Hello, Hex Editor!\nUse Parse Hex after editing."
+    );
+    renderBytes(sample, "Sample buffer loaded.");
+  };
+
+  loadSample();
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const arr = new Uint8Array(ev.target.result);
+      renderBytes(arr, `Loaded ${file.name}`);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  parseBtn?.addEventListener("click", () => {
+    const bytes = parseHexString(hexArea?.value || "");
+    if (bytes === null) {
+      setStatus("Hex input contains an incomplete byte.", true);
+      return;
+    }
+    renderBytes(bytes, "Parsed hex input.");
+  });
+
+  asciiBtn?.addEventListener("click", () => {
+    const txt = asciiArea?.value || "";
+    const bytes = new TextEncoder().encode(txt);
+    renderBytes(bytes, "Encoded ASCII view.");
+  });
+
+  newBtn?.addEventListener("click", () =>
+    renderBytes(new Uint8Array(), "New empty buffer.")
+  );
 }
 
 function rFT(w) {
