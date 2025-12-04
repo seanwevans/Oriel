@@ -4160,8 +4160,8 @@ function initPapersPlease(win) {
     if (expiryEl) expiryEl.textContent = current.expiry;
     if (purposeEl) purposeEl.textContent = current.purpose;
     if (reasonEl) {
-      reasonEl.textContent = current.note;
-      reasonEl.classList.toggle("invalid", !current.valid);
+      reasonEl.textContent = "Review documents and choose to approve or deny.";
+      reasonEl.classList.remove("invalid");
     }
 
     if (photoEl) {
@@ -4214,6 +4214,7 @@ function initPapersPlease(win) {
       stats.credits = Math.max(0, stats.credits - 5);
       stats.mistakes += 1;
       log(`Citation issued for wrong decision on ${current.name}. -5 credits.`);
+      log(`Citation reason: ${current.note}`);
     }
 
     updateStats();
