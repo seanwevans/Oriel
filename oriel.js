@@ -726,7 +726,7 @@ class WindowManager {
     return `<textarea class="clip-area" readonly placeholder="(Clipboard is empty)"></textarea>`;
   }
   getWriteContent(txt) {
-    return `<div class="write-layout"><div class="write-toolbar"><button class="fmt-btn" data-cmd="bold" title="Bold">B</button><button class="fmt-btn" data-cmd="italic" title="Italic">I</button><button class="fmt-btn" data-cmd="underline" title="Underline">U</button></div><div class="write-editor" contenteditable="true" spellcheck="false">${
+    return `<div class="write-layout"><div class="write-toolbar"><select class="write-select write-font" title="Font Family"><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Courier New">Courier New</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option></select><select class="write-select write-size" title="Font Size"><option value="2">10</option><option value="3">12</option><option value="4" selected>14</option><option value="5">18</option><option value="6">24</option><option value="7">32</option></select><button class="fmt-btn" data-cmd="bold" title="Bold">B</button><button class="fmt-btn" data-cmd="italic" title="Italic">I</button><button class="fmt-btn" data-cmd="underline" title="Underline">U</button></div><div class="write-editor" contenteditable="true" spellcheck="false">${
       txt || "Welcome to Oriel Write."
     }</div></div>`;
   }
@@ -1506,12 +1506,30 @@ function initSolitaire(w) {
 }
 
 function initWrite(w) {
+  const editor = w.querySelector(".write-editor");
   w.querySelectorAll(".fmt-btn").forEach((btn) => {
     btn.onclick = () => {
       document.execCommand(btn.dataset.cmd, false, null);
-      w.querySelector(".write-editor").focus();
+      editor.focus();
     };
   });
+
+  const fontSelect = w.querySelector(".write-font");
+  const sizeSelect = w.querySelector(".write-size");
+
+  if (fontSelect) {
+    fontSelect.onchange = () => {
+      document.execCommand("fontName", false, fontSelect.value);
+      editor.focus();
+    };
+  }
+
+  if (sizeSelect) {
+    sizeSelect.onchange = () => {
+      document.execCommand("fontSize", false, sizeSelect.value);
+      editor.focus();
+    };
+  }
 }
 
 function initCardfile(w) {
