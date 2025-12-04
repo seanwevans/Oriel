@@ -34,6 +34,7 @@ const ICONS = {
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
+  papers: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="6" fill="#d8d8d8" stroke="#808080"/><path d="M8 12h10" stroke="#000080" stroke-width="2"/><rect x="6" y="16" width="10" height="8" fill="#f5f5f5" stroke="#808080"/><rect x="18" y="16" width="8" height="6" fill="#ffe0b2" stroke="#c07020"/><path d="M6 6l4-4h12l4 4" fill="#fff8e1" stroke="#c07020"/></svg>`,
   markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`,
   linerider: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="6" width="28" height="20" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 18l14-6l6 4l-14 6z" fill="#0080c0" stroke="black"/><circle cx="10" cy="12" r="3" fill="#ffcc00" stroke="black"/><path d="M8 22l10 4" stroke="#202020" stroke-width="2"/></svg>`,
   volume: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 12h6l8-6v20l-8-6H4z" fill="#c0c0c0" stroke="black"/><path d="M21 10c2 2 2 10 0 12M24 7c4 4 4 14 0 18" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,  
@@ -397,6 +398,7 @@ class WindowManager {
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "browser") content = this.getBrowserContent();
     if (type === "doom") content = this.getDoomContent();
+    if (type === "papers") content = this.getPapersContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
     this.desktop.appendChild(winEl);
     const winObj = {
@@ -436,6 +438,7 @@ class WindowManager {
     if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
     if (type === "doom") initDoom(winEl);
+    if (type === "papers") initPapersPlease(winEl);
     // Refresh logic
     refreshAllTaskManagers();
   }
@@ -723,8 +726,42 @@ class WindowManager {
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('doom', 'DOOM', 640, 400)">
                         ${ICONS.doom}
-                    <div class="prog-label">DOOM</div>
-            </div>
+                        <div class="prog-label">DOOM</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('papers', 'Checkpoint', 640, 520)">
+                        ${ICONS.papers}
+                        <div class="prog-label">Checkpoint</div>
+                    </div>
+                </div>
+            `;
+  }
+  getPapersContent() {
+    return `
+                <div class="papers-layout">
+                    <div class="papers-header">
+                        <div class="papers-title">Checkpoint Alpha</div>
+                        <div class="papers-subtitle">"Glory to Orielstotzka"</div>
+                    </div>
+                    <div class="papers-stats">Day <span class="papers-day">1</span> · Credits: <span class="papers-credits">20</span> · Citations: <span class="papers-mistakes">0</span></div>
+                    <div class="papers-body">
+                        <div class="papers-docs">
+                            <div class="papers-photo"></div>
+                            <div class="papers-fields">
+                                <div class="papers-field"><span class="papers-label">Name:</span> <span class="papers-name">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Nation:</span> <span class="papers-nation">---</span></div>
+                                <div class="papers-field"><span class="papers-label">ID:</span> <span class="papers-id">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Expires:</span> <span class="papers-expiry">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Purpose:</span> <span class="papers-purpose">---</span></div>
+                            </div>
+                        </div>
+                        <div class="papers-reason">Review documents and choose to approve or deny.</div>
+                        <div class="papers-actions">
+                            <button class="task-btn papers-approve">Approve</button>
+                            <button class="task-btn papers-deny">Deny</button>
+                            <button class="task-btn papers-next">Next Traveler</button>
+                        </div>
+                        <div class="papers-log" tabindex="0">Checkpoint initialized.</div>
+                    </div>
                 </div>
             `;
   }
@@ -4033,6 +4070,167 @@ function initSimCity(w) {
   buttons.forEach((btn) => btn.addEventListener("click", () => setTool(btn.dataset.tool)));
   setTool("road");
   updateStats();
+}
+
+function initPapersPlease(win) {
+  const nameEl = win.querySelector(".papers-name");
+  const nationEl = win.querySelector(".papers-nation");
+  const idEl = win.querySelector(".papers-id");
+  const expiryEl = win.querySelector(".papers-expiry");
+  const purposeEl = win.querySelector(".papers-purpose");
+  const reasonEl = win.querySelector(".papers-reason");
+  const logEl = win.querySelector(".papers-log");
+  const photoEl = win.querySelector(".papers-photo");
+  const dayEl = win.querySelector(".papers-day");
+  const creditsEl = win.querySelector(".papers-credits");
+  const mistakesEl = win.querySelector(".papers-mistakes");
+
+  const nations = ["Orielstotzka", "Kolechia", "Impor", "Arstotzka", "Antegria"];
+  const purposes = ["Work", "Visit", "Transit", "Immigrate", "Diplomatic"];
+  const firstNames = ["Elena", "Mikhail", "Sara", "Jonas", "Ilya", "Katarina", "Nikolai", "Leah"];
+  const lastNames = ["Novak", "Petrov", "Garcia", "Klein", "Ivanov", "Hernandez", "Cerny", "Kozlov"];
+  const colors = ["#c0392b", "#8e44ad", "#16a085", "#2980b9", "#d35400", "#7f8c8d"];
+  const issues = [
+    {
+      note: "Passport expired.",
+      apply: (p) => (p.expiry = randomDate(false)),
+    },
+    {
+      note: "Forged ID number detected.",
+      apply: (p) => (p.id = "X000-FAKE"),
+    },
+    {
+      note: "Photo does not match traveler.",
+      apply: (p) => (p.photoMismatch = true),
+    },
+    {
+      note: "Alias listed; identity uncertain.",
+      apply: (p) => (p.name = `${pick(firstNames)} ${pick(lastNames)}`),
+    },
+    {
+      note: "Nation currently banned.",
+      apply: (p) => (p.nation = "Unknown"),
+    },
+  ];
+
+  const stats = {
+    day: 1,
+    credits: 20,
+    mistakes: 0,
+    processed: 0,
+  };
+
+  let current = null;
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function randomId() {
+    return `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${
+      Math.floor(100 + Math.random() * 900)
+    }`;
+  }
+
+  function randomDate(valid = true) {
+    const now = new Date();
+    const delta = valid ? 40 + Math.random() * 220 : -10 - Math.random() * 120;
+    now.setDate(now.getDate() + Math.round(delta));
+    return now.toISOString().split("T")[0];
+  }
+
+  function updateStats() {
+    if (dayEl) dayEl.textContent = stats.day;
+    if (creditsEl) creditsEl.textContent = stats.credits;
+    if (mistakesEl) mistakesEl.textContent = stats.mistakes;
+  }
+
+  function log(msg) {
+    if (!logEl) return;
+    const lines = logEl.innerText.split("\n").filter(Boolean);
+    lines.unshift(msg);
+    logEl.innerText = lines.slice(0, 8).join("\n");
+  }
+
+  function renderEntrant() {
+    if (!current) current = generateEntrant();
+    if (nameEl) nameEl.textContent = current.name;
+    if (nationEl) nationEl.textContent = current.nation;
+    if (idEl) idEl.textContent = current.id;
+    if (expiryEl) expiryEl.textContent = current.expiry;
+    if (purposeEl) purposeEl.textContent = current.purpose;
+    if (reasonEl) {
+      reasonEl.textContent = current.note;
+      reasonEl.classList.toggle("invalid", !current.valid);
+    }
+
+    if (photoEl) {
+      const initials = current.name
+        .split(" ")
+        .map((p) => p[0])
+        .join(" ");
+      photoEl.textContent = initials;
+      photoEl.style.background = current.photoMismatch
+        ? "repeating-linear-gradient(45deg, #600, #600 6px, #c0392b 6px, #c0392b 12px)"
+        : `linear-gradient(135deg, ${pick(colors)}, ${pick(colors)})`;
+    }
+  }
+
+  function generateEntrant() {
+    const entrant = {
+      name: `${pick(firstNames)} ${pick(lastNames)}`,
+      nation: pick(nations),
+      id: randomId(),
+      expiry: randomDate(true),
+      purpose: pick(purposes),
+      valid: true,
+      note: "All documents appear valid.",
+      photoMismatch: false,
+    };
+
+    if (Math.random() < 0.45) {
+      entrant.valid = false;
+      const issue = pick(issues);
+      issue.apply(entrant);
+      entrant.note = issue.note;
+    }
+
+    return entrant;
+  }
+
+  function finishTraveler(approved) {
+    if (!current) return;
+    const correct = approved === current.valid;
+    stats.processed += 1;
+    if (stats.processed % 6 === 0) {
+      stats.day += 1;
+      log(`Night falls. Day ${stats.day} begins.`);
+    }
+
+    if (correct) {
+      stats.credits += 5;
+      log(`${approved ? "Approved" : "Denied"} correctly. +5 credits.`);
+    } else {
+      stats.credits = Math.max(0, stats.credits - 5);
+      stats.mistakes += 1;
+      log(`Citation issued for wrong decision on ${current.name}. -5 credits.`);
+    }
+
+    updateStats();
+    current = null;
+    renderEntrant();
+  }
+
+  win.querySelector(".papers-approve")?.addEventListener("click", () => finishTraveler(true));
+  win.querySelector(".papers-deny")?.addEventListener("click", () => finishTraveler(false));
+  win.querySelector(".papers-next")?.addEventListener("click", () => {
+    log("Traveler sent away without judgment.");
+    current = null;
+    renderEntrant();
+  });
+
+  updateStats();
+  renderEntrant();
 }
 
 const MINES_ROWS = 9;
