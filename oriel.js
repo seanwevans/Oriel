@@ -91,7 +91,7 @@ const DEFAULT_FS = {
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
           "CONSOLE.EXE": { type: "file", app: "console" },
-          "HEXEDIT.EXE": { type: "file", app: "hexedit" }
+          "HEXEDIT.EXE": { type: "file", app: "hexedit" },
           "IMGVIEW.EXE": { type: "file", app: "imageviewer" }
         }
       },
