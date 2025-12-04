@@ -665,6 +665,78 @@ body {
   background: white;
 }
 
+.img-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.img-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: var(--win-gray-light);
+  border: 1px solid var(--win-gray-shadow);
+  font-size: 12px;
+}
+
+.img-toolbar .file-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-toolbar .file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.img-url-input {
+  flex: 1;
+  padding: 4px;
+  font-size: 12px;
+  border: 1px solid var(--win-gray-shadow);
+  background: white;
+}
+
+.img-status {
+  font-weight: bold;
+  color: #003366;
+}
+
+.img-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--win-gray-shadow);
+  background: #111;
+  overflow: auto;
+}
+
+.img-preview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #333;
+  background: #f0f0f0;
+  border: 2px dashed var(--win-gray-shadow);
+  padding: 12px;
+}
+
 .md-viewer {
   display: flex;
   flex-direction: column;
@@ -1096,6 +1168,136 @@ body {
   font-size: 12px;
   background: rgba(255, 255, 255, 0.8);
   border: 1px dashed var(--win-gray-shadow);
+}
+
+.irc-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--win-gray);
+}
+
+.irc-header {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) auto;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--win-gray-shadow);
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+  font-size: 12px;
+}
+
+.irc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.irc-field label {
+  font-weight: bold;
+  color: #202020;
+}
+
+.irc-field input {
+  padding: 4px 6px;
+  border: 1px solid var(--win-gray-dark);
+  font-family: var(--font-main);
+  font-size: 13px;
+}
+
+.irc-actions {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.irc-body {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 6px;
+  padding: 6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.irc-log {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  padding: 6px;
+  overflow-y: auto;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.irc-log-row {
+  margin-bottom: 4px;
+}
+
+.irc-log-time {
+  color: #666;
+}
+
+.irc-log-prefix {
+  font-weight: bold;
+  color: #003366;
+  margin-left: 4px;
+}
+
+.irc-log-row.irc-system .irc-log-prefix {
+  color: #800000;
+}
+
+.irc-log-row.irc-bot .irc-log-prefix {
+  color: #008000;
+}
+
+.irc-log-row.irc-self .irc-log-prefix {
+  color: #000080;
+}
+
+.irc-sidebar {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.irc-sidebar-header {
+  padding: 4px 6px;
+  background: #dcdcdc;
+  border-bottom: 1px solid var(--win-gray-shadow);
+  font-weight: bold;
+  text-align: center;
+}
+
+.irc-users {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  font-size: 13px;
+}
+
+.irc-user {
+  padding: 2px 4px;
+  border-bottom: 1px dotted var(--win-gray-shadow);
+}
+
+.irc-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  padding: 6px;
+  border-top: 1px solid var(--win-gray-shadow);
+  background: #dcdcdc;
+}
+
+.irc-input {
+  padding: 6px;
+  border: 1px solid var(--win-gray-dark);
+  font-family: "Courier New", monospace;
+  font-size: 13px;
 }
 
 .sound-controls {
@@ -1813,6 +2015,23 @@ body {
   overflow: hidden;
 }
 
+.mplayer-screen canvas,
+.mplayer-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mplayer-screen canvas {
+  image-rendering: pixelated;
+}
+
+.mplayer-video {
+  object-fit: contain;
+  background: black;
+}
+
 .mplayer-overlay {
   position: absolute;
   inset: 4px;
@@ -1878,6 +2097,36 @@ body {
 
 .mplayer-btn:active {
   border: 1px solid black;
+}
+
+.mplayer-load-btn {
+  border: 1px solid #808080;
+  background: linear-gradient(180deg, #f5f5f5, #c0c0c0);
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mplayer-load-btn input {
+  display: none;
+}
+
+.mplayer-status {
+  font-size: 12px;
+  color: #1f4430;
+  background: #e8f4ed;
+  border: 1px solid #808080;
+  padding: 4px 6px;
+}
+
+.mplayer-file-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .simcity-layout {

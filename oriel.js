@@ -27,6 +27,7 @@ const ICONS = {
   skifree: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 26l20-20" stroke="#000080" stroke-width="2"/><path d="M6 22l12-12" stroke="#000080" stroke-width="2"/><circle cx="16" cy="10" r="3" fill="#ff4040" stroke="black"/><rect x="14" y="13" width="4" height="7" fill="#ffffff" stroke="black"/><path d="M14 16l-4 3" stroke="#000" stroke-width="2"/><path d="M18 16l4 3" stroke="#000" stroke-width="2"/><path d="M14 20l-4 6" stroke="#000" stroke-width="2"/><path d="M18 20l4 6" stroke="#000" stroke-width="2"/></svg>`,
   chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
+  irc: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#c0e0ff" stroke="#003366"/><rect x="8" y="10" width="12" height="4" rx="2" fill="white" stroke="#003366"/><circle cx="22" cy="20" r="4" fill="#004080"/><path d="M22 17c1.5 0 2.5.7 3 1.8" stroke="white" stroke-width="1" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -34,6 +35,7 @@ const ICONS = {
   help: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#FFFF00" stroke="black"/><text x="16" y="22" font-size="20" text-anchor="middle" font-weight="bold" font-family="serif">?</text></svg>`,
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
+  imageviewer: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#f5f5f5" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#c0e8ff" stroke="#808080"/><circle cx="12" cy="13" r="2" fill="#ffcc00" stroke="#c08000"/><path d="M8 22l6-6l4 4l4-6l4 8H8z" fill="#008040" stroke="#004020"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
   papers: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="6" fill="#d8d8d8" stroke="#808080"/><path d="M8 12h10" stroke="#000080" stroke-width="2"/><rect x="6" y="16" width="10" height="8" fill="#f5f5f5" stroke="#808080"/><rect x="18" y="16" width="8" height="6" fill="#ffe0b2" stroke="#c07020"/><path d="M6 6l4-4h12l4 4" fill="#fff8e1" stroke="#c07020"/></svg>`,
   markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`,
@@ -85,10 +87,12 @@ const DEFAULT_FS = {
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
           "WEB.EXE": { type: "file", app: "browser" },
+          "IRC.EXE": { type: "file", app: "irc" },
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
           "CONSOLE.EXE": { type: "file", app: "console" },
           "HEXEDIT.EXE": { type: "file", app: "hexedit" }
+          "IMGVIEW.EXE": { type: "file", app: "imageviewer" }
         }
       },
       DOCUMENTS: {
@@ -97,7 +101,12 @@ const DEFAULT_FS = {
           "README.TXT": { type: "file", app: "notepad", content: "Welcome to Oriel 1.0!" },
           "TODO.TXT": { type: "file", app: "notepad", content: "- Buy Milk\n- Install DOOM" },
           "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } },
-          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE }
+          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE },
+          "SCREEN.PNG": {
+            type: "file",
+            app: "imageviewer",
+            content: { name: "screen.png", src: "screen.png" }
+          }
         }
       }
     }
@@ -138,6 +147,18 @@ function createFolder(btn) {
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+
+const IRC_BOT_MESSAGES = [
+  "Anyone else miss dial-up modems?",
+  "Set your away message with /away <msg>!",
+  "New high score in SkiFree: 12,430 points.",
+  "Reminder: backups save lives.",
+  "Try the checkpoint game—papers, please!",
+  "TinyC compile succeeded. No warnings.",
+  "Have you tweaked your wallpaper today?",
+  "Oriel 1.0 loves retro vibes.",
+  "Remember to hydrate and stretch."
+];
 
 const VOLUME_STORAGE_KEY = "oriel-volume";
 
@@ -190,9 +211,21 @@ let mediaPlayerTracks = null;
 function getMediaPlayerTracks() {
   if (!mediaPlayerTracks) {
     mediaPlayerTracks = [
-      { name: "Synth Bell (C5)", url: generateToneUrl(523.25, 1.2) },
-      { name: "Retro Chime (E4)", url: generateToneUrl(329.63, 1.5) },
-      { name: "Soft Drone (A3)", url: generateToneUrl(220, 2) }
+      {
+        name: "Synth Bell (C5)",
+        url: generateToneUrl(523.25, 1.2),
+        type: "audio/wav"
+      },
+      {
+        name: "Retro Chime (E4)",
+        url: generateToneUrl(329.63, 1.5),
+        type: "audio/wav"
+      },
+      {
+        name: "Soft Drone (A3)",
+        url: generateToneUrl(220, 2),
+        type: "audio/wav"
+      }
     ];
   }
   return mediaPlayerTracks;
@@ -440,8 +473,10 @@ class WindowManager {
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
+    if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "browser") content = this.getBrowserContent();
+    if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
@@ -481,8 +516,10 @@ class WindowManager {
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
     if (type === "pdfreader") initPdfReader(winEl, initData);
+    if (type === "imageviewer") initImageViewer(winEl, initData);
     if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
+    if (type === "irc") initIRC(winEl);
     if (type === "doom") initDoom(winEl);
     if (type === "papers") initPapersPlease(winEl);
     if (type === "hexedit") initHexEditor(winEl);
@@ -499,6 +536,7 @@ class WindowManager {
         closingWin.el.skifreeCleanup();
       if (typeof closingWin.el.lineRiderCleanup === "function")
         closingWin.el.lineRiderCleanup();
+      if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
         closingWin.el.doomCI = null;
@@ -731,6 +769,10 @@ class WindowManager {
                         ${ICONS.control}
                         <div class="prog-label">Control</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('imageviewer', 'Image Viewer', 720, 540)">
+                        ${ICONS.imageviewer}
+                        <div class="prog-label">Image View</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('pdfreader', 'PDF Reader', 720, 540)">
                         ${ICONS.pdfreader}
                         <div class="prog-label">PDF Reader</div>
@@ -770,6 +812,10 @@ class WindowManager {
                     <div class="prog-icon" onclick="wm.openWindow('browser', 'Web Browser', 640, 480)">
                         ${ICONS.browser}
                         <div class="prog-label">Browser</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('irc', 'IRC Client', 680, 500)">
+                        ${ICONS.irc}
+                        <div class="prog-label">IRC</div>
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
                         ${ICONS.readme}
@@ -887,6 +933,39 @@ class WindowManager {
               </div>
             </div>`;
   }
+  getIRCContent() {
+    return `<div class="irc-layout">
+              <div class="irc-header">
+                <div class="irc-field">
+                  <label>Server</label>
+                  <input type="text" class="irc-server" value="irc.oriel.local" spellcheck="false">
+                </div>
+                <div class="irc-field">
+                  <label>Nick</label>
+                  <input type="text" class="irc-nick" value="guest" spellcheck="false">
+                </div>
+                <div class="irc-field">
+                  <label>Channel</label>
+                  <input type="text" class="irc-channel" value="#oriel" spellcheck="false">
+                </div>
+                <div class="irc-actions">
+                  <button class="task-btn irc-connect">Connect</button>
+                  <button class="task-btn irc-join" disabled>Join</button>
+                </div>
+              </div>
+              <div class="irc-body">
+                <div class="irc-log" aria-live="polite"></div>
+                <div class="irc-sidebar">
+                  <div class="irc-sidebar-header">Users</div>
+                  <div class="irc-users"></div>
+                </div>
+              </div>
+              <div class="irc-input-row">
+                <input type="text" class="irc-input" placeholder="Type a message and hit Enter" spellcheck="false" disabled>
+                <button class="task-btn irc-send" disabled>Send</button>
+              </div>
+            </div>`;
+  }
   getDoomContent() {
     return `
       <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
@@ -920,7 +999,7 @@ class WindowManager {
     return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><canvas id="mplayer-canvas" width="300" height="150" style="width:100%;height:100%"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div></div></div>`;
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
   }
   getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
@@ -1008,6 +1087,22 @@ class WindowManager {
                 </div>
                 <div class="pdf-viewer">
                     <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
+                </div>
+            </div>`;
+  }
+  getImageViewerContent(initData) {
+    const name = initData?.name || "";
+    const src = initData?.src || "";
+    return `<div class="img-viewer">
+                <div class="img-toolbar">
+                    <label class="task-btn file-btn">Open Image<input type="file" accept="image/*" class="img-file-input"></label>
+                    <input type="text" class="img-url-input" placeholder="Paste image URL and click Load" value="${src ? src : ""}">
+                    <button class="task-btn img-load-btn">Load</button>
+                    <div class="img-status">${src ? `Loaded ${name || "image"}` : "No image loaded"}</div>
+                </div>
+                <div class="img-display">
+                    <div class="img-placeholder" ${src ? "style=\"display:none\"" : ""}>Drop an image or click Open</div>
+                    <img class="img-preview" ${src ? `src="${src}"` : "style=\"display:none\""} alt="${name || "Image preview"}">
                 </div>
             </div>`;
   }
@@ -1597,6 +1692,141 @@ function initBrowser(win) {
   loadUrl(BROWSER_HOME);
 }
 
+function initIRC(win) {
+  const serverInput = win.querySelector(".irc-server");
+  const nickInput = win.querySelector(".irc-nick");
+  const channelInput = win.querySelector(".irc-channel");
+  const connectBtn = win.querySelector(".irc-connect");
+  const joinBtn = win.querySelector(".irc-join");
+  const sendBtn = win.querySelector(".irc-send");
+  const input = win.querySelector(".irc-input");
+  const logEl = win.querySelector(".irc-log");
+  const usersEl = win.querySelector(".irc-users");
+
+  if (!serverInput || !nickInput || !channelInput || !connectBtn || !joinBtn || !sendBtn || !input || !logEl || !usersEl) return;
+
+  let connected = false;
+  let currentChannel = null;
+  let botInterval = null;
+  const users = new Set();
+
+  const escapeHtml = (str) =>
+    String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  const addLog = (prefix, message, cls = "") => {
+    const row = document.createElement("div");
+    row.className = `irc-log-row ${cls}`.trim();
+    const time = new Date();
+    const ts = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    row.innerHTML = `<span class="irc-log-time">[${ts}]</span> <span class="irc-log-prefix">${escapeHtml(
+      prefix
+    )}</span> <span class="irc-log-msg">${escapeHtml(message)}</span>`;
+    logEl.appendChild(row);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  const refreshUsers = () => {
+    usersEl.innerHTML = "";
+    if (!users.size) {
+      usersEl.innerHTML = '<div class="irc-user">(empty)</div>';
+      return;
+    }
+    Array.from(users)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((u) => {
+        const div = document.createElement("div");
+        div.className = "irc-user";
+        div.textContent = u;
+        usersEl.appendChild(div);
+      });
+  };
+
+  refreshUsers();
+
+  const toggleConnectedState = (state) => {
+    connected = state;
+    connectBtn.textContent = connected ? "Disconnect" : "Connect";
+    joinBtn.disabled = !connected;
+    input.disabled = !connected || !currentChannel;
+    sendBtn.disabled = input.disabled;
+    channelInput.disabled = !connected ? false : currentChannel !== null;
+    if (!connected) {
+      currentChannel = null;
+      users.clear();
+      refreshUsers();
+      if (botInterval) clearInterval(botInterval);
+      botInterval = null;
+    }
+  };
+
+  const fakeServerMessage = (text) => addLog("*", text, "irc-system");
+
+  const joinChannel = (chan) => {
+    const nick = nickInput.value.trim() || "guest";
+    currentChannel = chan;
+    input.disabled = false;
+    sendBtn.disabled = false;
+    channelInput.disabled = true;
+    users.clear();
+    [nick, "sysop", "retroBot"].forEach((u) => users.add(u));
+    refreshUsers();
+    fakeServerMessage(`Joined ${chan}`);
+    addLog(`<${nick}>`, `has entered ${chan}`, "irc-self");
+
+    if (botInterval) clearInterval(botInterval);
+    botInterval = setInterval(() => {
+      if (!connected || !currentChannel) return;
+      const botMsg = IRC_BOT_MESSAGES[Math.floor(Math.random() * IRC_BOT_MESSAGES.length)];
+      addLog("<retroBot>", botMsg, "irc-bot");
+    }, 9000);
+  };
+
+  const handleSend = () => {
+    const text = input.value.trim();
+    if (!text || !connected || !currentChannel) return;
+    const nick = nickInput.value.trim() || "guest";
+    addLog(`<${nick}>`, text, "irc-self");
+    input.value = "";
+  };
+
+  connectBtn.addEventListener("click", () => {
+    if (connected) {
+      fakeServerMessage("Connection closed.");
+      toggleConnectedState(false);
+      return;
+    }
+    const server = serverInput.value.trim() || "irc.oriel.local";
+    const nick = nickInput.value.trim() || "guest";
+    fakeServerMessage(`Connecting to ${server} as ${nick}...`);
+    setTimeout(() => {
+      fakeServerMessage(`Welcome to ${server}. Use /help for commands.`);
+      toggleConnectedState(true);
+    }, 500);
+  });
+
+  joinBtn.addEventListener("click", () => {
+    if (!connected) return;
+    const chan = channelInput.value.trim();
+    if (!chan) return;
+    joinChannel(chan.startsWith("#") ? chan : `#${chan}`);
+  });
+
+  sendBtn.addEventListener("click", handleSend);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  win.ircCleanup = () => {
+    if (botInterval) clearInterval(botInterval);
+  };
+}
+
 let selT = {};
 
 function initTaskMan(win) {
@@ -1803,22 +2033,26 @@ function initReversi(w) {
 function initMediaPlayer(w) {
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
+  const video = w.querySelector(".mplayer-video");
 
   const selectEl = w.querySelector(".mplayer-track-select");
   const seekEl = w.querySelector(".mplayer-seek");
   const currentEl = w.querySelector(".mplayer-current");
   const durationEl = w.querySelector(".mplayer-duration");
   const trackNameEl = w.querySelector(".mplayer-track-name");
-  const audio = new Audio();
-  registerMediaElement(audio);
+  const fileInput = w.querySelector(".mplayer-file-input");
+  const fileNameEl = w.querySelector(".mplayer-file-name");
 
-  const tracks = getMediaPlayerTracks();
-  tracks.forEach((t, i) => {
+  registerMediaElement(video);
+
+  const tracks = [...getMediaPlayerTracks()];
+  const addOption = (track, index, prefix = "") => {
     const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = t.name;
+    opt.value = index;
+    opt.textContent = `${prefix}${track.name}`;
     selectEl.appendChild(opt);
-  });
+  };
+  tracks.forEach((t, i) => addOption(t, i));
 
   let interval = null;
   let x = 50;
@@ -1861,59 +2095,104 @@ function initMediaPlayer(w) {
     y = 50;
   };
 
+  const isVideoTrack = (track) => {
+    const type = (track.type || "").toLowerCase();
+    if (type.startsWith("video/")) return true;
+    const name = (track.name || "").toLowerCase();
+    return /(\.mp4|\.webm|\.ogv|\.mov|\.mkv)$/.test(name);
+  };
+
   const updateSeek = () => {
-    if (!audio.duration) return;
-    seekEl.value = Math.floor((audio.currentTime / audio.duration) * 100);
-    currentEl.textContent = formatTime(audio.currentTime);
-    durationEl.textContent = formatTime(audio.duration);
+    const duration = video.duration;
+    if (!isFinite(duration) || duration <= 0) {
+      seekEl.value = 0;
+      durationEl.textContent = formatTime(0);
+      currentEl.textContent = formatTime(video.currentTime || 0);
+      return;
+    }
+    seekEl.value = Math.floor((video.currentTime / duration) * 100);
+    currentEl.textContent = formatTime(video.currentTime);
+    durationEl.textContent = formatTime(duration);
   };
 
   const loadTrack = (index) => {
     currentTrack = index;
     const track = tracks[currentTrack];
-    audio.src = track.url;
-    audio.currentTime = 0;
+    const videoMode = isVideoTrack(track);
+    canvas.style.display = videoMode ? "none" : "block";
+    video.src = track.url;
+    video.currentTime = 0;
     trackNameEl.textContent = track.name;
     seekEl.value = 0;
     currentEl.textContent = "0:00";
     durationEl.textContent = "0:00";
+    if (!videoMode) {
+      resetVisual();
+    } else {
+      stopVisual();
+    }
   };
 
   selectEl.addEventListener("change", (e) => {
     loadTrack(parseInt(e.target.value, 10));
-    registerMediaElement(audio);
-    audio.play();
-    interval = interval || setInterval(animate, 30);
+    registerMediaElement(video);
+    video.play();
+    if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
   });
 
   seekEl.addEventListener("input", () => {
-    if (!audio.duration) return;
-    audio.currentTime = (parseFloat(seekEl.value) / 100) * audio.duration;
+    if (!video.duration || !isFinite(video.duration)) return;
+    video.currentTime = (parseFloat(seekEl.value) / 100) * video.duration;
   });
 
-  audio.addEventListener("timeupdate", updateSeek);
-  audio.addEventListener("loadedmetadata", updateSeek);
-  audio.addEventListener("ended", () => {
+  video.addEventListener("timeupdate", updateSeek);
+  video.addEventListener("loadedmetadata", updateSeek);
+  video.addEventListener("ended", () => {
     stopVisual();
-    audio.currentTime = 0;
+    video.currentTime = 0;
     seekEl.value = 0;
     currentEl.textContent = formatTime(0);
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (!fileInput.files || !fileInput.files.length) {
+      fileNameEl.textContent = "Load mp3 or video files from your computer to play them here.";
+      return;
+    }
+
+    let startIndex = tracks.length;
+    Array.from(fileInput.files).forEach((file) => {
+      const url = URL.createObjectURL(file);
+      const entry = { name: file.name, url, type: file.type };
+      tracks.push(entry);
+      addOption(entry, tracks.length - 1, "Local: ");
+    });
+
+    selectEl.value = `${startIndex}`;
+    loadTrack(startIndex);
+    registerMediaElement(video);
+    video.play();
+    fileNameEl.textContent =
+      fileInput.files.length === 1
+        ? `Loaded ${fileInput.files[0].name}`
+        : `Loaded ${fileInput.files.length} files`;
   });
 
   loadTrack(currentTrack);
   selectEl.value = "0";
 
   w.toggleMedia = (btn, action) => {
+    const videoMode = canvas.style.display === "none";
     if (action === "play") {
-      registerMediaElement(audio);
-      audio.play();
-      if (!interval) interval = setInterval(animate, 30);
+      registerMediaElement(video);
+      video.play();
+      if (!videoMode && !interval) interval = setInterval(animate, 30);
     } else if (action === "pause") {
-      audio.pause();
+      video.pause();
       stopVisual();
     } else {
-      audio.pause();
-      audio.currentTime = 0;
+      video.pause();
+      video.currentTime = 0;
       seekEl.value = 0;
       currentEl.textContent = formatTime(0);
       stopVisual();
@@ -2890,6 +3169,70 @@ function renderMarkdown(text) {
   return output.join("\n");
 }
 
+function initImageViewer(win, initData) {
+  const fileInput = win.querySelector(".img-file-input");
+  const urlInput = win.querySelector(".img-url-input");
+  const loadBtn = win.querySelector(".img-load-btn");
+  const preview = win.querySelector(".img-preview");
+  const placeholder = win.querySelector(".img-placeholder");
+  const status = win.querySelector(".img-status");
+
+  const setStatus = (text) => {
+    if (status) status.textContent = text;
+  };
+
+  const showPlaceholder = (message) => {
+    if (placeholder) {
+      placeholder.style.display = "flex";
+      placeholder.textContent = message || "Drop an image or click Open";
+    }
+    if (preview) preview.style.display = "none";
+  };
+
+  const setImage = (src, label) => {
+    if (!preview || !placeholder) return;
+    if (!src) {
+      showPlaceholder("No image loaded");
+      setStatus("No image loaded");
+      return;
+    }
+    preview.onload = () => {
+      placeholder.style.display = "none";
+      preview.style.display = "block";
+      setStatus(`Loaded ${label || "image"}`);
+    };
+    preview.onerror = () => {
+      showPlaceholder("Failed to load image");
+      setStatus("Failed to load image");
+    };
+    preview.src = src;
+    preview.alt = label || "Image preview";
+  };
+
+  if (initData?.src) setImage(initData.src, initData.name);
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setImage(ev.target.result, file.name);
+    reader.readAsDataURL(file);
+  });
+
+  const loadUrl = () => {
+    const url = urlInput?.value.trim();
+    if (url) setImage(url, url);
+  };
+
+  loadBtn?.addEventListener("click", loadUrl);
+  urlInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadUrl();
+    }
+  });
+}
+
 function initPdfReader(win, initData) {
   const fileInput = win.querySelector(".pdf-file-input");
   const urlInput = win.querySelector(".pdf-url-input");
@@ -3141,7 +3484,11 @@ function rFL(w) {
           rFL(w);
         } else if (i.app) {
           const size =
-            i.app === "skifree" ? { w: 520, h: 520 } : { w: 400, h: 300 };
+            i.app === "skifree"
+              ? { w: 520, h: 520 }
+              : i.app === "imageviewer"
+                ? { w: 720, h: 540 }
+                : { w: 400, h: 300 };
           wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
         }
       };
