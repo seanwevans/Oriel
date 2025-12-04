@@ -6541,6 +6541,48 @@ function initSplash() {
   });
 }
 
+
+// System / General
+window.createFolder = createFolder;
+window.switchTask = switchTask;
+window.endTask = endTask;
+
+// Apps
+window.handleConsoleKey = handleConsoleKey; // Fixes the Console App
+window.calcInput = calcInput;
+window.resetMines = resetMines;
+window.toggleMedia = toggleMedia;
+window.selectPaintTool = selectPaintTool;
+window.clearPaint = clearPaint;
+window.copyCharMap = copyCharMap;
+window.runCompiler = runCompiler;
+window.runPython = runPython;
+
+// Database App
+window.addDbRecord = addDbRecord;
+window.exportDbToCsv = exportDbToCsv;
+window.deleteDbRecord = deleteDbRecord;
+
+// Photoshop App
+window.psTriggerOpen = psTriggerOpen;
+window.psNewDocument = psNewDocument;
+window.psExport = psExport;
+window.setPsTool = setPsTool;
+window.psApplyFilter = psApplyFilter;
+window.psFillCanvas = psFillCanvas;
+
+// Control Panel
+window.openCPColor = openCPColor;
+window.openCPDesktop = openCPDesktop;
+window.openCPScreensaver = openCPScreensaver;
+window.openCPSound = openCPSound;
+window.openCPFonts = openCPFonts;
+window.applyTheme = applyTheme;
+window.setWallpaper = setWallpaper;
+window.previewScreensaver = previewScreensaver;
+window.applyScreensaver = applyScreensaver;
+window.applyFontSelection = applyFontSelection;
+
 window.onload = () => {
     initSplash();
     initScreensaver();    
