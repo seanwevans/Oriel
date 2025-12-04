@@ -2943,7 +2943,8 @@ function appendConsoleLine(w, text = "") {
   const line = document.createElement("div");
   line.textContent = text;
   output.appendChild(line);
-  output.scrollTop = output.scrollHeight;
+  const consoleEl = w.querySelector(".console");
+  if (consoleEl) consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
 function processConsoleCommand(w, input) {
