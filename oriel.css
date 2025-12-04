@@ -1229,7 +1229,6 @@ body {
   border: 1px dashed #c29b00;
 }
 
-/* Database Styles */
 .db-layout {
   display: flex;
   flex-direction: column;
@@ -3333,7 +3332,6 @@ body {
   font-weight: bold;
 }
 
-/* Splash Screen Styles */
 #splash-screen {
     position: fixed;
     top: 0;
@@ -3354,7 +3352,6 @@ body {
     gap: 20px;
 }
 
-/* The Windows Flag */
 .win-logo {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -3377,7 +3374,6 @@ body {
 .win-pane.blue { background-color: #3131ee; border-radius: 0 0 0 10px; }
 .win-pane.yellow { background-color: #eeee00; border-radius: 0 0 10px 0; }
 
-/* The Text */
 .splash-text {
     color: white;
     font-family: "Times New Roman", serif;
@@ -3411,7 +3407,6 @@ body {
     font-size: 10px;
 }
 
-/* --- Splash Screen Layout Updates --- */
 #splash-screen {
     /* Existing styles remain... */
     display: flex;
@@ -3427,14 +3422,12 @@ body {
     gap: 40px; /* Space between logo and loading bar */
 }
 
-/* Ensure the logo/text row stays horizontal */
 .splash-content {
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-/* --- Windows XP Loader Styles --- */
 .xp-load-container {
     width: 250px;
     height: 16px;
@@ -3459,7 +3452,6 @@ body {
     box-shadow: 0 0 4px #2b60de;
 }
 
-/* Stagger the three blocks */
 .xp-load-bar:nth-child(1) { animation-delay: 0s; }
 .xp-load-bar:nth-child(2) { animation-delay: 0.15s; }
 .xp-load-bar:nth-child(3) { animation-delay: 0.3s; }

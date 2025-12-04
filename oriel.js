@@ -474,6 +474,7 @@ const RSS_PRESETS = [
   { label: "BBC World", url: "http://feeds.bbci.co.uk/news/world/rss.xml" },
   { label: "Ars Technica", url: "http://feeds.arstechnica.com/arstechnica/index" }
 ];
+
 const DEFAULT_RSS_SAMPLE = [
   {
     title: "Welcome to Oriel RSS",
@@ -483,6 +484,7 @@ const DEFAULT_RSS_SAMPLE = [
       "Load a feed from the toolbar presets or paste any RSS/Atom URL. Items appear on the left and show details here."
   }
 ];
+
 const RSS_PROXY_ROOT = "https://api.allorigins.win/raw?url=";
 
 const IRC_BOT_MESSAGES = [
@@ -545,6 +547,7 @@ function generateToneUrl(freq, duration = 1.2, sampleRate = 22050) {
 }
 
 let mediaPlayerTracks = null;
+
 function getMediaPlayerTracks() {
   if (!mediaPlayerTracks) {
     mediaPlayerTracks = [
@@ -609,6 +612,7 @@ function registerMediaElement(el) {
 }
 
 let testToneContext = null;
+
 function playVolumeTest() {
   testToneContext =
     testToneContext || new (window.AudioContext || window.webkitAudioContext)();
@@ -5272,10 +5276,6 @@ function updateConsolePrompt(w) {
   if (prompt) prompt.textContent = `${state.cwd}>`;
 }
 
-// Lightweight Unix command support powered by the Cash command behaviors
-// (https://github.com/dthree/cash). The implementations below adapt Cash's
-// expected filesystem interactions to the in-browser MOCK_FS structure.
-
 function consolePathFromUnix(targetPath, cwd) {
   const unixCwd = cwd.replace(/^C:\\/, "/").replace(/\\/g, "/");
   const normalized = (targetPath || ".").replace(/\\/g, "/");
@@ -6559,7 +6559,6 @@ function initSplash() {
     removeSplash();
   });
 }
-
 
 window.onload = () => {
     initSplash();
