@@ -34,6 +34,7 @@ const ICONS = {
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
+  volume: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M4 12h6l8-6v20l-8-6H4z" fill="#c0c0c0" stroke="black"/><path d="M21 10c2 2 2 10 0 12M24 7c4 4 4 14 0 18" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
 };
 
 const DEFAULT_PDF_DATA_URI =
@@ -122,6 +123,79 @@ function createFolder(btn) {
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+
+const VOLUME_STORAGE_KEY = "oriel-volume";
+
+function clampVolume(v) {
+  return Math.min(1, Math.max(0, v));
+}
+
+function loadStoredVolume() {
+  const stored = parseFloat(localStorage.getItem(VOLUME_STORAGE_KEY));
+  if (isNaN(stored)) return 0.7;
+  return clampVolume(stored);
+}
+
+let systemVolume = loadStoredVolume();
+let lastNonZeroVolume = systemVolume || 0.7;
+const activeMediaElements = new Set();
+
+function getSystemVolume() {
+  return systemVolume;
+}
+
+function updateVolumeUIElements(volume) {
+  const percent = `${Math.round(volume * 100)}%`;
+  document
+    .querySelectorAll(".volume-slider")
+    .forEach((slider) => (slider.value = Math.round(volume * 100)));
+  document
+    .querySelectorAll(".volume-percent")
+    .forEach((label) => (label.textContent = percent));
+  document
+    .querySelectorAll(".volume-mute-toggle")
+    .forEach((chk) => (chk.checked = volume === 0));
+}
+
+function setSystemVolume(value) {
+  systemVolume = clampVolume(value);
+  if (systemVolume > 0) lastNonZeroVolume = systemVolume;
+  localStorage.setItem(VOLUME_STORAGE_KEY, systemVolume.toString());
+  activeMediaElements.forEach((el) => {
+    el.volume = systemVolume;
+  });
+  updateVolumeUIElements(systemVolume);
+}
+
+function registerMediaElement(el) {
+  if (!el) return;
+  el.volume = systemVolume;
+  activeMediaElements.add(el);
+  const cleanup = () => activeMediaElements.delete(el);
+  el.addEventListener("ended", cleanup, { once: true });
+  el.addEventListener("pause", () => {
+    if (el.currentTime === 0 || el.currentTime >= (el.duration || 0)) {
+      cleanup();
+    }
+  });
+}
+
+let testToneContext = null;
+function playVolumeTest() {
+  testToneContext =
+    testToneContext || new (window.AudioContext || window.webkitAudioContext)();
+  const ctx = testToneContext;
+  if (ctx.state === "suspended") ctx.resume();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 880;
+  gain.gain.value = systemVolume;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.4);
+}
 
 class SimulatedKernel {
   constructor() {
@@ -767,7 +841,7 @@ class WindowManager {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPSound(this)">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
   }
   getNotepadContent(txt) {
     return `<textarea class="notepad-area" spellcheck="false">${
@@ -1113,6 +1187,84 @@ function openCPScreensaver(target, containerOverride) {
   };
   updateDesc();
   select?.addEventListener("change", updateDesc);
+}
+
+function openCPSound(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "sound")
+      );
+  }
+
+  const currentVolume = Math.round(getSystemVolume() * 100);
+
+  body.innerHTML = `<div class="cp-settings-layout">
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">System Volume</div>
+            <div class="volume-row">
+                <input type="range" min="0" max="100" value="${currentVolume}" class="volume-slider" aria-label="System volume">
+                <span class="volume-percent">${currentVolume}%</span>
+            </div>
+            <label class="volume-mute"><input type="checkbox" class="volume-mute-toggle" ${
+              currentVolume === 0 ? "checked" : ""
+            }>Mute</label>
+            <div class="volume-actions">
+                <button class="task-btn volume-test-btn">Test Beep</button>
+                <button class="task-btn volume-reset-btn">Reset</button>
+            </div>
+            <div class="volume-note">Adjusts playback volume for all Oriel apps.</div>
+        </div>
+    </div>`;
+
+  const slider = body.querySelector(".volume-slider");
+  const muteToggle = body.querySelector(".volume-mute-toggle");
+  const syncUI = (vol) => {
+    if (slider) slider.value = Math.round(vol * 100);
+    if (muteToggle) muteToggle.checked = vol === 0;
+    const pct = body.querySelector(".volume-percent");
+    if (pct) pct.textContent = `${Math.round(vol * 100)}%`;
+  };
+
+  slider?.addEventListener("input", (e) => {
+    const vol = Number(e.target.value) / 100;
+    setSystemVolume(vol);
+    syncUI(getSystemVolume());
+  });
+
+  muteToggle?.addEventListener("change", (e) => {
+    if (e.target.checked) {
+      setSystemVolume(0);
+    } else {
+      setSystemVolume(lastNonZeroVolume || 0.5);
+    }
+    syncUI(getSystemVolume());
+  });
+
+  body.querySelector(".volume-reset-btn")?.addEventListener("click", () => {
+    setSystemVolume(0.7);
+    syncUI(getSystemVolume());
+  });
+
+  body.querySelector(".volume-test-btn")?.addEventListener("click", () => {
+    playVolumeTest();
+  });
 }
 
 function setWallpaper() {
@@ -1939,6 +2091,7 @@ function initControlPanel(w) {
     <div class="menu-item cp-menu-item active" data-view="desktop">Desktop</div>
     <div class="menu-item cp-menu-item" data-view="color">Colors</div>
     <div class="menu-item cp-menu-item" data-view="screensaver">Screensaver</div>
+    <div class="menu-item cp-menu-item" data-view="sound">Sound</div>
     <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
@@ -1948,6 +2101,7 @@ function initControlPanel(w) {
       <button class="task-btn cp-tab-btn active" data-view="desktop">Desktop</button>
       <button class="task-btn cp-tab-btn" data-view="color">Colors</button>
       <button class="task-btn cp-tab-btn" data-view="screensaver">Screensaver</button>
+      <button class="task-btn cp-tab-btn" data-view="sound">Sound</button>
       <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
@@ -1974,6 +2128,7 @@ function initControlPanel(w) {
     if (view === "desktop") openCPDesktop(viewArea);
     else if (view === "color") openCPColor(viewArea);
     else if (view === "screensaver") openCPScreensaver(viewArea);
+    else if (view === "sound") openCPSound(viewArea);
     else if (view === "fonts") openCPFonts(viewArea);
     else renderHome();
   };
@@ -2663,6 +2818,7 @@ function initSoundRecorder(w) {
   w.querySelector("#btn-play").onclick = () => {
     if (audioUrl) {
       const audio = new Audio(audioUrl);
+      registerMediaElement(audio);
       audio.play();
       status.innerText = "Playing...";
       audio.onended = () => { status.innerText = "Ready"; };
