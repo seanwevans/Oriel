@@ -2110,15 +2110,22 @@ let chessLibPromise = null;
 
 function loadChessLibrary() {
   if (!chessLibPromise) {
-    chessLibPromise = new Promise((resolve, reject) => {      
-      if (window.Chess) return resolve(window.Chess);      
-      import("./vendor/chess.min.js")
-        .then((module) => {          
-          resolve(module.Chess);
-        })
-        .catch((e) => {          
-          reject(e);
-        });
+    chessLibPromise = new Promise((resolve, reject) => {
+      // 1. If loaded, return it
+      if (window.Chess) return resolve(window.Chess);
+
+      // 2. Create script tag (Like DOOM/JsDos)
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js";
+      
+      // 3. Resolve when loaded
+      script.onload = () => {
+        if (window.Chess) resolve(window.Chess);
+        else reject(new Error("Chess.js loaded but window.Chess is missing"));
+      };
+      script.onerror = (e) => reject(e);
+      
+      document.head.appendChild(script);
     });
   }
   return chessLibPromise;
@@ -2127,29 +2134,39 @@ function loadChessLibrary() {
 function initStockfishEngine(w) {
   if (w.chessWorkerReady) return Promise.resolve(w.chessWorker);
   if (w.chessWorkerInit) return w.chessWorkerInit;
+
   w.chessWorkerInit = new Promise((resolve, reject) => {
-    try {
-      const worker = new Worker(
-        "https://cdn.jsdelivr.net/npm/stockfish@16.1.1/src/stockfish.js"
-      );
-      w.chessWorker = worker;
-      const onMsg = (event) => {
-        const msg = String(event.data || "");
-        if (msg.includes("uciok")) worker.postMessage("isready");
-        if (msg.includes("readyok")) {
-          worker.removeEventListener("message", onMsg);
-          w.chessWorkerReady = true;
-          resolve(worker);
-        }
-      };
-      worker.addEventListener("message", onMsg);
-      worker.onerror = (e) => reject(e);
-      worker.postMessage("uci");
-      worker.postMessage("setoption name Skill Level value 5");
-      worker.postMessage("ucinewgame");
-    } catch (err) {
-      reject(err);
-    }
+    // 1. Fetch the worker code from CDN
+    fetch("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js")
+      .then(res => res.blob())
+      .then(blob => {
+        // 2. Create a local blob URL
+        const blobUrl = URL.createObjectURL(blob);
+        const worker = new Worker(blobUrl);
+        w.chessWorker = worker;
+
+        const onMsg = (event) => {
+          const msg = String(event.data || "");
+          if (msg.includes("uciok")) worker.postMessage("isready");
+          if (msg.includes("readyok")) {
+            worker.removeEventListener("message", onMsg);
+            w.chessWorkerReady = true;
+            resolve(worker);
+          }
+        };
+
+        worker.addEventListener("message", onMsg);
+        worker.onerror = (e) => reject(e);
+        
+        // 3. Initialize Engine
+        worker.postMessage("uci");
+        worker.postMessage("setoption name Skill Level value 5");
+        worker.postMessage("ucinewgame");
+      })
+      .catch((err) => {
+        console.error("Stockfish failed to load:", err);
+        reject(err);
+      });
   });
   return w.chessWorkerInit;
 }
