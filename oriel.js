@@ -733,7 +733,7 @@ class WindowManager {
     return `<div class="winfile-layout"><div class="drive-bar"><div class="drive-icon active">a:</div><div class="drive-icon active">c:</div><div class="drive-icon active">d:</div><div style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"><input type="text" id="new-folder-name" style="width:80px;height:18px;font-size:11px;" placeholder="Folder Name"><button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button><span>C:\\</span></div></div><div class="winfile-main"><div class="winfile-pane winfile-tree"><div class="winfile-pane-header">C:\\</div><div id="file-tree-root"></div></div><div class="winfile-pane winfile-list"><div class="winfile-pane-header" id="file-list-header">C:\\*.*</div><div class="file-list-view" id="file-list-view"></div></div></div><div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div></div>`;
   }
   getSoundRecContent() {
-    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
+    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div class="sound-volume"><label for="volume-slider">Volume</label><input type="range" id="volume-slider" min="0" max="100" value="100"><span id="volume-label">100%</span></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
   }
   getCharMapContent() {
     return `<div class="char-map-layout">
@@ -2579,6 +2579,8 @@ function initSoundRecorder(w) {
   const canvas = w.querySelector(".sound-wave-canvas");
   const ctx = canvas.getContext("2d");
   const status = w.querySelector("#sound-status");
+  const volumeSlider = w.querySelector("#volume-slider");
+  const volumeLabel = w.querySelector("#volume-label");
   
   let mediaRecorder;
   let audioChunks = [];
@@ -2590,6 +2592,22 @@ function initSoundRecorder(w) {
   let source;
   let streamRef;
   let animationId;
+  let playbackVolume = volumeSlider ? Number(volumeSlider.value) / 100 : 1;
+  let currentAudio = null;
+
+  const updateVolumeLabel = () => {
+    if (!volumeSlider || !volumeLabel) return;
+    volumeLabel.innerText = `${volumeSlider.value}%`;
+  };
+
+  if (volumeSlider) {
+    updateVolumeLabel();
+    volumeSlider.oninput = () => {
+      playbackVolume = Number(volumeSlider.value) / 100;
+      updateVolumeLabel();
+      if (currentAudio) currentAudio.volume = playbackVolume;
+    };
+  }
 
   // Visualization Loop
   function draw() {
@@ -2662,10 +2680,18 @@ function initSoundRecorder(w) {
   // PLAY
   w.querySelector("#btn-play").onclick = () => {
     if (audioUrl) {
+      if (currentAudio) {
+        currentAudio.pause();
+      }
       const audio = new Audio(audioUrl);
+      audio.volume = playbackVolume;
       audio.play();
+      currentAudio = audio;
       status.innerText = "Playing...";
-      audio.onended = () => { status.innerText = "Ready"; };
+      audio.onended = () => {
+        status.innerText = "Ready";
+        currentAudio = null;
+      };
     }
   };
 }
