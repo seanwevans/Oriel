@@ -1008,6 +1008,97 @@ body {
   z-index: 10;
 }
 
+.artist-app {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  background: var(--win-gray);
+}
+
+.artist-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--win-gray-shadow);
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+}
+
+.artist-prompt {
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--win-gray-dark);
+  font-family: var(--font-main);
+}
+
+.artist-status {
+  font-size: 12px;
+  color: #003366;
+}
+
+.artist-status-error {
+  color: #a00000;
+  font-weight: bold;
+}
+
+.artist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px 8px 8px;
+  height: 100%;
+}
+
+.artist-preview-wrap {
+  flex: 1;
+  min-height: 200px;
+  border: 1px solid var(--win-gray-shadow);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.artist-preview {
+  max-width: 100%;
+  max-height: 100%;
+  display: none;
+}
+
+.artist-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  background: repeating-linear-gradient(
+    45deg,
+    #f5f5f5 0,
+    #f5f5f5 12px,
+    #e8e8e8 12px,
+    #e8e8e8 24px
+  );
+  text-align: center;
+  padding: 12px;
+}
+
+.artist-hint {
+  font-size: 12px;
+  color: #333;
+}
+
+.artist-link {
+  font-size: 12px;
+  color: #003399;
+  text-decoration: underline;
+  width: fit-content;
+}
+
 .ps-layout {
   display: flex;
   flex-direction: column;
@@ -3083,6 +3174,48 @@ body {
   z-index: 9999;
   display: none;
   cursor: none;
+}
+
+#bsod-overlay {
+  position: absolute;
+  inset: 0;
+  background: #0c4cb3;
+  color: #cddfff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+  padding: 40px;
+}
+
+#bsod-overlay.visible {
+  display: flex;
+}
+
+.bsod-content {
+  max-width: 720px;
+  line-height: 1.6;
+}
+
+.bsod-sad {
+  font-size: 96px;
+  margin-bottom: 24px;
+}
+
+.bsod-message {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.bsod-code {
+  font-family: monospace;
+  margin-bottom: 12px;
+}
+
+.bsod-footer {
+  font-size: 14px;
+  opacity: 0.85;
 }
 
 #saver-canvas {

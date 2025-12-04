@@ -9,6 +9,7 @@ const ICONS = {
   hexedit: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#101010" stroke="#c0c0c0"/><rect x="6" y="8" width="20" height="16" fill="#1e1e1e" stroke="#404040"/><text x="16" y="18" font-family="monospace" font-size="10" fill="#00ff90" text-anchor="middle">0xED</text></svg>`,
   taskman: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" fill="#c0c0c0" stroke="black"/><rect x="6" y="6" width="20" height="4" fill="#000080"/><rect x="6" y="12" width="20" height="14" fill="white" stroke="black"/><line x1="8" y1="16" x2="24" y2="16" stroke="black"/><line x1="8" y1="20" x2="24" y2="20" stroke="black"/></svg>`,
   paint: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M10 24c0 2 2 4 4 4s4-2 4-4v-8h-8v8z" fill="#c0c0c0" stroke="black"/><rect x="10" y="10" width="8" height="6" fill="black"/><path d="M14 4l-4 6h8l-4-6z" fill="#c0c0c0" stroke="black"/><circle cx="24" cy="24" r="6" fill="#ff0000" opacity="0.5"/><circle cx="8" cy="24" r="6" fill="#0000ff" opacity="0.5"/></svg>`,
+  artist: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#f9e0ae" stroke="#8a5a00"/><path d="M8 18c0-4 6-8 10-8s6 3 6 6-3 6-6 6c-2 0-2-2-1.5-3.5s-1.5-2.5-3-1.5S8 22 8 18z" fill="#fff4d0" stroke="#8a5a00"/><circle cx="12" cy="12" r="2" fill="#ff6f61"/><circle cx="18" cy="12" r="2" fill="#6ccff6"/><circle cx="14" cy="17" r="2" fill="#8bd450"/><rect x="6" y="20" width="6" height="2" rx="1" fill="#8a5a00"/><rect x="5" y="21" width="3" height="5" rx="1" fill="#c29f5d"/></svg>`,
   photoshop: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" fill="#0b1d35" stroke="#00c8ff"/><rect x="6" y="6" width="20" height="20" fill="#112d4e" stroke="#00c8ff"/><text x="13" y="20" font-family="monospace" font-size="12" font-weight="bold" fill="#00c8ff">PS</text><rect x="18" y="10" width="6" height="2" fill="#00c8ff"/><rect x="18" y="14" width="6" height="2" fill="#00c8ff" opacity="0.7"/></svg>`,
   database: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M16 6c-8 0-12 2-12 4v12c0 2 4 4 12 4s12-2 12-4V10c0-2-4-4-12-4z" fill="#c0c0c0" stroke="black"/><ellipse cx="16" cy="10" rx="12" ry="4" fill="white" stroke="black"/><path d="M4 14c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/><path d="M4 18c0 2 4 4 12 4s12-2 12-4" fill="none" stroke="black"/></svg>`,
   soundrec: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="12" y="6" width="8" height="14" rx="4" fill="#404040" stroke="black"/><rect x="14" y="20" width="4" height="6" fill="#808080" stroke="black"/><rect x="10" y="26" width="12" height="2" fill="black"/><line x1="8" y1="12" x2="24" y2="12" stroke="#808080" stroke-width="2"/></svg>`,
@@ -386,6 +387,7 @@ const DEFAULT_FS = {
           "SOL.EXE": { type: "file", app: "solitaire" },
           "REVERSI.EXE": { type: "file", app: "reversi" },
           "PBRUSH.EXE": { type: "file", app: "paint" },
+          "ARTIST.EXE": { type: "file", app: "artist" },
           "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
           "MPLAYER.EXE": { type: "file", app: "mplayer" },
           "SKIFREE.EXE": { type: "file", app: "skifree" },
@@ -790,6 +792,7 @@ class WindowManager {
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
     if (type === "photoshop") content = this.getPhotoshopContent();
+    if (type === "artist") content = this.getArtistContent();
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
@@ -841,6 +844,7 @@ class WindowManager {
     if (type === "reversi") initReversi(winEl);
     if (type === "paint") initPaint(winEl);
     if (type === "photoshop") initPhotoshop(winEl);
+    if (type === "artist") initArtist(winEl);
     if (type === "mplayer") initMediaPlayer(winEl);
     if (type === "simcity") initSimCity(winEl);
     if (type === "skifree") initSkiFree(winEl);
@@ -1478,6 +1482,25 @@ class WindowManager {
   getPaintContent() {
     return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
+  getArtistContent() {
+    const defaultPrompt = "retro desktop art of a cozy computer lab";
+    return `
+                <div class="artist-app">
+                    <div class="artist-toolbar">
+                        <input class="artist-prompt" type="text" value="${defaultPrompt}" placeholder="Describe the image you want" spellcheck="false" />
+                        <button class="task-btn artist-generate">Generate</button>
+                        <span class="artist-status">Enter a prompt and click Generate.</span>
+                    </div>
+                    <div class="artist-body">
+                        <div class="artist-preview-wrap">
+                            <div class="artist-placeholder">Image will appear here</div>
+                            <img class="artist-preview" alt="AI generated art" />
+                        </div>
+                        <div class="artist-hint">Uses the free Pollinations image API. Right-click the result to save it.</div>
+                        <a class="artist-link" href="#" target="_blank" rel="noreferrer noopener">Open image directly</a>
+                    </div>
+                </div>`;
+  }
   getPhotoshopContent() {
     return `
                 <div class="ps-layout">
@@ -1539,6 +1562,8 @@ let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
 const sCtx = saverCanvas.getContext("2d");
 const screensaverDiv = document.getElementById("screensaver");
+const bsodOverlay = document.getElementById("bsod-overlay");
+const bsodCodeText = bsodOverlay?.querySelector(".bsod-code");
 let screensaverType = "starfield";
 let screensaverTimeout = 60;
 
@@ -1584,6 +1609,14 @@ function startScreensaver(forceType) {
   saverCanvas.width = window.innerWidth;
   saverCanvas.height = window.innerHeight;
   clearInterval(sInterval);
+
+  const shouldPrank = !forceType && Math.random() < 0.001;
+  if (shouldPrank) {
+    showFakeBsod();
+    return;
+  }
+
+  hideFakeBsod();
   if (saver === "pipes") {
     setupPipes();
     sInterval = setInterval(drawPipes, 50);
@@ -1597,6 +1630,21 @@ function stopScreensaver() {
   saverActive = false;
   screensaverDiv.style.display = "none";
   clearInterval(sInterval);
+  hideFakeBsod();
+}
+
+function showFakeBsod() {
+  if (!bsodOverlay) return;
+  const randomCode = Math.random().toString(16).slice(2, 8).toUpperCase();
+  if (bsodCodeText) bsodCodeText.textContent = `STOP CODE: ${randomCode}`;
+  bsodOverlay.classList.add("visible");
+  saverCanvas.style.display = "none";
+}
+
+function hideFakeBsod() {
+  if (!bsodOverlay) return;
+  bsodOverlay.classList.remove("visible");
+  saverCanvas.style.display = "block";
 }
 
 function setupStarfield() {
@@ -4037,6 +4085,79 @@ function initImageViewer(win, initData) {
       loadUrl();
     }
   });
+}
+
+function initArtist(win) {
+  const promptInput = win.querySelector(".artist-prompt");
+  const generateBtn = win.querySelector(".artist-generate");
+  const status = win.querySelector(".artist-status");
+  const preview = win.querySelector(".artist-preview");
+  const placeholder = win.querySelector(".artist-placeholder");
+  const link = win.querySelector(".artist-link");
+
+  if (!promptInput || !generateBtn || !status || !preview || !placeholder || !link)
+    return;
+
+  const setStatus = (msg, isError = false) => {
+    status.textContent = msg;
+    status.classList.toggle("artist-status-error", isError);
+  };
+
+  const setLoading = (loading) => {
+    generateBtn.disabled = loading;
+    generateBtn.textContent = loading ? "Generating..." : "Generate";
+  };
+
+  const showPlaceholder = (msg) => {
+    placeholder.style.display = "flex";
+    placeholder.textContent = msg;
+    preview.style.display = "none";
+  };
+
+  const displayImage = (url) => {
+    preview.onload = () => {
+      placeholder.style.display = "none";
+      preview.style.display = "block";
+      setStatus("Image ready. Right-click to save.");
+      setLoading(false);
+    };
+    preview.onerror = () => {
+      showPlaceholder("Failed to load image. Try again.");
+      setStatus("Image request failed.", true);
+      setLoading(false);
+    };
+    preview.src = url;
+    link.href = url;
+  };
+
+  const requestImage = () => {
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+      setStatus("Enter a description first.", true);
+      return;
+    }
+    setLoading(true);
+    setStatus("Requesting image from Pollinations...");
+    showPlaceholder("Generating image...");
+
+    const apiUrl =
+      "https://image.pollinations.ai/prompt/" +
+      encodeURIComponent(prompt) +
+      `?width=1024&height=1024&seed=${Date.now()}`;
+
+    displayImage(apiUrl);
+  };
+
+  generateBtn.addEventListener("click", requestImage);
+  promptInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      requestImage();
+    }
+  });
+
+  // Kick off an initial render using the default prompt
+  requestImage();
 }
 
 function initPdfReader(win, initData) {
