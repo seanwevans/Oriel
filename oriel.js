@@ -26,6 +26,7 @@ const ICONS = {
   skifree: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 26l20-20" stroke="#000080" stroke-width="2"/><path d="M6 22l12-12" stroke="#000080" stroke-width="2"/><circle cx="16" cy="10" r="3" fill="#ff4040" stroke="black"/><rect x="14" y="13" width="4" height="7" fill="#ffffff" stroke="black"/><path d="M14 16l-4 3" stroke="#000" stroke-width="2"/><path d="M18 16l4 3" stroke="#000" stroke-width="2"/><path d="M14 20l-4 6" stroke="#000" stroke-width="2"/><path d="M18 20l4 6" stroke="#000" stroke-width="2"/></svg>`,
   chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
+  irc: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#c0e0ff" stroke="#003366"/><rect x="8" y="10" width="12" height="4" rx="2" fill="white" stroke="#003366"/><circle cx="22" cy="20" r="4" fill="#004080"/><path d="M22 17c1.5 0 2.5.7 3 1.8" stroke="white" stroke-width="1" fill="none"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -84,6 +85,7 @@ const DEFAULT_FS = {
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
           "WEB.EXE": { type: "file", app: "browser" },
+          "IRC.EXE": { type: "file", app: "irc" },
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
           "CONSOLE.EXE": { type: "file", app: "console" }
@@ -136,6 +138,18 @@ function createFolder(btn) {
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+
+const IRC_BOT_MESSAGES = [
+  "Anyone else miss dial-up modems?",
+  "Set your away message with /away <msg>!",
+  "New high score in SkiFree: 12,430 points.",
+  "Reminder: backups save lives.",
+  "Try the checkpoint game—papers, please!",
+  "TinyC compile succeeded. No warnings.",
+  "Have you tweaked your wallpaper today?",
+  "Oriel 1.0 loves retro vibes.",
+  "Remember to hydrate and stretch."
+];
 
 const VOLUME_STORAGE_KEY = "oriel-volume";
 
@@ -440,6 +454,7 @@ class WindowManager {
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "browser") content = this.getBrowserContent();
+    if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
     const winEl = this.createWindowDOM(id, title, w, h, content);
@@ -480,6 +495,7 @@ class WindowManager {
     if (type === "pdfreader") initPdfReader(winEl, initData);
     if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
+    if (type === "irc") initIRC(winEl);
     if (type === "doom") initDoom(winEl);
     if (type === "papers") initPapersPlease(winEl);
     // Refresh logic
@@ -495,6 +511,7 @@ class WindowManager {
         closingWin.el.skifreeCleanup();
       if (typeof closingWin.el.lineRiderCleanup === "function")
         closingWin.el.lineRiderCleanup();
+      if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
         closingWin.el.doomCI = null;
@@ -763,6 +780,10 @@ class WindowManager {
                         ${ICONS.browser}
                         <div class="prog-label">Browser</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('irc', 'IRC Client', 680, 500)">
+                        ${ICONS.irc}
+                        <div class="prog-label">IRC</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('readme', 'Read Me', 350, 400)">
                         ${ICONS.readme}
                         <div class="prog-label">Read Me</div>
@@ -876,6 +897,39 @@ class WindowManager {
               <div class="browser-view">
                 <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
                 <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
+  }
+  getIRCContent() {
+    return `<div class="irc-layout">
+              <div class="irc-header">
+                <div class="irc-field">
+                  <label>Server</label>
+                  <input type="text" class="irc-server" value="irc.oriel.local" spellcheck="false">
+                </div>
+                <div class="irc-field">
+                  <label>Nick</label>
+                  <input type="text" class="irc-nick" value="guest" spellcheck="false">
+                </div>
+                <div class="irc-field">
+                  <label>Channel</label>
+                  <input type="text" class="irc-channel" value="#oriel" spellcheck="false">
+                </div>
+                <div class="irc-actions">
+                  <button class="task-btn irc-connect">Connect</button>
+                  <button class="task-btn irc-join" disabled>Join</button>
+                </div>
+              </div>
+              <div class="irc-body">
+                <div class="irc-log" aria-live="polite"></div>
+                <div class="irc-sidebar">
+                  <div class="irc-sidebar-header">Users</div>
+                  <div class="irc-users"></div>
+                </div>
+              </div>
+              <div class="irc-input-row">
+                <input type="text" class="irc-input" placeholder="Type a message and hit Enter" spellcheck="false" disabled>
+                <button class="task-btn irc-send" disabled>Send</button>
               </div>
             </div>`;
   }
@@ -1567,6 +1621,141 @@ function initBrowser(win) {
   });
 
   loadUrl(BROWSER_HOME);
+}
+
+function initIRC(win) {
+  const serverInput = win.querySelector(".irc-server");
+  const nickInput = win.querySelector(".irc-nick");
+  const channelInput = win.querySelector(".irc-channel");
+  const connectBtn = win.querySelector(".irc-connect");
+  const joinBtn = win.querySelector(".irc-join");
+  const sendBtn = win.querySelector(".irc-send");
+  const input = win.querySelector(".irc-input");
+  const logEl = win.querySelector(".irc-log");
+  const usersEl = win.querySelector(".irc-users");
+
+  if (!serverInput || !nickInput || !channelInput || !connectBtn || !joinBtn || !sendBtn || !input || !logEl || !usersEl) return;
+
+  let connected = false;
+  let currentChannel = null;
+  let botInterval = null;
+  const users = new Set();
+
+  const escapeHtml = (str) =>
+    String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  const addLog = (prefix, message, cls = "") => {
+    const row = document.createElement("div");
+    row.className = `irc-log-row ${cls}`.trim();
+    const time = new Date();
+    const ts = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    row.innerHTML = `<span class="irc-log-time">[${ts}]</span> <span class="irc-log-prefix">${escapeHtml(
+      prefix
+    )}</span> <span class="irc-log-msg">${escapeHtml(message)}</span>`;
+    logEl.appendChild(row);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  const refreshUsers = () => {
+    usersEl.innerHTML = "";
+    if (!users.size) {
+      usersEl.innerHTML = '<div class="irc-user">(empty)</div>';
+      return;
+    }
+    Array.from(users)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((u) => {
+        const div = document.createElement("div");
+        div.className = "irc-user";
+        div.textContent = u;
+        usersEl.appendChild(div);
+      });
+  };
+
+  refreshUsers();
+
+  const toggleConnectedState = (state) => {
+    connected = state;
+    connectBtn.textContent = connected ? "Disconnect" : "Connect";
+    joinBtn.disabled = !connected;
+    input.disabled = !connected || !currentChannel;
+    sendBtn.disabled = input.disabled;
+    channelInput.disabled = !connected ? false : currentChannel !== null;
+    if (!connected) {
+      currentChannel = null;
+      users.clear();
+      refreshUsers();
+      if (botInterval) clearInterval(botInterval);
+      botInterval = null;
+    }
+  };
+
+  const fakeServerMessage = (text) => addLog("*", text, "irc-system");
+
+  const joinChannel = (chan) => {
+    const nick = nickInput.value.trim() || "guest";
+    currentChannel = chan;
+    input.disabled = false;
+    sendBtn.disabled = false;
+    channelInput.disabled = true;
+    users.clear();
+    [nick, "sysop", "retroBot"].forEach((u) => users.add(u));
+    refreshUsers();
+    fakeServerMessage(`Joined ${chan}`);
+    addLog(`<${nick}>`, `has entered ${chan}`, "irc-self");
+
+    if (botInterval) clearInterval(botInterval);
+    botInterval = setInterval(() => {
+      if (!connected || !currentChannel) return;
+      const botMsg = IRC_BOT_MESSAGES[Math.floor(Math.random() * IRC_BOT_MESSAGES.length)];
+      addLog("<retroBot>", botMsg, "irc-bot");
+    }, 9000);
+  };
+
+  const handleSend = () => {
+    const text = input.value.trim();
+    if (!text || !connected || !currentChannel) return;
+    const nick = nickInput.value.trim() || "guest";
+    addLog(`<${nick}>`, text, "irc-self");
+    input.value = "";
+  };
+
+  connectBtn.addEventListener("click", () => {
+    if (connected) {
+      fakeServerMessage("Connection closed.");
+      toggleConnectedState(false);
+      return;
+    }
+    const server = serverInput.value.trim() || "irc.oriel.local";
+    const nick = nickInput.value.trim() || "guest";
+    fakeServerMessage(`Connecting to ${server} as ${nick}...`);
+    setTimeout(() => {
+      fakeServerMessage(`Welcome to ${server}. Use /help for commands.`);
+      toggleConnectedState(true);
+    }, 500);
+  });
+
+  joinBtn.addEventListener("click", () => {
+    if (!connected) return;
+    const chan = channelInput.value.trim();
+    if (!chan) return;
+    joinChannel(chan.startsWith("#") ? chan : `#${chan}`);
+  });
+
+  sendBtn.addEventListener("click", handleSend);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  win.ircCleanup = () => {
+    if (botInterval) clearInterval(botInterval);
+  };
 }
 
 let selT = {};
