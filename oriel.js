@@ -30,6 +30,7 @@ const ICONS = {
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   irc: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#c0e0ff" stroke="#003366"/><rect x="8" y="10" width="12" height="4" rx="2" fill="white" stroke="#003366"/><circle cx="22" cy="20" r="4" fill="#004080"/><path d="M22 17c1.5 0 2.5.7 3 1.8" stroke="white" stroke-width="1" fill="none"/></svg>`,
   beatmaker: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" ry="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#202020" stroke="#808080"/><rect x="8" y="18" width="4" height="4" fill="#ff7043"/><rect x="14" y="18" width="4" height="4" fill="#fff176"/><rect x="20" y="18" width="4" height="4" fill="#66bb6a"/><rect x="10" y="12" width="12" height="2" fill="#00e5ff"/><rect x="12" y="10" width="8" height="2" fill="#00bcd4"/><rect x="10" y="14" width="12" height="2" fill="#00e676"/></svg>`,
+  radio: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="10" width="24" height="14" rx="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="14" height="4" fill="#c0c0c0" stroke="black"/><circle cx="22" cy="17" r="4" fill="#ffcc00" stroke="#c08000"/><circle cx="22" cy="17" r="2" fill="#0066cc"/><rect x="8" y="14" width="8" height="2" fill="#000"/><rect x="8" y="18" width="6" height="2" fill="#000"/><path d="M10 8 L18 4" stroke="#404040" stroke-width="2"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -88,6 +89,7 @@ const DEFAULT_FS = {
           "CHARMAP.EXE": { type: "file", app: "charmap" },
           "SOUNDREC.EXE": { type: "file", app: "soundrec" },
           "BEATLAB.EXE": { type: "file", app: "beatmaker" },
+          "RADIO.EXE": { type: "file", app: "radio" },
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
           "WEB.EXE": { type: "file", app: "browser" },
@@ -151,6 +153,7 @@ function createFolder(btn) {
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
 
 const IRC_BOT_MESSAGES = [
   "Anyone else miss dial-up modems?",
@@ -471,6 +474,7 @@ class WindowManager {
     if (type === "linerider") content = this.getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
     if (type === "soundrec") content = this.getSoundRecContent();
+    if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = this.getBeatMakerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = this.getWinFileContent();
@@ -513,6 +517,7 @@ class WindowManager {
     if (type === "linerider") initLineRider(winEl);
     if (type === "database") initDatabase(winEl);
     if (type === "soundrec") initSoundRecorder(winEl);
+    if (type === "radio") initRadio(winEl);
     if (type === "beatmaker") initBeatMaker(winEl);
     if (type === "charmap") initCharMap(winEl);
     if (type === "winfile") initFileManager(winEl);
@@ -769,6 +774,10 @@ class WindowManager {
                         ${ICONS.soundrec}
                         <div class="prog-label">Sound Rec</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('radio', 'Radio', 620, 460)">
+                        ${ICONS.radio}
+                        <div class="prog-label">Radio</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('beatmaker', 'Beat Lab', 720, 420)">
                         ${ICONS.beatmaker}
                         <div class="prog-label">Beat Lab</div>
@@ -979,6 +988,30 @@ class WindowManager {
               <div class="irc-input-row">
                 <input type="text" class="irc-input" placeholder="Type a message and hit Enter" spellcheck="false" disabled>
                 <button class="task-btn irc-send" disabled>Send</button>
+              </div>
+            </div>`;
+  }
+  getRadioContent() {
+    return `<div class="radio-layout">
+              <div class="radio-toolbar">
+                <div class="radio-search">
+                  <input type="text" class="radio-query" placeholder="Search stations or genres..." spellcheck="false" />
+                  <button class="task-btn radio-search-btn">Search</button>
+                  <button class="task-btn radio-top-btn" title="Load popular stations">Top</button>
+                </div>
+                <div class="radio-status">Find and play live internet radio via the free Radio Browser API.</div>
+              </div>
+              <div class="radio-body">
+                <div class="radio-list" role="listbox" aria-label="Radio stations"></div>
+                <div class="radio-player">
+                  <div class="radio-now">No station selected.</div>
+                  <audio class="radio-audio" controls></audio>
+                  <div class="radio-actions">
+                    <button class="task-btn radio-play">Play</button>
+                    <button class="task-btn radio-stop">Stop</button>
+                  </div>
+                  <div class="radio-meta">Use search or Top to load stations.</div>
+                </div>
               </div>
             </div>`;
   }
@@ -2125,6 +2158,162 @@ function initReversi(w) {
   };
 
   render();
+}
+
+async function initRadio(win) {
+  const listEl = win.querySelector(".radio-list");
+  const queryEl = win.querySelector(".radio-query");
+  const searchBtn = win.querySelector(".radio-search-btn");
+  const topBtn = win.querySelector(".radio-top-btn");
+  const statusEl = win.querySelector(".radio-status");
+  const nowEl = win.querySelector(".radio-now");
+  const metaEl = win.querySelector(".radio-meta");
+  const playBtn = win.querySelector(".radio-play");
+  const stopBtn = win.querySelector(".radio-stop");
+  const audioEl = win.querySelector(".radio-audio");
+
+  if (!listEl || !queryEl || !searchBtn || !topBtn || !audioEl) return;
+
+  registerMediaElement(audioEl);
+
+  let stations = [];
+  let selectedIndex = -1;
+
+  const setStatus = (msg, isError = false) => {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("radio-error", !!isError);
+  };
+
+  const renderStations = () => {
+    listEl.innerHTML = "";
+    if (!stations.length) {
+      listEl.innerHTML = "<div class='radio-empty'>No stations loaded yet.</div>";
+      return;
+    }
+    stations.forEach((st, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "radio-item" + (idx === selectedIndex ? " active" : "");
+      btn.dataset.index = idx.toString();
+      btn.setAttribute("role", "option");
+      const tags = (st.tags || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(", ");
+      btn.innerHTML = `
+        <div class="radio-station-title">${st.name || "Unnamed Station"}</div>
+        <div class="radio-meta-line">${st.country || ""}${
+        st.language ? " · " + st.language : ""
+      }</div>
+        <div class="radio-meta-line">${
+          st.codec ? st.codec.toUpperCase() + " · " : ""
+        }${st.bitrate ? st.bitrate + " kbps" : ""}${
+        tags ? " · " + tags : ""
+      }</div>`;
+      btn.addEventListener("click", () => selectStation(idx));
+      listEl.appendChild(btn);
+    });
+  };
+
+  const selectStation = (idx) => {
+    selectedIndex = idx;
+    const st = stations[idx];
+    listEl.querySelectorAll(".radio-item").forEach((el, i) => {
+      el.classList.toggle("active", i === selectedIndex);
+    });
+    const prettyName = `${st.name || "Unknown"}${
+      st.country ? " · " + st.country : ""
+    }`;
+    nowEl.textContent = `Now tuned to ${prettyName}`;
+    metaEl.textContent = `Codec: ${st.codec || "n/a"} · Bitrate: ${
+      st.bitrate || "--"
+    } kbps${st.tags ? " · Tags: " + st.tags.split(",").slice(0, 5).join(", ") : ""}`;
+    const streamUrl = st.url_resolved || st.url;
+    if (streamUrl) {
+      audioEl.src = streamUrl;
+      setStatus("Station ready. Press Play to start.");
+    } else {
+      setStatus("This station does not have a playable stream.", true);
+    }
+  };
+
+  const fetchStations = async (url, description) => {
+    setStatus(`Loading ${description}...`);
+    listEl.innerHTML = "<div class='radio-empty'>Fetching stations...</div>";
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      const data = await res.json();
+      stations = Array.isArray(data) ? data.slice(0, 30) : [];
+      selectedIndex = -1;
+      nowEl.textContent = "No station selected.";
+      metaEl.textContent = "Use search or Top to load stations.";
+      renderStations();
+      if (stations.length === 0) {
+        setStatus("No stations found for that query.", true);
+      } else {
+        setStatus(`Loaded ${stations.length} stations (${description}).`);
+      }
+    } catch (err) {
+      console.error(err);
+      listEl.innerHTML =
+        "<div class='radio-empty'>Could not load stations. Please try again.</div>";
+      setStatus("Network error while contacting Radio Browser.", true);
+    }
+  };
+
+  const startPlayback = () => {
+    if (selectedIndex < 0 || !audioEl.src) {
+      setStatus("Pick a station first.", true);
+      return;
+    }
+    audioEl
+      .play()
+      .then(() => setStatus("Playing live radio."))
+      .catch(() => setStatus("Playback blocked. Try pressing Play again.", true));
+  };
+
+  const stopPlayback = () => {
+    audioEl.pause();
+    audioEl.currentTime = 0;
+    setStatus("Stopped.");
+  };
+
+  searchBtn.addEventListener("click", () => {
+    const q = queryEl.value.trim();
+    if (!q) {
+      setStatus("Enter a search term like 'jazz', 'news', or a city.", true);
+      return;
+    }
+    const url = `${RADIO_BROWSER_BASE}/stations/search?limit=30&name=${encodeURIComponent(q)}`;
+    fetchStations(url, `search for "${q}"`);
+  });
+
+  topBtn.addEventListener("click", () => {
+    const url = `${RADIO_BROWSER_BASE}/stations/topvote/30`;
+    fetchStations(url, "popular stations");
+  });
+
+  queryEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      searchBtn.click();
+    }
+  });
+
+  playBtn?.addEventListener("click", startPlayback);
+  stopBtn?.addEventListener("click", stopPlayback);
+
+  audioEl.addEventListener("playing", () => setStatus("Streaming..."));
+  audioEl.addEventListener("stalled", () =>
+    setStatus("Stream stalled. Trying to recover...", true)
+  );
+  audioEl.addEventListener("error", () =>
+    setStatus("Stream error. Try another station.", true)
+  );
+
+  fetchStations(`${RADIO_BROWSER_BASE}/stations/topvote/20`, "popular stations");
 }
 
 function initMediaPlayer(w) {
