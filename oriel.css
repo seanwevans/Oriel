@@ -987,6 +987,48 @@ body {
   padding: 5px;
 }
 
+.char-map-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: white;
+  border: 1px solid #808080;
+  padding: 6px;
+  margin-bottom: 6px;
+}
+
+.char-preview {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  border: 1px solid #808080;
+  background: #f3f3f3;
+}
+
+.char-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.char-code {
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+}
+
+.char-font-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.char-font {
+  height: 22px;
+}
+
 .char-grid {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
