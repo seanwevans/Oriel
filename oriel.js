@@ -1694,6 +1694,16 @@ function initSolitaire(w) {
       cd.onclick = () => tryTableau(ci);
       col.forEach((card, i) => {
         const d = renderCard(card, () => {
+          // If another card is selected, treat this click as a move
+          // destination for the selection (so players can click on
+          // stacks directly instead of empty column space).
+          if (
+            sel &&
+            !(sel.card === card && sel.loc === "tableau" && sel.col === ci && sel.idx === i)
+          ) {
+            tryTableau(ci);
+            return;
+          }
           if (card.u) selectCard(card, "tableau", ci, i);
           else if (i === col.length - 1) {
             card.u = true;
