@@ -40,7 +40,13 @@ const ICONS = {
 const DEFAULT_PDF_DATA_URI =
   "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
 
-const DEFAULT_MD_SAMPLE = `# Welcome to Markdown Viewer\n\nThis is a simple markdown previewer. Try editing the text on the left and watch the preview update.\n\n## Features\n- Headings, lists, and links\n- **Bold** and *italic* text\n- Inline code like \`console.log('hi')\`\n- Code blocks:\n\n\n```js\nfunction hello(name) {\n  return \`Hello, ${name}!\`;\n}\n```\n\n[Learn more about Markdown](https://www.markdownguide.org/basic-syntax/)`;
+const DEFAULT_MD_SAMPLE = 
+  `# Welcome to Markdown Viewer\n\n
+  This is a simple markdown previewer. 
+  Try editing the text on the left and watch the preview update.\n\n
+  ## Features\n
+  - Headings, lists, and links\n
+  - **Bold** and *italic* text\n`;
 
 const FS_STORAGE_KEY = "oriel-fs-v1";
 
