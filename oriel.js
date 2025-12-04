@@ -34,7 +34,8 @@ const ICONS = {
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
-  markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`
+  markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`,
+  linerider: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="6" width="28" height="20" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 18l14-6l6 4l-14 6z" fill="#0080c0" stroke="black"/><circle cx="10" cy="12" r="3" fill="#ffcc00" stroke="black"/><path d="M8 22l10 4" stroke="#202020" stroke-width="2"/></svg>`
 };
 
 const DEFAULT_PDF_DATA_URI =
@@ -70,6 +71,7 @@ const DEFAULT_FS = {
           "PBRUSH.EXE": { type: "file", app: "paint" },
           "MPLAYER.EXE": { type: "file", app: "mplayer" },
           "SKIFREE.EXE": { type: "file", app: "skifree" },
+          "LINERIDR.EXE": { type: "file", app: "linerider" },
           "SIMCITY.EXE": { type: "file", app: "simcity" },
           "WINFILE.EXE": { type: "file", app: "winfile" },
           "TASKMAN.EXE": { type: "file", app: "taskman" },
@@ -308,6 +310,7 @@ class WindowManager {
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = this.getSimCityContent();
     if (type === "skifree") content = this.getSkiFreeContent();
+    if (type === "linerider") content = this.getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "charmap") content = this.getCharMapContent();
@@ -343,6 +346,7 @@ class WindowManager {
     if (type === "mplayer") initMediaPlayer(winEl);
     if (type === "simcity") initSimCity(winEl);
     if (type === "skifree") initSkiFree(winEl);
+    if (type === "linerider") initLineRider(winEl);
     if (type === "database") initDatabase(winEl);
     if (type === "soundrec") initSoundRecorder(winEl);
     if (type === "charmap") initCharMap(winEl);
@@ -369,6 +373,8 @@ class WindowManager {
         closingWin.el.chessCleanup();
       if (typeof closingWin.el.skifreeCleanup === "function")
         closingWin.el.skifreeCleanup();
+      if (typeof closingWin.el.lineRiderCleanup === "function")
+        closingWin.el.lineRiderCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
         closingWin.el.doomCI = null;
@@ -581,6 +587,10 @@ class WindowManager {
                         ${ICONS.skifree}
                         <div class="prog-label">SkiFree</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('linerider', 'Line Rider', 620, 520)">
+                        ${ICONS.linerider}
+                        <div class="prog-label">Line Rider</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('soundrec', 'Sound Recorder', 300, 160)">
                         ${ICONS.soundrec}
                         <div class="prog-label">Sound Rec</div>
@@ -677,6 +687,25 @@ class WindowManager {
                     </div>
                     <canvas class="skifree-canvas" width="320" height="360"></canvas>
                     <div class="skifree-help">Use ← → to steer, ↑ to jump, ↓ to slow down. Avoid trees and rocks!</div>
+                </div>
+            `;
+  }
+  getLineRiderContent() {
+    return `
+                <div class="linerider-layout">
+                    <div class="linerider-toolbar">
+                        <div class="linerider-group">
+                            <button class="task-btn linerider-mode active" data-mode="draw" title="Draw segments">Draw</button>
+                            <button class="task-btn linerider-mode" data-mode="erase" title="Erase segments">Erase</button>
+                        </div>
+                        <div class="linerider-group">
+                            <button class="task-btn linerider-play">Ride</button>
+                            <button class="task-btn linerider-reset">Reset Sled</button>
+                            <button class="task-btn linerider-clear">Clear Lines</button>
+                        </div>
+                    </div>
+                    <canvas class="linerider-canvas" width="560" height="360"></canvas>
+                    <div class="linerider-status">Draw ramps with your mouse, then hit Ride!</div>
                 </div>
             `;
   }
@@ -3484,6 +3513,239 @@ function initSkiFree(win) {
     cancelAnimationFrame(raf);
     layout.removeEventListener("keydown", onKeyDown);
     layout.removeEventListener("keyup", onKeyUp);
+  };
+}
+
+function initLineRider(win) {
+  const canvas = win.querySelector(".linerider-canvas");
+  const statusEl = win.querySelector(".linerider-status");
+  const modeButtons = Array.from(win.querySelectorAll(".linerider-mode"));
+  const playBtn = win.querySelector(".linerider-play");
+  const resetBtn = win.querySelector(".linerider-reset");
+  const clearBtn = win.querySelector(".linerider-clear");
+
+  if (!canvas || !statusEl) return;
+
+  const ctx = canvas.getContext("2d");
+  const segments = [];
+  let mode = "draw";
+  let drawing = false;
+  let lastPoint = null;
+  let sled = null;
+  let raf = 0;
+  let lastTs = 0;
+
+  const setMode = (m) => {
+    mode = m;
+    modeButtons.forEach((btn) =>
+      btn.classList.toggle("active", btn.dataset.mode === m)
+    );
+    canvas.style.cursor = m === "draw" ? "crosshair" : "pointer";
+  };
+
+  const toCanvas = (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((evt.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((evt.clientY - rect.top) / rect.height) * canvas.height
+    };
+  };
+
+  const resetSled = () => {
+    sled = { x: 40, y: 40, vx: 120, vy: 0 };
+    statusEl.textContent = "Sled reset. Draw a run and hit Ride.";
+    drawScene();
+  };
+
+  const stopRide = (message = null) => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    if (message) statusEl.textContent = message;
+  };
+
+  const drawScene = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f1f6ff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#0b64c0";
+    ctx.beginPath();
+    segments.forEach((s) => {
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+    });
+    ctx.stroke();
+
+    if (sled) {
+      ctx.fillStyle = "#202020";
+      ctx.beginPath();
+      ctx.arc(sled.x, sled.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffcc00";
+      ctx.beginPath();
+      ctx.moveTo(sled.x - 10, sled.y + 8);
+      ctx.lineTo(sled.x + 12, sled.y + 8);
+      ctx.stroke();
+    }
+  };
+
+  const eraseSegment = (p) => {
+    const maxDist = 8;
+    for (let i = 0; i < segments.length; i++) {
+      const s = segments[i];
+      const dx = s.x2 - s.x1;
+      const dy = s.y2 - s.y1;
+      const lenSq = dx * dx + dy * dy || 1;
+      const t = Math.max(
+        0,
+        Math.min(1, ((p.x - s.x1) * dx + (p.y - s.y1) * dy) / lenSq)
+      );
+      const projX = s.x1 + dx * t;
+      const projY = s.y1 + dy * t;
+      const dist = Math.hypot(p.x - projX, p.y - projY);
+      if (dist <= maxDist) {
+        segments.splice(i, 1);
+        statusEl.textContent = "Erased a segment.";
+        drawScene();
+        return;
+      }
+    }
+    statusEl.textContent = "No nearby segment to erase.";
+  };
+
+  const onPointerDown = (e) => {
+    const pos = toCanvas(e);
+    if (mode === "draw") {
+      drawing = true;
+      lastPoint = pos;
+    } else {
+      eraseSegment(pos);
+    }
+  };
+
+  const onPointerMove = (e) => {
+    if (!drawing || mode !== "draw") return;
+    const pos = toCanvas(e);
+    segments.push({ x1: lastPoint.x, y1: lastPoint.y, x2: pos.x, y2: pos.y });
+    lastPoint = pos;
+    drawScene();
+  };
+
+  const endDraw = () => {
+    drawing = false;
+    lastPoint = null;
+  };
+
+  const intersectSegment = (p1, p2, s) => {
+    const p3 = { x: s.x1, y: s.y1 };
+    const p4 = { x: s.x2, y: s.y2 };
+    const denom =
+      (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    if (denom === 0) return null;
+    const t =
+      ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) /
+      denom;
+    const u =
+      -((p1.x - p2.x) * (p1.y - p3.y) - (p1.y - p2.y) * (p1.x - p3.x)) /
+      denom;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return {
+      x: p1.x + t * (p2.x - p1.x),
+      y: p1.y + t * (p2.y - p1.y),
+      t,
+      seg: s
+    };
+  };
+
+  const findCollision = (p1, p2) => {
+    let best = null;
+    segments.forEach((s) => {
+      const hit = intersectSegment(p1, p2, s);
+      if (!hit) return;
+      if (!best || hit.t < best.t) best = hit;
+    });
+    return best;
+  };
+
+  const step = (ts) => {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0;
+    lastTs = ts;
+    if (!sled) resetSled();
+
+    if (dt > 0) {
+      sled.vy += 900 * dt;
+      const next = { x: sled.x + sled.vx * dt, y: sled.y + sled.vy * dt };
+      const hit = findCollision({ x: sled.x, y: sled.y }, next);
+      if (hit) {
+        sled.x = hit.x;
+        sled.y = hit.y;
+        const dx = hit.seg.x2 - hit.seg.x1;
+        const dy = hit.seg.y2 - hit.seg.y1;
+        const len = Math.hypot(dx, dy) || 1;
+        const speed = Math.max(40, Math.hypot(sled.vx, sled.vy) * 0.98);
+        sled.vx = (dx / len) * speed;
+        sled.vy = (dy / len) * speed + 10 * dt;
+      } else {
+        sled.x = next.x;
+        sled.y = next.y;
+      }
+    }
+
+    drawScene();
+
+    if (sled.y > canvas.height + 80) {
+      stopRide("The rider crashed off the course.");
+      return;
+    }
+    if (sled.x < -80 || sled.x > canvas.width + 80) {
+      stopRide("The rider left the course.");
+      return;
+    }
+    raf = requestAnimationFrame(step);
+  };
+
+  const startRide = () => {
+    if (!segments.length) {
+      statusEl.textContent = "Draw a track before riding.";
+      return;
+    }
+    if (!sled) resetSled();
+    lastTs = 0;
+    statusEl.textContent = "Riding...";
+    if (!raf) raf = requestAnimationFrame(step);
+  };
+
+  modeButtons.forEach((btn) =>
+    btn.addEventListener("click", () => setMode(btn.dataset.mode))
+  );
+  playBtn?.addEventListener("click", startRide);
+  resetBtn?.addEventListener("click", () => {
+    stopRide();
+    resetSled();
+  });
+  clearBtn?.addEventListener("click", () => {
+    stopRide();
+    segments.length = 0;
+    resetSled();
+    statusEl.textContent = "Cleared the canvas.";
+  });
+
+  canvas.addEventListener("mousedown", onPointerDown);
+  canvas.addEventListener("mousemove", onPointerMove);
+  canvas.addEventListener("mouseup", endDraw);
+  canvas.addEventListener("mouseleave", endDraw);
+
+  setMode(mode);
+  resetSled();
+
+  win.lineRiderCleanup = () => {
+    stopRide();
+    canvas.removeEventListener("mousedown", onPointerDown);
+    canvas.removeEventListener("mousemove", onPointerMove);
+    canvas.removeEventListener("mouseup", endDraw);
+    canvas.removeEventListener("mouseleave", endDraw);
   };
 }
 
