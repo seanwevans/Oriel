@@ -16,6 +16,7 @@ const ICONS = {
   clock: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><line x1="16" y1="16" x2="16" y2="8" stroke="black" stroke-width="2"/><line x1="16" y1="16" x2="22" y2="16" stroke="black" stroke-width="2"/></svg>`,
   control: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="#c0c0c0" stroke="black"/><rect x="6" y="10" width="20" height="12" fill="white"/><circle cx="10" cy="16" r="3" fill="red"/><circle cx="16" cy="16" r="3" fill="green"/><circle cx="22" cy="16" r="3" fill="blue"/></svg>`,
   cp_color: `<svg viewBox="0 0 32 32" class="svg-icon"><path d="M16 2 L2 28 H30 Z" fill="#FFFF00" stroke="black"/><circle cx="16" cy="18" r="5" fill="red"/><circle cx="12" cy="24" r="5" fill="blue"/><circle cx="20" cy="24" r="5" fill="green"/></svg>`,
+  screensaver: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#000" stroke="#0ff"/><circle cx="22" cy="10" r="2" fill="#0ff"/><path d="M8 22c2-4 6-6 10-6s6 1 8 3" stroke="#0ff" stroke-width="2" fill="none"/></svg>`,
   write: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><text x="16" y="22" font-family="serif" font-size="24" text-anchor="middle" font-weight="bold" fill="blue">A</text><path d="M20 6 l6 6 -2 2 -6 -6 z" fill="#ffff00" stroke="black"/></svg>`,
   cardfile: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="18" fill="white" stroke="black"/><line x1="4" y1="12" x2="28" y2="12" stroke="black"/><rect x="6" y="4" width="8" height="4" fill="white" stroke="black" style="border-bottom:none;"/></svg>`,
   solitaire: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="16" height="20" fill="white" stroke="black" rx="2"/><text x="8" y="16" font-size="14" fill="red">♥</text><rect x="12" y="8" width="16" height="20" fill="#000080" stroke="white" rx="2"/></svg>`,
@@ -773,7 +774,7 @@ class WindowManager {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
   }
   getNotepadContent(txt) {
     return `<textarea class="notepad-area" spellcheck="false">${
@@ -830,22 +831,26 @@ let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
 const sCtx = saverCanvas.getContext("2d");
 const screensaverDiv = document.getElementById("screensaver");
+let screensaverType = "starfield";
+let screensaverTimeout = 60;
 // Starfield vars
 let stars = [];
 const numStars = 100;
 let sInterval = null;
+// Pipes vars
+let pipes = [];
+const pipeDirections = [
+  { x: 1, y: 0 },
+  { x: -1, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: -1 }
+];
+const PIPE_COLORS = ["#4bc0ff", "#ff6b6b", "#50fa7b", "#f1fa8c"];
 
 function initScreensaver() {
   saverCanvas.width = window.innerWidth;
   saverCanvas.height = window.innerHeight;
-  // Populate stars
-  for (let i = 0; i < numStars; i++) {
-    stars.push({
-      x: Math.random() * saverCanvas.width,
-      y: Math.random() * saverCanvas.height,
-      z: Math.random() * saverCanvas.width
-    });
-  }
+  setupStarfield();
   // Global Listeners
   document.body.addEventListener("mousemove", resetTimer);
   document.body.addEventListener("keydown", resetTimer);
@@ -853,7 +858,7 @@ function initScreensaver() {
   // Timer Check
   setInterval(() => {
     idleTime++;
-    if (idleTime > 60 && !saverActive) startScreensaver(); // 60s trigger
+    if (idleTime > screensaverTimeout && !saverActive) startScreensaver();
   }, 1000);
 }
 
@@ -862,16 +867,37 @@ function resetTimer() {
   if (saverActive) stopScreensaver();
 }
 
-function startScreensaver() {
+function startScreensaver(forceType) {
+  const saver = forceType || screensaverType;
   saverActive = true;
   screensaverDiv.style.display = "block";
-  sInterval = setInterval(drawStars, 30);
+  saverCanvas.width = window.innerWidth;
+  saverCanvas.height = window.innerHeight;
+  clearInterval(sInterval);
+  if (saver === "pipes") {
+    setupPipes();
+    sInterval = setInterval(drawPipes, 50);
+  } else {
+    setupStarfield();
+    sInterval = setInterval(drawStars, 30);
+  }
 }
 
 function stopScreensaver() {
   saverActive = false;
   screensaverDiv.style.display = "none";
   clearInterval(sInterval);
+}
+
+function setupStarfield() {
+  stars = [];
+  for (let i = 0; i < numStars; i++) {
+    stars.push({
+      x: Math.random() * saverCanvas.width,
+      y: Math.random() * saverCanvas.height,
+      z: Math.random() * saverCanvas.width
+    });
+  }
 }
 
 function drawStars() {
@@ -899,6 +925,89 @@ function drawStars() {
       sCtx.fillRect(px, py, size, size);
     }
   }
+}
+
+function setupPipes() {
+  pipes = [];
+  sCtx.fillStyle = "black";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  for (let i = 0; i < 4; i++) {
+    pipes.push({
+      x: Math.random() * saverCanvas.width,
+      y: Math.random() * saverCanvas.height,
+      dir: pipeDirections[Math.floor(Math.random() * pipeDirections.length)],
+      color: PIPE_COLORS[i % PIPE_COLORS.length],
+      stepSize: 14,
+      turnCounter: 0
+    });
+  }
+}
+
+function chooseNewPipeDirection(pipe) {
+  const options = pipeDirections.filter(
+    (d) => !(d.x === -pipe.dir.x && d.y === -pipe.dir.y)
+  );
+  pipe.dir = options[Math.floor(Math.random() * options.length)];
+  pipe.turnCounter = 0;
+}
+
+function adjustColor(col, amt) {
+  const hex = col.replace("#", "");
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) + amt;
+  let g = ((num >> 8) & 0xff) + amt;
+  let b = (num & 0xff) + amt;
+  r = Math.min(255, Math.max(0, r));
+  g = Math.min(255, Math.max(0, g));
+  b = Math.min(255, Math.max(0, b));
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function drawPipes() {
+  sCtx.fillStyle = "rgba(0,0,0,0.08)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  pipes.forEach((pipe) => {
+    pipe.turnCounter++;
+    const dangerMargin = 30;
+    let nextX = pipe.x + pipe.dir.x * pipe.stepSize;
+    let nextY = pipe.y + pipe.dir.y * pipe.stepSize;
+
+    if (
+      nextX < dangerMargin ||
+      nextX > saverCanvas.width - dangerMargin ||
+      nextY < dangerMargin ||
+      nextY > saverCanvas.height - dangerMargin ||
+      Math.random() < 0.1 * (pipe.turnCounter / 6)
+    ) {
+      chooseNewPipeDirection(pipe);
+      nextX = pipe.x + pipe.dir.x * pipe.stepSize;
+      nextY = pipe.y + pipe.dir.y * pipe.stepSize;
+    }
+
+    const highlight = adjustColor(pipe.color, 80);
+    const shadow = adjustColor(pipe.color, -80);
+    const grad = sCtx.createLinearGradient(pipe.x, pipe.y, nextX, nextY);
+    grad.addColorStop(0, highlight);
+    grad.addColorStop(0.5, pipe.color);
+    grad.addColorStop(1, shadow);
+
+    sCtx.lineWidth = 12;
+    sCtx.lineCap = "round";
+    sCtx.strokeStyle = grad;
+    sCtx.beginPath();
+    sCtx.moveTo(pipe.x, pipe.y);
+    sCtx.lineTo(nextX, nextY);
+    sCtx.stroke();
+
+    sCtx.fillStyle = highlight;
+    sCtx.beginPath();
+    sCtx.arc(nextX, nextY, 4, 0, Math.PI * 2);
+    sCtx.fill();
+
+    pipe.x = nextX;
+    pipe.y = nextY;
+  });
 }
 // --- CONTROL PANEL: DESKTOP ---
 function openCPDesktop(el, containerOverride) {
@@ -946,6 +1055,70 @@ function openCPDesktop(el, containerOverride) {
         `;
 }
 
+function openCPScreensaver(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "screensaver")
+      );
+  }
+
+  const saverOptionsData = [
+    { value: "starfield", label: "Starfield", desc: "Classic warp-speed stars." },
+    { value: "pipes", label: "3D Pipes", desc: "Colorful shaded pipes crawl in 3D." }
+  ];
+  const saverOptions = saverOptionsData
+    .map(
+      (opt) =>
+        `<option value="${opt.value}" ${
+          opt.value === screensaverType ? "selected" : ""
+        }>${opt.label}</option>`
+    )
+    .join("");
+
+  body.innerHTML = `<div class="cp-settings-layout">
+        <div class="cp-section">
+            <label style="display:block;font-size:12px;margin-bottom:6px;">Screensaver</label>
+            <select id="cp-saver-select" style="width:100%;margin-bottom:8px;">${saverOptions}</select>
+            <div class="cp-font-preview" id="cp-saver-desc"></div>
+            <div class="cp-saver-row">
+                <label for="cp-saver-delay">Idle time (seconds):</label>
+                <input type="number" id="cp-saver-delay" min="5" max="600" value="${screensaverTimeout}" style="width:80px;">
+            </div>
+            <div class="cp-saver-actions">
+                <button class="task-btn" onclick="previewScreensaver()">Preview</button>
+                <button class="task-btn" onclick="applyScreensaver()">Apply</button>
+            </div>
+            <div class="cp-saver-note" id="cp-saver-status">Current saver: ${screensaverType}</div>
+        </div>
+    </div>`;
+
+  const descBox = body.querySelector("#cp-saver-desc");
+  const select = body.querySelector("#cp-saver-select");
+  const updateDesc = () => {
+    const selected = saverOptionsData.find((s) => s.value === select?.value);
+    if (descBox && selected) descBox.textContent = selected.desc;
+  };
+  updateDesc();
+  select?.addEventListener("change", updateDesc);
+}
+
 function setWallpaper() {
   const url = document.getElementById("bg-url").value;
   const mode = document.getElementById("bg-mode").value;
@@ -967,6 +1140,29 @@ function setWallpaper() {
   } else {
     body.style.backgroundImage = "none";
   }
+}
+
+function applyScreensaver() {
+  const select = document.getElementById("cp-saver-select");
+  const delay = document.getElementById("cp-saver-delay");
+  const status = document.getElementById("cp-saver-status");
+  if (select?.value) screensaverType = select.value;
+  const parsedDelay = parseInt(delay?.value || "", 10);
+  if (!isNaN(parsedDelay)) {
+    screensaverTimeout = Math.min(600, Math.max(5, parsedDelay));
+    if (delay) delay.value = screensaverTimeout;
+  }
+  idleTime = 0;
+  if (status)
+    status.textContent = `Current saver: ${screensaverType} (starts after ${screensaverTimeout}s idle)`;
+}
+
+function previewScreensaver() {
+  const select = document.getElementById("cp-saver-select");
+  const chosen = select?.value || screensaverType;
+  screensaverType = chosen;
+  idleTime = 0;
+  startScreensaver(chosen);
 }
 function initBrowser(win) {
   const urlInput = win.querySelector(".browser-url");
@@ -1730,6 +1926,7 @@ function initControlPanel(w) {
   menu.innerHTML = `
     <div class="menu-item cp-menu-item active" data-view="desktop">Desktop</div>
     <div class="menu-item cp-menu-item" data-view="color">Colors</div>
+    <div class="menu-item cp-menu-item" data-view="screensaver">Screensaver</div>
     <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
@@ -1738,6 +1935,7 @@ function initControlPanel(w) {
     <div class="cp-menu-bar">
       <button class="task-btn cp-tab-btn active" data-view="desktop">Desktop</button>
       <button class="task-btn cp-tab-btn" data-view="color">Colors</button>
+      <button class="task-btn cp-tab-btn" data-view="screensaver">Screensaver</button>
       <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
@@ -1763,6 +1961,7 @@ function initControlPanel(w) {
     setActive(view);
     if (view === "desktop") openCPDesktop(viewArea);
     else if (view === "color") openCPColor(viewArea);
+    else if (view === "screensaver") openCPScreensaver(viewArea);
     else if (view === "fonts") openCPFonts(viewArea);
     else renderHome();
   };
