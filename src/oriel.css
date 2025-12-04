@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
 
 :root {
-  /* Default Theme */
+
   --win-teal: #008080;
   --win-gray: #c0c0c0;
   --win-gray-light: #ffffff;
@@ -263,8 +263,7 @@ body {
 .window-body {
   flex-grow: 1;
   background-color: white;
-  border: 1px solid var(--win-gray-dark);
-  /* Inner border */
+  border: 1px solid var(--win-gray-dark);  
   overflow: auto;
   position: relative;
   font-family: "Arial", sans-serif;
@@ -2178,7 +2177,6 @@ body {
   border: 1px solid #808080;
 }
 
-/* File Manager Styles */
 .winfile-layout {
   display: flex;
   flex-direction: column;
@@ -3339,7 +3337,7 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: black;
-    z-index: 20000; /* Higher than screensaver (9999) */
+    z-index: 20000;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -3408,18 +3406,29 @@ body {
 }
 
 #splash-screen {
-    /* Existing styles remain... */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;    
+    background-color: black;    
+    background-image: url('https://images.unsplash.com/photo-1556139918-9b92e8b00105');    
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 20000;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column; /* Ensure vertical stacking */
+    flex-direction: column;
+    cursor: pointer;
 }
 
 .splash-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 40px; /* Space between logo and loading bar */
+    gap: 40px;
 }
 
 .splash-content {
@@ -3437,7 +3446,7 @@ body {
     padding: 2px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 0 0 1px #505050; /* Double border effect */
+    box-shadow: 0 0 0 1px #505050;
 }
 
 .xp-load-bar {
