@@ -28,6 +28,7 @@ const ICONS = {
   chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
   irc: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#c0e0ff" stroke="#003366"/><rect x="8" y="10" width="12" height="4" rx="2" fill="white" stroke="#003366"/><circle cx="22" cy="20" r="4" fill="#004080"/><path d="M22 17c1.5 0 2.5.7 3 1.8" stroke="white" stroke-width="1" fill="none"/></svg>`,
+  beatmaker: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" ry="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#202020" stroke="#808080"/><rect x="8" y="18" width="4" height="4" fill="#ff7043"/><rect x="14" y="18" width="4" height="4" fill="#fff176"/><rect x="20" y="18" width="4" height="4" fill="#66bb6a"/><rect x="10" y="12" width="12" height="2" fill="#00e5ff"/><rect x="12" y="10" width="8" height="2" fill="#00bcd4"/><rect x="10" y="14" width="12" height="2" fill="#00e676"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -84,6 +85,7 @@ const DEFAULT_FS = {
           "DATAMGR.EXE": { type: "file", app: "database" },
           "CHARMAP.EXE": { type: "file", app: "charmap" },
           "SOUNDREC.EXE": { type: "file", app: "soundrec" },
+          "BEATLAB.EXE": { type: "file", app: "beatmaker" },
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
           "WEB.EXE": { type: "file", app: "browser" },
@@ -466,6 +468,7 @@ class WindowManager {
     if (type === "linerider") content = this.getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
     if (type === "soundrec") content = this.getSoundRecContent();
+    if (type === "beatmaker") content = this.getBeatMakerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = this.getWinFileContent();
     if (type === "clock") content = this.getClockContent();
@@ -506,6 +509,7 @@ class WindowManager {
     if (type === "linerider") initLineRider(winEl);
     if (type === "database") initDatabase(winEl);
     if (type === "soundrec") initSoundRecorder(winEl);
+    if (type === "beatmaker") initBeatMaker(winEl);
     if (type === "charmap") initCharMap(winEl);
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
@@ -756,6 +760,10 @@ class WindowManager {
                     <div class="prog-icon" onclick="wm.openWindow('soundrec', 'Sound Recorder', 300, 160)">
                         ${ICONS.soundrec}
                         <div class="prog-label">Sound Rec</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('beatmaker', 'Beat Lab', 720, 420)">
+                        ${ICONS.beatmaker}
+                        <div class="prog-label">Beat Lab</div>
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('clock', 'Clock', 250, 250)">
                         ${ICONS.clock}
@@ -1020,6 +1028,38 @@ class WindowManager {
   }
   getSoundRecContent() {
     return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
+  }
+  getBeatMakerContent() {
+    const steps = Array.from({ length: 16 }, (_, i) =>
+      `<div class="daw-step" data-step="${i}" title="Step ${i + 1}"></div>`
+    ).join("");
+    const row = (id, label) =>
+      `<div class="daw-row" data-track="${id}"><div class="daw-row-label">${label}</div><div class="daw-step-row">${steps}</div></div>`;
+
+    return `<div class="daw-layout">
+              <div class="daw-toolbar">
+                <div class="daw-transport">
+                  <button class="task-btn" id="daw-play">Play</button>
+                  <button class="task-btn" id="daw-stop">Stop</button>
+                </div>
+                <div class="daw-tempo">
+                  <label for="daw-tempo">Tempo</label>
+                  <input type="range" id="daw-tempo" min="60" max="180" value="110">
+                  <span id="daw-tempo-val">110</span> BPM
+                </div>
+                <div class="daw-tools">
+                  <button class="task-btn" id="daw-random">Humanize</button>
+                  <button class="task-btn" id="daw-clear">Clear</button>
+                </div>
+              </div>
+              <div class="daw-grid">
+                ${row("kick", "Kick")}
+                ${row("snare", "Snare")}
+                ${row("hihat", "Hi-Hat")}
+                ${row("clap", "Clap")}
+              </div>
+              <div class="daw-status" id="daw-status">Ready to lay down a beat.</div>
+            </div>`;
   }
   getCharMapContent() {
     return `<div class="char-map-layout">
@@ -3488,7 +3528,9 @@ function rFL(w) {
               ? { w: 520, h: 520 }
               : i.app === "imageviewer"
                 ? { w: 720, h: 540 }
-                : { w: 400, h: 300 };
+                : i.app === "beatmaker"
+                  ? { w: 720, h: 420 }
+                  : { w: 400, h: 300 };
           wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
         }
       };
@@ -3568,6 +3610,219 @@ function initDoom(win) {
       container.innerHTML =
         '<div style="color:#f44;font-family:var(--font-main);padding:8px;">Failed to load DOOM (js-dos load error).</div>';
     });
+}
+
+function initBeatMaker(win) {
+  const tempo = win.querySelector("#daw-tempo");
+  const tempoVal = win.querySelector("#daw-tempo-val");
+  const status = win.querySelector("#daw-status");
+  const playBtn = win.querySelector("#daw-play");
+  const stopBtn = win.querySelector("#daw-stop");
+  const randomBtn = win.querySelector("#daw-random");
+  const clearBtn = win.querySelector("#daw-clear");
+
+  const tracks = [
+    { id: "kick", name: "Kick" },
+    { id: "snare", name: "Snare" },
+    { id: "hihat", name: "Hi-Hat" },
+    { id: "clap", name: "Clap" }
+  ];
+  const stepsCount = 16;
+  const pattern = Object.fromEntries(
+    tracks.map((t) => [t.id, Array(stepsCount).fill(false)])
+  );
+
+  // Starter groove
+  [0, 4, 8, 12].forEach((i) => (pattern.kick[i] = true));
+  [4, 12].forEach((i) => (pattern.snare[i] = true));
+  [2, 6, 10, 14].forEach((i) => (pattern.hihat[i] = true));
+  pattern.clap[14] = true;
+
+  let audioCtx = null;
+  let timer = null;
+  let currentStep = 0;
+
+  const stepNodes = Array.from(win.querySelectorAll(".daw-step"));
+
+  function ensureContext() {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function renderPattern() {
+    stepNodes.forEach((node) => {
+      const track = node.closest(".daw-row").dataset.track;
+      const stepIndex = parseInt(node.dataset.step);
+      node.classList.toggle("active", pattern[track][stepIndex]);
+    });
+  }
+
+  function highlightStep(stepIndex) {
+    stepNodes.forEach((node) => {
+      const isCurrent = parseInt(node.dataset.step) === stepIndex;
+      node.classList.toggle("playhead", isCurrent);
+    });
+  }
+
+  function connectWithVolume(node) {
+    const gain = ensureContext().createGain();
+    gain.gain.value = systemVolume;
+    node.connect(gain);
+    gain.connect(ensureContext().destination);
+    return { node, gain };
+  }
+
+  function triggerKick(time) {
+    const ctx = ensureContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(140, time);
+    osc.frequency.exponentialRampToValueAtTime(55, time + 0.25);
+    gain.gain.setValueAtTime(systemVolume, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.4);
+  }
+
+  function triggerNoise(duration, tone, cutoff) {
+    const ctx = ensureContext();
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * tone;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = cutoff;
+    const { gain } = connectWithVolume(noise);
+    gain.gain.setValueAtTime(systemVolume * 0.8, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    noise.connect(filter);
+    filter.connect(gain);
+    noise.start();
+    noise.stop(ctx.currentTime + duration);
+  }
+
+  function triggerSnare(time) {
+    const ctx = ensureContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(180, time);
+    gain.gain.setValueAtTime(systemVolume * 0.25, time);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.25);
+    triggerNoise(0.18, 0.7, 1000);
+  }
+
+  function triggerHat(time) {
+    triggerNoise(0.1, 0.4, 6000);
+  }
+
+  function triggerClap(time) {
+    const ctx = ensureContext();
+    const bursts = [0, 0.03, 0.06];
+    bursts.forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(400, time + offset);
+      gain.gain.setValueAtTime(systemVolume * 0.2, time + offset);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + offset + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time + offset);
+      osc.stop(time + offset + 0.16);
+    });
+  }
+
+  const triggerMap = {
+    kick: triggerKick,
+    snare: triggerSnare,
+    hihat: triggerHat,
+    clap: triggerClap
+  };
+
+  stepNodes.forEach((node) => {
+    node.addEventListener("click", () => {
+      const track = node.closest(".daw-row").dataset.track;
+      const stepIndex = parseInt(node.dataset.step);
+      pattern[track][stepIndex] = !pattern[track][stepIndex];
+      node.classList.toggle("active", pattern[track][stepIndex]);
+      status.textContent = pattern[track][stepIndex]
+        ? `${tracks.find((t) => t.id === track).name} enabled on step ${stepIndex + 1}.`
+        : `${tracks.find((t) => t.id === track).name} muted on step ${stepIndex + 1}.`;
+    });
+  });
+
+  function stepDurationMs() {
+    return (60000 / parseInt(tempo.value, 10)) / 4;
+  }
+
+  function playCurrentStep() {
+    const ctx = ensureContext();
+    const time = ctx.currentTime;
+    tracks.forEach((t) => {
+      if (pattern[t.id][currentStep]) triggerMap[t.id](time);
+    });
+    highlightStep(currentStep);
+    currentStep = (currentStep + 1) % stepsCount;
+  }
+
+  function startPlayback() {
+    if (timer) return;
+    ensureContext();
+    currentStep = 0;
+    playCurrentStep();
+    timer = setInterval(playCurrentStep, stepDurationMs());
+    status.textContent = "Playing pattern. Click steps to toggle sounds.";
+  }
+
+  function stopPlayback() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    highlightStep(-1);
+    status.textContent = "Stopped. Adjust tempo or toggle steps.";
+  }
+
+  tempo.addEventListener("input", () => {
+    tempoVal.textContent = tempo.value;
+    if (timer) {
+      clearInterval(timer);
+      timer = setInterval(playCurrentStep, stepDurationMs());
+    }
+  });
+
+  playBtn.onclick = startPlayback;
+  stopBtn.onclick = stopPlayback;
+
+  randomBtn.onclick = () => {
+    tracks.forEach((t) => {
+      pattern[t.id] = pattern[t.id].map(() => Math.random() < 0.25);
+    });
+    renderPattern();
+    status.textContent = "Humanized the beat with some random hits.";
+  };
+
+  clearBtn.onclick = () => {
+    tracks.forEach((t) => pattern[t.id].fill(false));
+    renderPattern();
+    status.textContent = "Cleared all steps.";
+  };
+
+  renderPattern();
 }
 
 function initSoundRecorder(w) {
