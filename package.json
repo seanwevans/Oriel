@@ -1,0 +1,20 @@
+{
+  "name": "oriel",
+  "version": "1.0.0",
+  "description": "Retro desktop simulation assets and a Node-based FTP client utility.",
+  "main": "oriel.js",
+  "scripts": {
+    "ftp": "node ftp-client.js"
+  },
+  "keywords": [
+    "ftp",
+    "retro",
+    "desktop"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "ftp": "^0.3.10"
+  }
+}
