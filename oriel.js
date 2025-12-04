@@ -623,6 +623,10 @@ class WindowManager {
                         ${ICONS.clock}
                         <div class="prog-label">Clock</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('charmap', 'Character Map', 460, 380)">
+                        ${ICONS.charmap}
+                        <div class="prog-label">Char Map</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('control', 'Control Panel', 400, 300)">
                         ${ICONS.control}
                         <div class="prog-label">Control</div>
@@ -767,7 +771,32 @@ class WindowManager {
     return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
   }
   getCharMapContent() {
-    return `<div class="char-map-layout"><div class="char-grid" id="char-grid"></div><div class="char-controls"><label>Characters to copy:</label><div class="copy-row"><input type="text" class="char-input" id="char-copy-input" readonly><button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button></div><button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button></div></div>`;
+    return `<div class="char-map-layout">
+              <div class="char-map-toolbar">
+                <div class="char-preview" aria-live="polite">A</div>
+                <div class="char-meta">
+                  <div class="char-code" id="char-code-label">U+0041 · Dec 65</div>
+                  <div class="char-font-row">
+                    <label for="char-font-select">Font:</label>
+                    <select class="char-font" id="char-font-select">
+                      <option value="'Times New Roman', serif">Times New Roman</option>
+                      <option value="'Arial', sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif">Symbols</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="char-grid" id="char-grid"></div>
+              <div class="char-controls">
+                <label>Characters to copy:</label>
+                <div class="copy-row">
+                  <input type="text" class="char-input" id="char-copy-input" readonly>
+                  <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
+                </div>
+                <button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button>
+              </div>
+            </div>`;
   }
   getClockContent() {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
@@ -2306,21 +2335,50 @@ function initSoundRecorder(w) {
 
 function initCharMap(w) {
   const g = w.querySelector("#char-grid"),
-    ip = w.querySelector("#char-copy-input");
+    ip = w.querySelector("#char-copy-input"),
+    preview = w.querySelector(".char-preview"),
+    codeLabel = w.querySelector("#char-code-label"),
+    fontSelect = w.querySelector("#char-font-select");
+
+  let activeCell = null;
+
+  const applyFont = (fontValue) => {
+    g.style.fontFamily = fontValue;
+    preview.style.fontFamily = fontValue;
+  };
+
+  const setSelection = (cell) => {
+    if (!cell) return;
+    if (activeCell) activeCell.classList.remove("active");
+    activeCell = cell;
+    cell.classList.add("active");
+    const chr = cell.dataset.char;
+    const code = parseInt(cell.dataset.code, 10);
+    preview.innerText = chr;
+    codeLabel.innerText = `U+${code.toString(16).toUpperCase().padStart(4, "0")} · Dec ${code}`;
+  };
+
   for (let i = 32; i < 256; i++) {
-    const c = String.fromCharCode(i),
-      d = document.createElement("div");
+    const c = String.fromCharCode(i);
+    const d = document.createElement("div");
     d.className = "char-cell";
     d.innerText = c;
+    d.dataset.char = c;
+    d.dataset.code = i;
     d.onclick = () => {
       ip.value += c;
+      setSelection(d);
     };
     g.appendChild(d);
   }
+
+  fontSelect?.addEventListener("change", (e) => applyFont(e.target.value));
+  setSelection(g.querySelector('[data-code="65"]') || g.querySelector(".char-cell"));
+  applyFont(fontSelect?.value || "'Times New Roman', serif");
 }
 
 function copyCharMap(b) {
-  b.closest(".window").querySelector("input").select();
+  b.closest(".window").querySelector("#char-copy-input").select();
   document.execCommand("copy");
 }
 
