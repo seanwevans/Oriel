@@ -1393,6 +1393,43 @@ body {
   font-size: 12px;
 }
 
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.volume-slider {
+  flex: 1;
+}
+
+.volume-percent {
+  width: 48px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.volume-mute {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.volume-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.volume-note {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
 .write-layout {
   display: flex;
   flex-direction: column;
