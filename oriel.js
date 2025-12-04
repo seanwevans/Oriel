@@ -679,14 +679,7 @@ class WindowManager {
   getDoomContent() {
     return `
       <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
-        <div id="doom-container" style="width:640px;height:400px;background:#111;"></div>
-        <script>
-          if(!window.Dos) {
-            const script = document.createElement('script');
-            script.src = "https://js-dos.com/6.22/current/js-dos.js";
-            document.head.appendChild(script);
-          }
-        </script>
+        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></div>
       </div>
     `;
   }
@@ -2510,30 +2503,61 @@ function createFolder(btn) {
   }
 }
 
+let jsDosLoadPromise = null;
+
+function loadJsDos() {
+  if (window.Dos) return Promise.resolve();       // already loaded
+
+  if (jsDosLoadPromise) return jsDosLoadPromise;  // already loading
+
+  jsDosLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://js-dos.com/6.22/current/js-dos.js";
+    script.onload = () => resolve();
+    script.onerror = (e) => reject(e);
+    document.head.appendChild(script);
+  });
+
+  return jsDosLoadPromise;
+}
+
+const originalTitle = "My Custom Title"; 
+
+// Redefine the 'title' property on the document object
+Object.defineProperty(document, 'title', {
+    get: function() {
+        return originalTitle; // Always return the original title
+    },
+    set: function(value) {
+        // You can log the attempts to change the title if you want, 
+        // but it will not actually change the title.
+        console.log("js-dos tried to change the title to:", value);
+    },
+    configurable: false // Prevents further redefinitions
+});
+
 function initDoom(win) {
   const container = win.querySelector("#doom-container");
-  
-  // Wait for script to load if it hasn't yet
-  const checkDos = setInterval(() => {
-    if (window.Dos) {
-      clearInterval(checkDos);
-      startDoom();
-    }
-  }, 100);
+  if (!container) return;
 
-  function startDoom() {
-    // Basic Shareware Doom config via JS-DOS
-    window.Dos(container, {
+  loadJsDos()
+    .then(() => {
+      return window.Dos(container, {
         style: "none",
         wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
-    }).ready((fs, main) => {
-      fs.extract("https://js-dos.com/6.22/current/doom.zip").then(() => {
-        main(["-c", "cd doom", "-c", "doom.exe"]).then((ci) => {
-            win.doomCI = ci; // Store to exit later if needed
+      }).ready((fs, main) => {
+        fs.extract("https://js-dos.com/cdn/upload/DOOM-@evilution.zip").then(() => {
+          main(["-c", "cd doom", "-c", "DOOM"]).then((ci) => {
+            win.doomCI = ci;
+          });
         });
       });
+    })
+    .catch((err) => {
+      console.error("Failed to load js-dos:", err);
+      container.innerHTML =
+        '<div style="color:#f44;font-family:var(--font-main);padding:8px;">Failed to load DOOM (js-dos load error).</div>';
     });
-  }
 }
 
 function initSoundRecorder(w) {
