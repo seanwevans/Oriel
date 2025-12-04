@@ -431,9 +431,17 @@ body {
   background: #c0c0c0;
 }
 
+.mine-cell.flagged {
+  color: red;
+}
+
 .mine-cell.bomb {
   background: red;
   color: black;
+}
+
+.mine-cell.blown {
+  background: #ff8080;
 }
 
 .c1 {
