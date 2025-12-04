@@ -1260,6 +1260,15 @@ body {
   border-bottom: 1px solid #808080;
 }
 
+.write-select {
+  height: 24px;
+  border: 1px solid gray;
+  background: white;
+  font-size: 12px;
+  font-family: var(--font-main);
+  padding: 0 4px;
+}
+
 .fmt-btn {
   width: 24px;
   height: 24px;
