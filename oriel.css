@@ -665,6 +665,90 @@ body {
   background: white;
 }
 
+.md-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: var(--win-gray-light);
+  border: 1px solid var(--win-gray-shadow);
+  font-size: 12px;
+}
+
+.md-toolbar .file-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.md-toolbar .file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.md-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.md-input {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 1px solid var(--win-gray-shadow);
+  background: white;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.md-preview {
+  border: 1px solid var(--win-gray-shadow);
+  background: white;
+  padding: 10px;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.md-preview pre {
+  background: #f4f4f4;
+  padding: 8px;
+  border: 1px solid #ddd;
+  overflow: auto;
+}
+
+.md-preview code {
+  background: #f4f4f4;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.md-preview ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.md-preview a {
+  color: #003399;
+}
+
+.md-empty {
+  color: #555;
+  font-style: italic;
+}
+
 .task-queue-view {
   flex: 1;
   background: black;
