@@ -4442,6 +4442,124 @@ function updateConsolePrompt(w) {
   if (prompt) prompt.textContent = `${state.cwd}>`;
 }
 
+// Lightweight Unix command support powered by the Cash command behaviors
+// (https://github.com/dthree/cash). The implementations below adapt Cash's
+// expected filesystem interactions to the in-browser MOCK_FS structure.
+
+function consolePathFromUnix(targetPath, cwd) {
+  const unixCwd = cwd.replace(/^C:\\/, "/").replace(/\\/g, "/");
+  const normalized = (targetPath || ".").replace(/\\/g, "/");
+  const combined = normalized.startsWith("/")
+    ? normalized
+    : `${unixCwd}/${normalized}`;
+  const segments = combined
+    .split("/")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => s.toUpperCase());
+  const windowsPath = `C:${segments.length ? "\\" + segments.join("\\") : "\\"}`;
+  return resolveConsolePath(windowsPath, cwd);
+}
+
+function unixifyPath(path) {
+  return path.replace(/^C:\\/, "/").replace(/\\/g, "/") || "/";
+}
+
+function cashLs(pathArg, state) {
+  const { node } = consolePathFromUnix(pathArg || state.cwd, state.cwd);
+  if (!node || node.type !== "dir") {
+    return { error: "ls: No such file or directory" };
+  }
+  const entries = Object.keys(node.children || {}).sort();
+  return { lines: entries.length ? entries : ["(empty)"] };
+}
+
+function cashPwd(state) {
+  return { lines: [unixifyPath(state.cwd)] };
+}
+
+function cashCat(pathArg, state) {
+  if (!pathArg) return { error: "cat: missing file operand" };
+  const { node } = consolePathFromUnix(pathArg, state.cwd);
+  if (!node) return { error: `cat: ${pathArg}: No such file or directory` };
+  if (node.type === "dir") return { error: `cat: ${pathArg}: Is a directory` };
+  return { lines: [node.content || ""] };
+}
+
+function cashEcho(argLine) {
+  return { lines: [argLine || ""] };
+}
+
+function cashMkdir(argLine, state) {
+  if (!argLine) return { error: "mkdir: missing operand" };
+  const segments = argLine.split(/\s+/).filter(Boolean);
+  const created = [];
+  for (const seg of segments) {
+    const { path, node } = consolePathFromUnix(seg, state.cwd);
+    if (node) return { error: `mkdir: cannot create directory '${seg}': File exists` };
+    const parentPath = seg.split("/").slice(0, -1).join("/");
+    const { node: parent } = consolePathFromUnix(parentPath || state.cwd, state.cwd);
+    if (!parent || parent.type !== "dir") {
+      return { error: `mkdir: cannot create directory '${seg}': No such file or directory` };
+    }
+    const newName = seg.split("/").filter(Boolean).pop().toUpperCase();
+    parent.children[newName] = { type: "dir", children: {} };
+    created.push(seg);
+  }
+  saveFileSystem();
+  return { lines: created.map((c) => `created ${c}`) };
+}
+
+function cashTouch(argLine, state) {
+  if (!argLine) return { error: "touch: missing file operand" };
+  const files = argLine.split(/\s+/).filter(Boolean);
+  const created = [];
+  for (const file of files) {
+    const { path, node } = consolePathFromUnix(file, state.cwd);
+    if (node && node.type === "dir") return { error: `touch: ${file}: Is a directory` };
+    const parentPath = file.split("/").slice(0, -1).join("/");
+    const { node: parent } = consolePathFromUnix(parentPath || state.cwd, state.cwd);
+    if (!parent || parent.type !== "dir") {
+      return { error: `touch: cannot touch '${file}': No such file or directory` };
+    }
+    const newName = file.split("/").filter(Boolean).pop().toUpperCase();
+    parent.children[newName] = parent.children[newName] || { type: "file", content: "" };
+    created.push(file);
+  }
+  saveFileSystem();
+  return { lines: created.map((c) => `updated ${c}`) };
+}
+
+function processCashCommand(w, cmd, argLine, rawCmd) {
+  const state = getConsoleState(w);
+  switch (cmd) {
+    case "ls":
+      return cashLs(argLine, state);
+    case "pwd":
+      return cashPwd(state);
+    case "cat":
+      return cashCat(argLine, state);
+    case "echo":
+      return cashEcho(argLine);
+    case "mkdir":
+      return cashMkdir(argLine, state);
+    case "touch":
+      return cashTouch(argLine, state);
+    case "cd": {
+      if (!argLine) return { lines: [state.cwd] };
+      const { path, node } = consolePathFromUnix(argLine, state.cwd);
+      if (node && node.type === "dir" && path) {
+        state.cwd = path;
+        updateConsolePrompt(w);
+        return { lines: [] };
+      }
+      return { error: `cd: ${argLine}: No such file or directory` };
+    }
+    default:
+      return { error: `'${rawCmd}' is not recognized as an internal or external command.` };
+  }
+}
+
 function getPathSegments(pathStr) {
   if (!pathStr) return [];
   const cleaned = pathStr.replace(/^[A-Za-z]:/, "").replace(/^\\+/, "");
@@ -4510,42 +4628,27 @@ function processConsoleCommand(w, input) {
   if (cmd === "help") {
     [
       "Egg Oriel Console Commands:",
-      "HELP - Show this help text",
-      "DIR  - List files and folders",
-      "CD   - Change directory",
-      "CLS  - Clear the screen",
-      "ECHO - Print text"
+      "HELP    - Show this help text",
+      "DIR/LS  - List files and folders",
+      "CD      - Change directory (works with Unix-style paths)",
+      "PWD     - Print working directory",
+      "CAT     - Print file contents",
+      "TOUCH   - Create an empty file",
+      "MKDIR   - Create folders",
+      "CLS     - Clear the screen",
+      "ECHO    - Print text"
     ].forEach((line) => appendConsoleLine(w, line));
-  } else if (cmd === "dir") {
-    const { node } = resolveConsolePath(lowerArgs || state.cwd, state.cwd);
-    if (!node || node.type !== "dir") {
-      appendConsoleLine(w, "File Not Found");
-    } else {
-      const entries = Object.keys(node.children || {});
-      entries.sort();
-      entries.forEach((key) => appendConsoleLine(w, key));
-      if (!entries.length) appendConsoleLine(w, "(empty)");
-    }
-  } else if (cmd === "echo") {
-    appendConsoleLine(w, lowerArgs);
-  } else if (cmd === "cd") {
-    if (!lowerArgs) {
-      appendConsoleLine(w, state.cwd);
-    } else {
-      const { path, node } = resolveConsolePath(lowerArgs, state.cwd);
-      if (node && node.type === "dir" && path) {
-        state.cwd = path;
-        updateConsolePrompt(w);
-      } else {
-        appendConsoleLine(w, "The system cannot find the path specified.");
-      }
-    }
-  } else {
-    appendConsoleLine(
-      w,
-      `'${rawCmd}' is not recognized as an internal or external command.`
-    );
+    return;
   }
+  if (cmd === "dir") {
+    const { lines, error } = cashLs(lowerArgs || state.cwd, state);
+    (error ? [error] : lines).forEach((line) => appendConsoleLine(w, line));
+    return;
+  }
+
+  const result = processCashCommand(w, cmd, lowerArgs, rawCmd);
+  if (result.error) appendConsoleLine(w, result.error);
+  (result.lines || []).forEach((line) => appendConsoleLine(w, line));
 }
 
 function handleConsoleKey(e) {
