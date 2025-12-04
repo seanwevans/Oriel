@@ -34,6 +34,7 @@ const ICONS = {
   help: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="12" fill="#FFFF00" stroke="black"/><text x="16" y="22" font-size="20" text-anchor="middle" font-weight="bold" font-family="serif">?</text></svg>`,
   desktop_cp: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="4" width="28" height="20" fill="white" stroke="black"/><rect x="4" y="6" width="24" height="16" fill="cyan"/><rect x="10" y="24" width="12" height="4" fill="gray" stroke="black"/></svg>`,
   pdfreader: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black"/><path d="M20 4v6h6" fill="#ffdddd" stroke="black"/><rect x="10" y="10" width="12" height="2" fill="#c00"/><path d="M12 14c4 6 8 0 10 8" fill="none" stroke="#c00" stroke-width="2"/><circle cx="12" cy="14" r="2" fill="#fff" stroke="#c00"/></svg>`,
+  imageviewer: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#f5f5f5" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#c0e8ff" stroke="#808080"/><circle cx="12" cy="13" r="2" fill="#ffcc00" stroke="#c08000"/><path d="M8 22l6-6l4 4l4-6l4 8H8z" fill="#008040" stroke="#004020"/></svg>`,
   doom: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" fill="#333" stroke="black"/><path d="M6 16l4-4l4 4l4-8l4 8l4-4" stroke="red" stroke-width="2" fill="none"/><rect x="8" y="22" width="16" height="4" fill="#555"/></svg>`,
   papers: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" fill="#fff" stroke="black"/><rect x="6" y="8" width="20" height="6" fill="#d8d8d8" stroke="#808080"/><path d="M8 12h10" stroke="#000080" stroke-width="2"/><rect x="6" y="16" width="10" height="8" fill="#f5f5f5" stroke="#808080"/><rect x="18" y="16" width="8" height="6" fill="#ffe0b2" stroke="#c07020"/><path d="M6 6l4-4h12l4 4" fill="#fff8e1" stroke="#c07020"/></svg>`,
   markdown: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#fff" stroke="black"/><rect x="4" y="10" width="24" height="2" fill="#c0c0c0"/><text x="10" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">#</text><text x="18" y="22" font-family="monospace" font-size="12" font-weight="bold" fill="#000">MD</text></svg>`,
@@ -88,7 +89,8 @@ const DEFAULT_FS = {
           "IRC.EXE": { type: "file", app: "irc" },
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
-          "CONSOLE.EXE": { type: "file", app: "console" }
+          "CONSOLE.EXE": { type: "file", app: "console" },
+          "IMGVIEW.EXE": { type: "file", app: "imageviewer" }
         }
       },
       DOCUMENTS: {
@@ -97,7 +99,12 @@ const DEFAULT_FS = {
           "README.TXT": { type: "file", app: "notepad", content: "Welcome to Oriel 1.0!" },
           "TODO.TXT": { type: "file", app: "notepad", content: "- Buy Milk\n- Install DOOM" },
           "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } },
-          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE }
+          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE },
+          "SCREEN.PNG": {
+            type: "file",
+            app: "imageviewer",
+            content: { name: "screen.png", src: "screen.png" }
+          }
         }
       }
     }
@@ -464,6 +471,7 @@ class WindowManager {
     if (type === "clipbrd") content = this.getClipboardContent();
     if (type === "readme") content = this.getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
+    if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "browser") content = this.getBrowserContent();
     if (type === "irc") content = this.getIRCContent();
@@ -505,6 +513,7 @@ class WindowManager {
     if (type === "cardfile") initCardfile(winEl);
     if (type === "taskman") initTaskMan(winEl);
     if (type === "pdfreader") initPdfReader(winEl, initData);
+    if (type === "imageviewer") initImageViewer(winEl, initData);
     if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
     if (type === "irc") initIRC(winEl);
@@ -755,6 +764,10 @@ class WindowManager {
                     <div class="prog-icon" onclick="wm.openWindow('control', 'Control Panel', 400, 300)">
                         ${ICONS.control}
                         <div class="prog-label">Control</div>
+                    </div>
+                    <div class="prog-icon" onclick="wm.openWindow('imageviewer', 'Image Viewer', 720, 540)">
+                        ${ICONS.imageviewer}
+                        <div class="prog-label">Image View</div>
                     </div>
                     <div class="prog-icon" onclick="wm.openWindow('pdfreader', 'PDF Reader', 720, 540)">
                         ${ICONS.pdfreader}
@@ -1066,6 +1079,22 @@ class WindowManager {
                 </div>
                 <div class="pdf-viewer">
                     <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
+                </div>
+            </div>`;
+  }
+  getImageViewerContent(initData) {
+    const name = initData?.name || "";
+    const src = initData?.src || "";
+    return `<div class="img-viewer">
+                <div class="img-toolbar">
+                    <label class="task-btn file-btn">Open Image<input type="file" accept="image/*" class="img-file-input"></label>
+                    <input type="text" class="img-url-input" placeholder="Paste image URL and click Load" value="${src ? src : ""}">
+                    <button class="task-btn img-load-btn">Load</button>
+                    <div class="img-status">${src ? `Loaded ${name || "image"}` : "No image loaded"}</div>
+                </div>
+                <div class="img-display">
+                    <div class="img-placeholder" ${src ? "style=\"display:none\"" : ""}>Drop an image or click Open</div>
+                    <img class="img-preview" ${src ? `src="${src}"` : "style=\"display:none\""} alt="${name || "Image preview"}">
                 </div>
             </div>`;
   }
@@ -3112,6 +3141,70 @@ function renderMarkdown(text) {
   return output.join("\n");
 }
 
+function initImageViewer(win, initData) {
+  const fileInput = win.querySelector(".img-file-input");
+  const urlInput = win.querySelector(".img-url-input");
+  const loadBtn = win.querySelector(".img-load-btn");
+  const preview = win.querySelector(".img-preview");
+  const placeholder = win.querySelector(".img-placeholder");
+  const status = win.querySelector(".img-status");
+
+  const setStatus = (text) => {
+    if (status) status.textContent = text;
+  };
+
+  const showPlaceholder = (message) => {
+    if (placeholder) {
+      placeholder.style.display = "flex";
+      placeholder.textContent = message || "Drop an image or click Open";
+    }
+    if (preview) preview.style.display = "none";
+  };
+
+  const setImage = (src, label) => {
+    if (!preview || !placeholder) return;
+    if (!src) {
+      showPlaceholder("No image loaded");
+      setStatus("No image loaded");
+      return;
+    }
+    preview.onload = () => {
+      placeholder.style.display = "none";
+      preview.style.display = "block";
+      setStatus(`Loaded ${label || "image"}`);
+    };
+    preview.onerror = () => {
+      showPlaceholder("Failed to load image");
+      setStatus("Failed to load image");
+    };
+    preview.src = src;
+    preview.alt = label || "Image preview";
+  };
+
+  if (initData?.src) setImage(initData.src, initData.name);
+
+  fileInput?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setImage(ev.target.result, file.name);
+    reader.readAsDataURL(file);
+  });
+
+  const loadUrl = () => {
+    const url = urlInput?.value.trim();
+    if (url) setImage(url, url);
+  };
+
+  loadBtn?.addEventListener("click", loadUrl);
+  urlInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadUrl();
+    }
+  });
+}
+
 function initPdfReader(win, initData) {
   const fileInput = win.querySelector(".pdf-file-input");
   const urlInput = win.querySelector(".pdf-url-input");
@@ -3250,7 +3343,11 @@ function rFL(w) {
           rFL(w);
         } else if (i.app) {
           const size =
-            i.app === "skifree" ? { w: 520, h: 520 } : { w: 400, h: 300 };
+            i.app === "skifree"
+              ? { w: 520, h: 520 }
+              : i.app === "imageviewer"
+                ? { w: 720, h: 540 }
+                : { w: 400, h: 300 };
           wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
         }
       };
