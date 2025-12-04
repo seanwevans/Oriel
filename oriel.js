@@ -28,6 +28,7 @@ const ICONS = {
   skifree: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="2" width="28" height="28" rx="2" fill="#e0f7ff" stroke="black"/><path d="M6 26l20-20" stroke="#000080" stroke-width="2"/><path d="M6 22l12-12" stroke="#000080" stroke-width="2"/><circle cx="16" cy="10" r="3" fill="#ff4040" stroke="black"/><rect x="14" y="13" width="4" height="7" fill="#ffffff" stroke="black"/><path d="M14 16l-4 3" stroke="#000" stroke-width="2"/><path d="M18 16l4 3" stroke="#000" stroke-width="2"/><path d="M14 20l-4 6" stroke="#000" stroke-width="2"/><path d="M18 20l4 6" stroke="#000" stroke-width="2"/></svg>`,
   chess: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="2" ry="2" fill="#fff" stroke="black"/><path d="M12 24h8v2h-8z" fill="#808080" stroke="black"/><path d="M13 20h6v4h-6z" fill="#c0c0c0" stroke="black"/><path d="M14 10c0-2 4-2 4 0v2h2v3H12v-3h2z" fill="#000"/><circle cx="16" cy="8" r="2" fill="#000"/></svg>`,
   browser: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" fill="#c0c0c0" stroke="black"/><circle cx="10" cy="12" r="1" fill="red"/><circle cx="14" cy="12" r="1" fill="gold"/><circle cx="18" cy="12" r="1" fill="lime"/><rect x="6" y="14" width="20" height="10" fill="white" stroke="black"/><path d="M8 20h16" stroke="#000080" stroke-width="2"/><path d="M12 18l-2 2l2 2" stroke="#000080" stroke-width="2" fill="none"/><path d="M20 18l2 2l-2 2" stroke="#000080" stroke-width="2" fill="none"/></svg>`,
+  radiogarden: `<svg viewBox="0 0 32 32" class="svg-icon"><circle cx="16" cy="16" r="14" fill="#0b5f66" stroke="#022f33"/><circle cx="16" cy="16" r="10" fill="#0fa4af" stroke="#0b5f66"/><circle cx="16" cy="16" r="6" fill="#c0f5ff" stroke="#0fa4af"/><rect x="15" y="6" width="2" height="20" fill="#022f33"/><rect x="6" y="15" width="20" height="2" fill="#022f33"/><circle cx="16" cy="16" r="2" fill="#ffe066" stroke="#bfa033"/></svg>`,
   irc: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="18" rx="2" ry="2" fill="#c0e0ff" stroke="#003366"/><rect x="8" y="10" width="12" height="4" rx="2" fill="white" stroke="#003366"/><circle cx="22" cy="20" r="4" fill="#004080"/><path d="M22 17c1.5 0 2.5.7 3 1.8" stroke="white" stroke-width="1" fill="none"/></svg>`,
   beatmaker: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" ry="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#202020" stroke="#808080"/><rect x="8" y="18" width="4" height="4" fill="#ff7043"/><rect x="14" y="18" width="4" height="4" fill="#fff176"/><rect x="20" y="18" width="4" height="4" fill="#66bb6a"/><rect x="10" y="12" width="12" height="2" fill="#00e5ff"/><rect x="12" y="10" width="8" height="2" fill="#00bcd4"/><rect x="10" y="14" width="12" height="2" fill="#00e676"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
@@ -151,6 +152,7 @@ function createFolder(btn) {
 const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
 const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
 
 const IRC_BOT_MESSAGES = [
   "Anyone else miss dial-up modems?",
@@ -482,6 +484,7 @@ class WindowManager {
     if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "browser") content = this.getBrowserContent();
+    if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
@@ -527,6 +530,7 @@ class WindowManager {
     if (type === "imageviewer") initImageViewer(winEl, initData);
     if (type === "markdown") initMarkdownViewer(winEl, initData);
     if (type === "browser") initBrowser(winEl);
+    if (type === "radiogarden") initRadioGarden(winEl);
     if (type === "irc") initIRC(winEl);
     if (type === "doom") initDoom(winEl);
     if (type === "papers") initPapersPlease(winEl);
@@ -829,6 +833,10 @@ class WindowManager {
                         ${ICONS.browser}
                         <div class="prog-label">Browser</div>
                     </div>
+                    <div class="prog-icon" onclick="wm.openWindow('radiogarden', 'Radio Garden', 720, 520)">
+                        ${ICONS.radiogarden}
+                        <div class="prog-label">Radio Garden</div>
+                    </div>
                     <div class="prog-icon" onclick="wm.openWindow('irc', 'IRC Client', 680, 500)">
                         ${ICONS.irc}
                         <div class="prog-label">IRC</div>
@@ -947,6 +955,33 @@ class WindowManager {
                 <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
                 <div class="browser-status">Enter a URL to begin browsing.</div>
               </div>
+            </div>`;
+  }
+  getRadioGardenContent() {
+    return `<div class="radio-garden">
+              <div class="radio-header">
+                <div>
+                  <div class="radio-title">Radio Garden</div>
+                  <div class="radio-subtitle">Search the globe and jump to a live station.</div>
+                </div>
+                <button class="task-btn radio-open-site">Open radio.garden</button>
+              </div>
+              <div class="radio-search-row">
+                <input class="radio-search-input" type="text" placeholder="Search by city, country, or station name" spellcheck="false">
+                <button class="task-btn radio-search-btn">Search</button>
+              </div>
+              <div class="radio-quick-row">
+                <span class="radio-quick-label">Quick picks:</span>
+                <div class="radio-quick-list">
+                  <button class="radio-chip" data-query="Tokyo">Tokyo</button>
+                  <button class="radio-chip" data-query="London">London</button>
+                  <button class="radio-chip" data-query="São Paulo">São Paulo</button>
+                  <button class="radio-chip" data-query="Sydney">Sydney</button>
+                  <button class="radio-chip" data-query="Lagos">Lagos</button>
+                </div>
+              </div>
+              <div class="radio-status">Type a query to load stations via the Radio Garden directory.</div>
+              <div class="radio-results" role="list"></div>
             </div>`;
   }
   getIRCContent() {
@@ -1787,6 +1822,134 @@ function initBrowser(win) {
   });
 
   loadUrl(BROWSER_HOME);
+}
+
+function initRadioGarden(win) {
+  const input = win.querySelector(".radio-search-input");
+  const searchBtn = win.querySelector(".radio-search-btn");
+  const results = win.querySelector(".radio-results");
+  const status = win.querySelector(".radio-status");
+  const openSite = win.querySelector(".radio-open-site");
+
+  const setStatus = (text, isError = false) => {
+    if (!status) return;
+    status.textContent = text;
+    status.classList.toggle("radio-status-error", isError);
+  };
+
+  const buildLink = (path) => `https://radio.garden${path}`;
+
+  const renderResults = (stations) => {
+    if (!results) return;
+    if (!stations.length) {
+      results.innerHTML = `<div class="radio-empty">No stations found for that search.</div>`;
+      return;
+    }
+    results.innerHTML = stations
+      .map((station) => {
+        const title = station.page?.title || "Unknown Station";
+        const subtitle = station.page?.subtitle || "";
+        const url = station.page?.url ? buildLink(station.page.url) : null;
+        return `<div class="radio-card" role="listitem">
+                  <div class="radio-card-main">
+                    <div class="radio-card-title">${title}</div>
+                    <div class="radio-card-sub">${subtitle}</div>
+                  </div>
+                  <div class="radio-card-actions">
+                    <button class="radio-pill" data-radio-link="${url || ""}" ${url ? "" : "disabled"}>Open</button>
+                    <button class="radio-pill ghost" data-copy-link="${url || ""}" ${url ? "" : "disabled"}>Copy Link</button>
+                  </div>
+                </div>`;
+      })
+      .join("");
+  };
+
+  const parseRadioJson = (text) => {
+    const start = text.indexOf("{");
+    if (start === -1) throw new Error("Unexpected response format");
+    return JSON.parse(text.slice(start));
+  };
+
+  const extractStations = (data) => {
+    const sections = Array.isArray(data?.data?.content) ? data.data.content : [];
+    const lists = sections.filter((section) => Array.isArray(section.items));
+    return lists.flatMap((list) => list.items || []).filter((item) => item.page?.type === "channel");
+  };
+
+  const runSearch = async (query) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setStatus("Enter a station, city, or country to search.", true);
+      return;
+    }
+    setStatus(`Searching for "${trimmed}"…`);
+    if (results) results.innerHTML = "";
+    try {
+      const res = await fetch(
+        `${RADIO_GARDEN_PROXY}/api/ara/content/search?q=${encodeURIComponent(trimmed)}`
+      );
+      const text = await res.text();
+      const data = parseRadioJson(text);
+      const stations = extractStations(data);
+      renderResults(stations);
+      setStatus(`Showing ${stations.length} result${stations.length === 1 ? "" : "s"} for "${trimmed}".`);
+    } catch (err) {
+      console.error(err);
+      setStatus("Could not reach radio.garden right now. Try again later.", true);
+    }
+  };
+
+  const handleActionClick = (e) => {
+    const openBtn = e.target.closest("[data-radio-link]");
+    const copyBtn = e.target.closest("[data-copy-link]");
+    if (openBtn) {
+      const link = openBtn.getAttribute("data-radio-link");
+      if (link) window.open(link, "_blank", "noopener,noreferrer");
+    }
+    if (copyBtn) {
+      const link = copyBtn.getAttribute("data-copy-link");
+      if (!link) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(link)
+          .then(() => setStatus("Copied link to clipboard."));
+      } else {
+        const temp = document.createElement("textarea");
+        temp.value = link;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+        setStatus("Copied link to clipboard.");
+      }
+    }
+  };
+
+  if (results) results.addEventListener("click", handleActionClick);
+
+  if (openSite) {
+    openSite.addEventListener("click", () =>
+      window.open("https://radio.garden", "_blank", "noopener,noreferrer")
+    );
+  }
+
+  if (searchBtn) {
+    searchBtn.addEventListener("click", () => runSearch(input?.value || ""));
+  }
+
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runSearch(input.value);
+    });
+  }
+
+  win.querySelectorAll(".radio-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const q = chip.getAttribute("data-query") || "";
+      if (input) input.value = q;
+      runSearch(q);
+    });
+  });
 }
 
 function initIRC(win) {
