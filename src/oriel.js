@@ -356,6 +356,51 @@ const PROGRAMS = [
   }
 ];
 
+const DESKTOP_STATE_KEY = "oriel-desktop-state";
+
+let wallpaperSettings = { url: "", mode: "tile" };
+
+function loadDesktopState() {
+  try {
+    const stored = localStorage.getItem(DESKTOP_STATE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (err) {
+    console.error("Failed to parse desktop state", err);
+  }
+  return { windows: [], wallpaper: null };
+}
+
+function persistDesktopState(state) {
+  localStorage.setItem(DESKTOP_STATE_KEY, JSON.stringify(state));
+}
+
+function applyWallpaperSettings(url = "", mode = "tile", persist = false) {
+  wallpaperSettings = { url, mode };
+  const body = document.body;
+  if (url) {
+    body.style.backgroundImage = `url('${url}')`;
+    if (mode === "tile") {
+      body.style.backgroundSize = "auto";
+      body.style.backgroundRepeat = "repeat";
+      body.style.backgroundPosition = "center";
+    } else if (mode === "center") {
+      body.style.backgroundSize = "auto";
+      body.style.backgroundRepeat = "no-repeat";
+      body.style.backgroundPosition = "center";
+    } else if (mode === "cover") {
+      body.style.backgroundSize = "cover";
+      body.style.backgroundRepeat = "no-repeat";
+      body.style.backgroundPosition = "center";
+    }
+  } else {
+    body.style.backgroundImage = "none";
+  }
+
+  if (persist && window.wm) {
+    window.wm.saveDesktopState();
+  }
+}
+
 const DEFAULT_PDF_DATA_URI =
   "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
 
@@ -691,11 +736,12 @@ class SimulatedKernel {
 const kernel = new SimulatedKernel();
 
 class WindowManager {
-  constructor() {
+  constructor(initialState = null) {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
     this.highestZ = 100;
+    this.isRestoring = false;
     this.dragState = {
       isDragging: false,
       initialX: 0,
@@ -724,16 +770,35 @@ class WindowManager {
       this.endDrag();
       this.endResize();
     });
-    // Initial App: Program Manager
-    this.openWindow("progman", "Program Manager", 500, 480);
+    // Restore prior desktop state
+    if (initialState && initialState.windows?.length) {
+      this.isRestoring = true;
+      this.restoreWindows(initialState.windows);
+      const top = this.getTopWindowByZ();
+      if (top) this.focusWindow(top.id);
+      this.isRestoring = false;
+      this.highestZ = Math.max(
+        this.highestZ,
+        ...initialState.windows.map((w) => w.zIndex || 100)
+      );
+      this.saveDesktopState();
+    }
+    if (this.windows.length === 0)
+      this.openWindow("progman", "Program Manager", 500, 480);
   }
-  createWindowDOM(id, title, width, height, content) {
+  createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
-    win.style.width = width + "px";
-    win.style.height = height + "px";
-    win.style.left = 40 + this.windows.length * 20 + "px";
-    win.style.top = 40 + this.windows.length * 20 + "px";
+    win.style.width =
+      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
+    win.style.height =
+      typeof height === "number"
+        ? height + "px"
+        : height || height === 0
+          ? height
+          : "";
+    win.style.left = stateOverrides.left || 40 + this.windows.length * 20 + "px";
+    win.style.top = stateOverrides.top || 40 + this.windows.length * 20 + "px";
     win.dataset.id = id;
     win.dataset.type = title; // For task manager filter
     // HTML Structure with Resize Handles
@@ -783,8 +848,8 @@ class WindowManager {
     win.addEventListener("mousedown", () => this.focusWindow(id));
     return win;
   }
-  openWindow(type, title, w, h, initData = null) {
-    const id = "win-" + Date.now();
+  openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
+    const id = stateOverrides.id || "win-" + Date.now();
     let content = "";
     // Generate App Content
     if (type === "progman") content = this.getProgramManagerContent();
@@ -827,7 +892,7 @@ class WindowManager {
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
-    const winEl = this.createWindowDOM(id, title, w, h, content);
+    const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
     this.desktop.appendChild(winEl);
     const winObj = {
       id,
@@ -836,12 +901,16 @@ class WindowManager {
       title,
       minimized: false,
       maximized: false,
-      prevRect: null
+      prevRect: stateOverrides.prevRect || null
     };
+    if (stateOverrides.zIndex) {
+      winEl.style.zIndex = stateOverrides.zIndex;
+      this.highestZ = Math.max(this.highestZ, stateOverrides.zIndex);
+    }
     this.windows.push(winObj);
     // Register Process
     kernel.registerProcess(id, title);
-    this.focusWindow(id);
+    if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
     if (type === "mines") initMinesweeper(winEl);
     if (type === "solitaire") initSolitaire(winEl);
@@ -878,6 +947,10 @@ class WindowManager {
     if (type === "hexedit") initHexEditor(winEl);
     // Refresh logic
     refreshAllTaskManagers();
+    if (stateOverrides.maximized) this.maximizeWindow(id);
+    if (stateOverrides.minimized) this.minimizeWindow(id);
+    this.saveDesktopState();
+    return winObj;
   }
   closeWindow(id) {
     const index = this.windows.findIndex((w) => w.id === id);
@@ -903,6 +976,7 @@ class WindowManager {
       // Kill Process
       kernel.unregisterProcess(id);
       refreshAllTaskManagers();
+      this.saveDesktopState();
     }
   }
   minimizeWindow(id) {
@@ -925,6 +999,7 @@ class WindowManager {
             `;
     icon.onclick = () => this.restoreWindow(id);
     this.minimizedContainer.appendChild(icon);
+    this.saveDesktopState();
   }
   restoreWindow(id) {
     const win = this.windows.find((w) => w.id === id);
@@ -934,17 +1009,19 @@ class WindowManager {
     const minIcon = document.getElementById("min-" + id);
     if (minIcon) minIcon.remove();
     this.focusWindow(id);
+    this.saveDesktopState();
   }
   maximizeWindow(id) {
     const win = this.windows.find((w) => w.id === id);
     if (!win) return;
     if (!win.maximized) {
-      win.prevRect = {
-        top: win.el.style.top,
-        left: win.el.style.left,
-        width: win.el.style.width,
-        height: win.el.style.height
-      };
+      win.prevRect =
+        win.prevRect || {
+          top: win.el.style.top,
+          left: win.el.style.left,
+          width: win.el.style.width,
+          height: win.el.style.height
+        };
       win.el.style.top = "0";
       win.el.style.left = "0";
       win.el.style.width = "100%";
@@ -958,8 +1035,15 @@ class WindowManager {
       win.maximized = false;
     }
     this.focusWindow(id);
+    this.saveDesktopState();
   }
   focusWindow(id) {
+    if (this.isRestoring) {
+      this.windows.forEach((w) =>
+        w.el.classList.toggle("active", w.id === id)
+      );
+      return;
+    }
     this.highestZ++;
     this.windows.forEach((w) => {
       if (w.id === id) {
@@ -969,6 +1053,7 @@ class WindowManager {
         w.el.classList.remove("active");
       }
     });
+    this.saveDesktopState();
   }
   // Drag Logic
   startDrag(e, winEl) {
@@ -992,6 +1077,7 @@ class WindowManager {
   endDrag() {
     this.dragState.isDragging = false;
     this.dragState.currentWin = null;
+    this.saveDesktopState();
   }
   // Resize Logic
   startResize(e, winEl, type) {
@@ -1041,6 +1127,63 @@ class WindowManager {
   endResize() {
     this.resizeState.isResizing = false;
     this.resizeState.currentWin = null;
+    this.saveDesktopState();
+  }
+  restoreWindows(windowsState = []) {
+    windowsState.forEach((winState) => {
+      const defaults = PROGRAMS.find((p) => p.type === winState.type);
+      const width = winState.width || defaults?.width || 500;
+      const height = winState.height || defaults?.height || 400;
+      this.openWindow(
+        winState.type || "progman",
+        winState.title || defaults?.title || "Window",
+        width,
+        height,
+        null,
+        {
+          id: winState.id,
+          left: winState.left,
+          top: winState.top,
+          width,
+          height,
+          maximized: winState.maximized,
+          minimized: winState.minimized,
+          prevRect: winState.prevRect,
+          zIndex: winState.zIndex
+        }
+      );
+    });
+  }
+  getWindowStateSnapshot() {
+    return this.windows.map((w) => ({
+      id: w.id,
+      type: w.type,
+      title: w.title,
+      left: w.el.style.left,
+      top: w.el.style.top,
+      width: w.el.style.width,
+      height: w.el.style.height,
+      minimized: w.minimized,
+      maximized: w.maximized,
+      prevRect: w.prevRect,
+      zIndex: parseInt(w.el.style.zIndex || `${this.highestZ}`, 10)
+    }));
+  }
+  getTopWindowByZ() {
+    if (this.windows.length === 0) return null;
+    return this.windows.reduce((top, current) => {
+      const currentZ = parseInt(current.el.style.zIndex || "0", 10);
+      const topZ = parseInt(top.el.style.zIndex || "0", 10);
+      return currentZ >= topZ ? current : top;
+    });
+  }
+  saveDesktopState() {
+    if (this.isRestoring) return;
+    const state = {
+      windows: this.getWindowStateSnapshot(),
+      wallpaper: wallpaperSettings
+    };
+    persistDesktopState(state);
   }
   // Helper: Icons
   getIconForType(type) {
@@ -1559,7 +1702,12 @@ class WindowManager {
   }
 }
 
-const wm = new WindowManager();
+const initialDesktopState = loadDesktopState();
+applyWallpaperSettings(
+  initialDesktopState.wallpaper?.url || "",
+  initialDesktopState.wallpaper?.mode || "tile"
+);
+const wm = new WindowManager(initialDesktopState);
 window.wm = wm;
 let saverActive = false;
 let idleTime = 0;
@@ -1815,6 +1963,10 @@ function openCPDesktop(el, containerOverride) {
                 </div>
             </div>
         `;
+  const urlInput = body.querySelector("#bg-url");
+  const modeSelect = body.querySelector("#bg-mode");
+  if (urlInput) urlInput.value = wallpaperSettings.url || "";
+  if (modeSelect) modeSelect.value = wallpaperSettings.mode || "tile";
 }
 
 function openCPScreensaver(target, containerOverride) {
@@ -1960,26 +2112,9 @@ function openCPSound(target, containerOverride) {
 }
 
 function setWallpaper() {
-  const url = document.getElementById("bg-url").value;
-  const mode = document.getElementById("bg-mode").value;
-  const body = document.body;
-  if (url) {
-    body.style.backgroundImage = `url('${url}')`;
-    if (mode === "tile") {
-      body.style.backgroundSize = "auto";
-      body.style.backgroundRepeat = "repeat";
-    } else if (mode === "center") {
-      body.style.backgroundSize = "auto";
-      body.style.backgroundRepeat = "no-repeat";
-      body.style.backgroundPosition = "center";
-    } else if (mode === "cover") {
-      body.style.backgroundSize = "cover";
-      body.style.backgroundRepeat = "no-repeat";
-      body.style.backgroundPosition = "center";
-    }
-  } else {
-    body.style.backgroundImage = "none";
-  }
+  const url = document.getElementById("bg-url")?.value || "";
+  const mode = document.getElementById("bg-mode")?.value || "tile";
+  applyWallpaperSettings(url, mode, true);
 }
 
 function applyScreensaver() {
