@@ -1611,6 +1611,12 @@ const bsodOverlay = document.getElementById("bsod-overlay");
 const bsodCodeText = bsodOverlay?.querySelector(".bsod-code");
 let screensaverType = "starfield";
 let screensaverTimeout = 60;
+let lockPassphrase = "";
+let requirePassphrase = false;
+let unlockPromptVisible = false;
+const saverLock = document.getElementById("saver-lock");
+const saverPassInput = document.getElementById("saver-pass-input");
+const saverLockError = document.getElementById("saver-lock-error");
 
 let stars = [];
 const numStars = 500;
@@ -1627,6 +1633,59 @@ const pipeDirections = [
 
 const PIPE_COLORS = ["#4bc0ff", "#ff6b6b", "#50fa7b", "#f1fa8c"];
 
+let matrixDrops = [];
+const MATRIX_CHARS = "X01Z=+*".split("");
+let matrixFontSize = 16;
+
+let dvdLogo = null;
+const DVD_COLORS = ["#ff3864", "#3ae374", "#00b3ff", "#ffc600", "#bd93f9", "#ffffff"];
+
+function isLockEnabled() {
+  return requirePassphrase && lockPassphrase.trim().length > 0;
+}
+
+function showUnlockPrompt() {
+  if (!isLockEnabled()) {
+    stopScreensaver();
+    return;
+  }
+
+  if (unlockPromptVisible) return;
+  unlockPromptVisible = true;
+
+  if (saverLock) saverLock.style.display = "flex";
+  if (screensaverDiv) screensaverDiv.classList.add("locked");
+  if (saverLockError) saverLockError.textContent = "";
+  if (saverPassInput) {
+    saverPassInput.value = "";
+    saverPassInput.focus();
+  }
+}
+
+function hideUnlockPrompt() {
+  unlockPromptVisible = false;
+  if (saverLock) saverLock.style.display = "none";
+  if (screensaverDiv) screensaverDiv.classList.remove("locked");
+  if (saverPassInput) saverPassInput.value = "";
+  if (saverLockError) saverLockError.textContent = "";
+}
+
+function submitLockPassphrase() {
+  if (!isLockEnabled()) {
+    stopScreensaver();
+    return;
+  }
+
+  const attempted = saverPassInput?.value || "";
+  if (attempted === lockPassphrase) {
+    hideUnlockPrompt();
+    stopScreensaver();
+  } else if (saverLockError) {
+    saverLockError.textContent = "Incorrect passphrase.";
+    saverPassInput?.focus();
+  }
+}
+
 function initScreensaver() {
   saverCanvas.width = window.innerWidth;
   saverCanvas.height = window.innerHeight;
@@ -1635,6 +1694,9 @@ function initScreensaver() {
   document.body.addEventListener("mousemove", resetTimer);
   document.body.addEventListener("keydown", resetTimer);
   document.body.addEventListener("mousedown", resetTimer);
+  saverPassInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitLockPassphrase();
+  });
   // Timer Check
   setInterval(() => {
     idleTime++;
@@ -1644,7 +1706,13 @@ function initScreensaver() {
 
 function resetTimer() {
   idleTime = 0;
-  if (saverActive) stopScreensaver();
+  if (!saverActive) return;
+  if (unlockPromptVisible) return;
+  if (isLockEnabled()) {
+    showUnlockPrompt();
+  } else {
+    stopScreensaver();
+  }
 }
 
 function startScreensaver(forceType) {
@@ -1654,6 +1722,7 @@ function startScreensaver(forceType) {
   saverCanvas.width = window.innerWidth;
   saverCanvas.height = window.innerHeight;
   clearInterval(sInterval);
+  hideUnlockPrompt();
 
   const shouldPrank = !forceType && Math.random() < 0.001;
   if (shouldPrank) {
@@ -1665,6 +1734,12 @@ function startScreensaver(forceType) {
   if (saver === "pipes") {
     setupPipes();
     sInterval = setInterval(drawPipes, 50);
+  } else if (saver === "matrix") {
+    setupMatrix();
+    sInterval = setInterval(drawMatrix, 50);
+  } else if (saver === "dvd") {
+    setupDvd();
+    sInterval = setInterval(drawDvd, 30);
   } else {
     setupStarfield();
     sInterval = setInterval(drawStars, 30);
@@ -1676,6 +1751,7 @@ function stopScreensaver() {
   screensaverDiv.style.display = "none";
   clearInterval(sInterval);
   hideFakeBsod();
+  hideUnlockPrompt();
 }
 
 function showFakeBsod() {
@@ -1728,6 +1804,88 @@ function drawStars() {
       sCtx.fillRect(px, py, size, size);
     }
   }
+}
+
+function setupMatrix() {
+  matrixFontSize = Math.max(14, Math.floor(saverCanvas.width / 80));
+  const columns = Math.floor(saverCanvas.width / matrixFontSize);
+  matrixDrops = new Array(columns)
+    .fill(0)
+    .map(() => Math.floor(Math.random() * -30));
+  sCtx.fillStyle = "black";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  sCtx.font = `${matrixFontSize}px monospace`;
+}
+
+function drawMatrix() {
+  sCtx.fillStyle = "rgba(0, 0, 0, 0.25)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  sCtx.fillStyle = "#00ff7f";
+  for (let i = 0; i < matrixDrops.length; i++) {
+    const text =
+      MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)] || "0";
+    sCtx.fillText(text, i * matrixFontSize, matrixDrops[i] * matrixFontSize);
+    if (matrixDrops[i] * matrixFontSize > saverCanvas.height && Math.random() > 0.975) {
+      matrixDrops[i] = 0;
+    }
+    matrixDrops[i]++;
+  }
+}
+
+function setupDvd() {
+  const size = Math.max(80, Math.floor(Math.min(saverCanvas.width, saverCanvas.height) / 6));
+  const startX = Math.random() * (saverCanvas.width - size);
+  const startY = Math.random() * (saverCanvas.height - size / 2);
+  dvdLogo = {
+    x: startX,
+    y: startY,
+    dx: 4,
+    dy: 3,
+    w: size,
+    h: size / 2,
+    color: DVD_COLORS[Math.floor(Math.random() * DVD_COLORS.length)]
+  };
+  sCtx.fillStyle = "black";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  sCtx.font = `${Math.floor(size / 3)}px 'Segoe UI', 'MS Sans Serif', sans-serif`;
+}
+
+function drawDvd() {
+  if (!dvdLogo) return;
+  sCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  dvdLogo.x += dvdLogo.dx;
+  dvdLogo.y += dvdLogo.dy;
+
+  const hitX = dvdLogo.x <= 0 || dvdLogo.x + dvdLogo.w >= saverCanvas.width;
+  const hitY = dvdLogo.y <= 0 || dvdLogo.y + dvdLogo.h >= saverCanvas.height;
+
+  if (hitX) {
+    dvdLogo.dx *= -1;
+    dvdLogo.color = DVD_COLORS[Math.floor(Math.random() * DVD_COLORS.length)];
+  }
+  if (hitY) {
+    dvdLogo.dy *= -1;
+    dvdLogo.color = DVD_COLORS[Math.floor(Math.random() * DVD_COLORS.length)];
+  }
+
+  sCtx.fillStyle = dvdLogo.color;
+  sCtx.strokeStyle = "#000";
+  sCtx.lineWidth = 4;
+  sCtx.beginPath();
+  if (sCtx.roundRect) {
+    sCtx.roundRect(dvdLogo.x, dvdLogo.y, dvdLogo.w, dvdLogo.h, dvdLogo.h / 4);
+  } else {
+    sCtx.rect(dvdLogo.x, dvdLogo.y, dvdLogo.w, dvdLogo.h);
+  }
+  sCtx.fill();
+  sCtx.stroke();
+
+  sCtx.fillStyle = "#000";
+  sCtx.textAlign = "center";
+  sCtx.textBaseline = "middle";
+  sCtx.fillText("DVD", dvdLogo.x + dvdLogo.w / 2, dvdLogo.y + dvdLogo.h / 2 + 2);
 }
 
 function setupPipes() {
@@ -1884,7 +2042,9 @@ function openCPScreensaver(target, containerOverride) {
 
   const saverOptionsData = [
     { value: "starfield", label: "Starfield", desc: "Classic warp-speed stars." },
-    { value: "pipes", label: "3D Pipes", desc: "Colorful shaded pipes crawl in 3D." }
+    { value: "pipes", label: "3D Pipes", desc: "Colorful shaded pipes crawl in 3D." },
+    { value: "matrix", label: "Matrix", desc: "Green cascading code falls from the top of the screen." },
+    { value: "dvd", label: "Bouncing Logo", desc: "A retro DVD logo that changes color when it hits a wall." }
   ];
   const saverOptions = saverOptionsData
     .map(
@@ -1895,6 +2055,8 @@ function openCPScreensaver(target, containerOverride) {
     )
     .join("");
 
+  const lockEnabled = isLockEnabled();
+
   body.innerHTML = `<div class="cp-settings-layout">
         <div class="cp-section">
             <label style="display:block;font-size:12px;margin-bottom:6px;">Screensaver</label>
@@ -1904,11 +2066,20 @@ function openCPScreensaver(target, containerOverride) {
                 <label for="cp-saver-delay">Idle time (seconds):</label>
                 <input type="number" id="cp-saver-delay" min="5" max="600" value="${screensaverTimeout}" style="width:80px;">
             </div>
+            <div class="cp-saver-row">
+                <label for="cp-saver-passphrase">Lock screen passphrase (optional):</label>
+                <input type="password" id="cp-saver-passphrase" placeholder="Leave blank to disable" value="${lockPassphrase}" style="width:100%;">
+            </div>
+            <label class="volume-mute"><input type="checkbox" id="cp-saver-require" ${
+              lockEnabled ? "checked" : ""
+            }> Require passphrase to exit screensaver</label>
             <div class="cp-saver-actions">
                 <button class="task-btn" onclick="previewScreensaver()">Preview</button>
                 <button class="task-btn" onclick="applyScreensaver()">Apply</button>
             </div>
-            <div class="cp-saver-note" id="cp-saver-status">Current saver: ${screensaverType}</div>
+            <div class="cp-saver-note" id="cp-saver-status">Current saver: ${screensaverType}${
+              lockEnabled ? " (locked)" : ""
+            }</div>
         </div>
     </div>`;
 
@@ -2023,23 +2194,37 @@ function setWallpaper() {
   }
 }
 
-function applyScreensaver() {
+function captureScreensaverForm() {
   const select = document.getElementById("cp-saver-select");
   const delay = document.getElementById("cp-saver-delay");
   const status = document.getElementById("cp-saver-status");
+  const passInput = document.getElementById("cp-saver-passphrase");
+  const requireToggle = document.getElementById("cp-saver-require");
   if (select?.value) screensaverType = select.value;
   const parsedDelay = parseInt(delay?.value || "", 10);
   if (!isNaN(parsedDelay)) {
     screensaverTimeout = Math.min(600, Math.max(5, parsedDelay));
     if (delay) delay.value = screensaverTimeout;
   }
+  lockPassphrase = passInput?.value || "";
+  const hasPass = lockPassphrase.trim().length > 0;
+  requirePassphrase = !!requireToggle?.checked && hasPass;
+  if (requireToggle && !hasPass) requireToggle.checked = false;
+  return { status, hasPass };
+}
+
+function applyScreensaver() {
+  const { status, hasPass } = captureScreensaverForm();
   idleTime = 0;
   if (status)
-    status.textContent = `Current saver: ${screensaverType} (starts after ${screensaverTimeout}s idle)`;
+    status.textContent = `Current saver: ${screensaverType} (starts after ${screensaverTimeout}s idle${
+      requirePassphrase && hasPass ? ", locked" : ""
+    })`;
 }
 
 function previewScreensaver() {
   const select = document.getElementById("cp-saver-select");
+  captureScreensaverForm();
   const chosen = select?.value || screensaverType;
   screensaverType = chosen;
   idleTime = 0;
@@ -6911,8 +7096,10 @@ window.setWallpaper = setWallpaper;
 window.previewScreensaver = previewScreensaver;
 window.applyScreensaver = applyScreensaver;
 window.applyFontSelection = applyFontSelection;
+window.submitLockPassphrase = submitLockPassphrase;
+window.hideUnlockPrompt = hideUnlockPrompt;
 
 window.onload = () => {
     initSplash();
-    initScreensaver();    
+    initScreensaver();
 };
