@@ -34,6 +34,7 @@ const ICONS = {
   beatmaker: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="2" ry="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="20" height="16" fill="#202020" stroke="#808080"/><rect x="8" y="18" width="4" height="4" fill="#ff7043"/><rect x="14" y="18" width="4" height="4" fill="#fff176"/><rect x="20" y="18" width="4" height="4" fill="#66bb6a"/><rect x="10" y="12" width="12" height="2" fill="#00e5ff"/><rect x="12" y="10" width="8" height="2" fill="#00bcd4"/><rect x="10" y="14" width="12" height="2" fill="#00e676"/></svg>`,
   radio: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="10" width="24" height="14" rx="2" fill="#f0f0f0" stroke="black"/><rect x="6" y="8" width="14" height="4" fill="#c0c0c0" stroke="black"/><circle cx="22" cy="17" r="4" fill="#ffcc00" stroke="#c08000"/><circle cx="22" cy="17" r="2" fill="#0066cc"/><rect x="8" y="14" width="8" height="2" fill="#000"/><rect x="8" y="18" width="6" height="2" fill="#000"/><path d="M10 8 L18 4" stroke="#404040" stroke-width="2"/></svg>`,
   rss: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="4" width="24" height="24" rx="4" fill="#ff7f00" stroke="#b85c00"/><circle cx="11" cy="21" r="2" fill="#fff"/><path d="M10 14c5 0 9 4 9 9" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M10 10c7 0 13 6 13 13" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+  discord: `<svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="6" width="24" height="20" rx="3" fill="#5865f2" stroke="#2c2f33"/><path d="M12 12c1 0 1.5.5 2 1 1-.5 3-.5 4 0 .5-.5 1-1 2-1l1 4s-1.5 2.5-5 2.5-5-2.5-5-2.5l1-4Z" fill="white"/><circle cx="14" cy="15" r="1" fill="#2c2f33"/><circle cx="18" cy="15" r="1" fill="#2c2f33"/></svg>`,
   folder: `<svg viewBox="0 0 16 16" class="tiny-icon"><path d="M1 2h6l2 2h6v10H1z" fill="#FFFF00" stroke="black" stroke-width="0.5"/></svg>`,
   file_exe: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><rect x="3" y="2" width="10" height="2" fill="#000080"/></svg>`,
   file_txt: `<svg viewBox="0 0 16 16" class="tiny-icon"><rect x="2" y="1" width="12" height="14" fill="white" stroke="black" stroke-width="0.5"/><line x1="4" y1="4" x2="12" y2="4" stroke="black" stroke-width="0.5"/><line x1="4" y1="7" x2="12" y2="7" stroke="black" stroke-width="0.5"/></svg>`,
@@ -323,6 +324,14 @@ const PROGRAMS = [
     label: "Radio Garden"
   },
   {
+    type: "discord",
+    title: "Discord (API)",
+    width: 720,
+    height: 520,
+    icon: "discord",
+    label: "Discord"
+  },
+  {
     type: "irc",
     title: "IRC Client",
     width: 680,
@@ -405,6 +414,7 @@ const DEFAULT_FS = {
           "CONTROL.EXE": { type: "file", app: "control" },
           "RSS.EXE": { type: "file", app: "rss" },
           "WEB.EXE": { type: "file", app: "browser" },
+          "DISCORD.EXE": { type: "file", app: "discord" },
           "IRC.EXE": { type: "file", app: "irc" },
           "TINYC.EXE": { type: "file", app: "compiler" },
           "PYTHON.EXE": { type: "file", app: "python" },
@@ -823,6 +833,7 @@ class WindowManager {
     if (type === "rss") content = this.getRssReaderContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
+    if (type === "discord") content = this.getDiscordContent();
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "papers") content = this.getPapersContent();
@@ -872,6 +883,7 @@ class WindowManager {
     if (type === "rss") initRssReader(winEl);
     if (type === "browser") initBrowser(winEl);
     if (type === "radiogarden") initRadioGarden(winEl);
+    if (type === "discord") initDiscord(winEl);
     if (type === "irc") initIRC(winEl);
     if (type === "doom") initDoom(winEl);
     if (type === "papers") initPapersPlease(winEl);
@@ -1244,6 +1256,35 @@ class WindowManager {
               <div class="irc-input-row">
                 <input type="text" class="irc-input" placeholder="Type a message and hit Enter" spellcheck="false" disabled>
                 <button class="task-btn irc-send" disabled>Send</button>
+              </div>
+            </div>`;
+  }
+  getDiscordContent() {
+    return `<div class="discord-layout">
+              <div class="discord-header">
+                <div class="discord-field">
+                  <label>Bot/User Token</label>
+                  <input type="password" class="discord-token" placeholder="Bot or user token" spellcheck="false">
+                </div>
+                <div class="discord-field">
+                  <label>Channel ID</label>
+                  <input type="text" class="discord-channel" placeholder="000000000000000000" spellcheck="false">
+                </div>
+                <div class="discord-actions">
+                  <button class="task-btn discord-fetch">Fetch Messages</button>
+                  <button class="task-btn discord-clear">Clear</button>
+                </div>
+              </div>
+              <div class="discord-status" aria-live="polite">Provide a token with access to the channel and fetch messages.</div>
+              <div class="discord-body">
+                <div class="discord-log" aria-label="Message log"></div>
+                <div class="discord-compose">
+                  <textarea class="discord-message" placeholder="Write a message" spellcheck="false"></textarea>
+                  <div class="discord-compose-actions">
+                    <button class="task-btn discord-send">Send</button>
+                    <span class="discord-help">Uses Discord's REST API. Tokens are only stored in-memory.</span>
+                  </div>
+                </div>
               </div>
             </div>`;
   }
@@ -2650,6 +2691,146 @@ function initIRC(win) {
           client = null;
       }
   };
+}
+
+function initDiscord(win) {
+  const tokenInput = win.querySelector(".discord-token");
+  const channelInput = win.querySelector(".discord-channel");
+  const fetchBtn = win.querySelector(".discord-fetch");
+  const clearBtn = win.querySelector(".discord-clear");
+  const sendBtn = win.querySelector(".discord-send");
+  const messageInput = win.querySelector(".discord-message");
+  const logEl = win.querySelector(".discord-log");
+  const statusEl = win.querySelector(".discord-status");
+
+  const setStatus = (text, tone = "info") => {
+    statusEl.textContent = text;
+    statusEl.dataset.tone = tone;
+  };
+
+  const formatAuth = (raw) => {
+    if (!raw) return "";
+    if (raw.startsWith("Bot ") || raw.startsWith("Bearer ")) return raw;
+    return `Bot ${raw}`;
+  };
+
+  const renderMessages = (messages = []) => {
+    logEl.innerHTML = "";
+    if (!messages.length) {
+      const empty = document.createElement("div");
+      empty.className = "discord-empty";
+      empty.textContent = "No messages returned for this channel.";
+      logEl.appendChild(empty);
+      return;
+    }
+
+    messages
+      .slice()
+      .reverse()
+      .forEach((msg) => {
+        const row = document.createElement("div");
+        row.className = "discord-msg";
+        const ts = new Date(msg.timestamp || msg.edited_timestamp || Date.now());
+        const meta = `${msg.author?.username || "Unknown"} · ${ts.toLocaleString()}`;
+
+        row.innerHTML = `<div class="discord-msg-meta">${meta}</div><div class="discord-msg-body">${
+          msg.content ? msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "(no content)"
+        }</div>`;
+        logEl.appendChild(row);
+      });
+  };
+
+  const requireFields = () => {
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    if (!token || !channelId) {
+      setStatus("Enter both a token and channel ID before proceeding.", "error");
+      return null;
+    }
+    return { token, channelId };
+  };
+
+  const fetchMessages = async () => {
+    const fields = requireFields();
+    if (!fields) return;
+
+    setStatus("Fetching messages via Discord API...", "info");
+    try {
+      const res = await fetch(
+        `https://discord.com/api/v10/channels/${encodeURIComponent(fields.channelId)}/messages?limit=20`,
+        {
+          headers: {
+            Authorization: formatAuth(fields.token)
+          }
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || `Request failed with status ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderMessages(data);
+      setStatus("Loaded the 20 most recent messages.", "success");
+    } catch (err) {
+      console.error(err);
+      setStatus(
+        `Could not reach Discord API: ${err.message}. Make sure CORS allows this origin and the token has access.`,
+        "error"
+      );
+    }
+  };
+
+  const sendMessage = async () => {
+    const fields = requireFields();
+    if (!fields) return;
+    const content = messageInput.value.trim();
+    if (!content) {
+      setStatus("Type a message before sending.", "error");
+      return;
+    }
+
+    setStatus("Sending message...", "info");
+    try {
+      const res = await fetch(`https://discord.com/api/v10/channels/${encodeURIComponent(fields.channelId)}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: formatAuth(fields.token)
+        },
+        body: JSON.stringify({ content })
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || `Request failed with status ${res.status}`);
+      }
+
+      messageInput.value = "";
+      setStatus("Message sent. Fetching latest messages...", "success");
+      fetchMessages();
+    } catch (err) {
+      console.error(err);
+      setStatus(
+        `Failed to send message: ${err.message}. Verify permissions (Send Messages) and CORS.`,
+        "error"
+      );
+    }
+  };
+
+  fetchBtn?.addEventListener("click", fetchMessages);
+  sendBtn?.addEventListener("click", sendMessage);
+  clearBtn?.addEventListener("click", () => {
+    logEl.innerHTML = "";
+    setStatus("Cleared log. Ready to fetch again.", "info");
+  });
+  messageInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
 }
 
 let selT = {};

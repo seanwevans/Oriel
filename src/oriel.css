@@ -1882,6 +1882,133 @@ body {
   font-size: 13px;
 }
 
+.discord-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--win-gray);
+  gap: 6px;
+}
+
+.discord-header {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr) auto;
+  gap: 6px;
+  padding: 6px;
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+  border-bottom: 1px solid var(--win-gray-shadow);
+  font-size: 12px;
+}
+
+.discord-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.discord-field label {
+  font-weight: bold;
+}
+
+.discord-field input {
+  padding: 4px 6px;
+  border: 1px solid var(--win-gray-dark);
+  font-size: 13px;
+  font-family: var(--font-main);
+}
+
+.discord-actions {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.discord-status {
+  padding: 4px 8px;
+  margin: 0 6px;
+  border: 1px solid var(--win-gray-shadow);
+  background: #f7f7f7;
+  font-size: 13px;
+}
+
+.discord-status[data-tone="error"] {
+  background: #fff0f0;
+  color: #8b0000;
+  border-color: #c05050;
+}
+
+.discord-status[data-tone="success"] {
+  background: #f0fff4;
+  color: #0b5f2d;
+  border-color: #4caf50;
+}
+
+.discord-body {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 6px;
+  padding: 0 6px 6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.discord-log {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  padding: 8px;
+  overflow-y: auto;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.discord-empty {
+  text-align: center;
+  color: #555;
+}
+
+.discord-msg-meta {
+  font-weight: bold;
+  color: #2c2f33;
+  margin-bottom: 2px;
+}
+
+.discord-msg-body {
+  background: #f5f5f5;
+  border: 1px solid var(--win-gray-shadow);
+  padding: 6px;
+  white-space: pre-wrap;
+}
+
+.discord-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.discord-message {
+  width: 100%;
+  height: 140px;
+  resize: vertical;
+  padding: 6px;
+  border: 1px solid var(--win-gray-dark);
+  font-family: var(--font-main);
+  font-size: 13px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.discord-compose-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.discord-help {
+  font-size: 12px;
+  color: #555;
+}
+
 .radio-layout {
   display: flex;
   flex-direction: column;
