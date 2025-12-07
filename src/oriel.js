@@ -945,7 +945,7 @@ class WindowManager {
     if (type === "console") initConsole(winEl);
     if (type === "write") initWrite(winEl);
     if (type === "cardfile") initCardfile(winEl);
-    if (type === "taskman") initTaskMan(winEl);
+    if (type === "taskman") initTaskMan(winEl, this);
     if (type === "pdfreader") initPdfReader(winEl, initData);
     if (type === "imageviewer") initImageViewer(winEl, initData);
     if (type === "markdown") initMarkdownViewer(winEl, initData);
@@ -958,7 +958,7 @@ class WindowManager {
     if (type === "papers") initPapersPlease(winEl);
     if (type === "hexedit") initHexEditor(winEl);
     // Refresh logic
-    refreshAllTaskManagers();
+    refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
     if (stateOverrides.minimized) this.minimizeWindow(id);
     this.saveDesktopState();
@@ -987,7 +987,7 @@ class WindowManager {
       delete browserSessions[id];
       // Kill Process
       kernel.unregisterProcess(id);
-      refreshAllTaskManagers();
+      refreshAllTaskManagers(this);
       this.saveDesktopState();
     }
   }
@@ -3155,16 +3155,18 @@ function initDiscord(win) {
 
 let selT = {};
 
-function initTaskMan(win) {
-  refreshTaskList(win.querySelector("#task-list"), win.dataset.id);
+function initTaskMan(win, manager) {
+  refreshTaskList(win.querySelector("#task-list"), win.dataset.id, manager);
   refreshProcessView(win.querySelector("#task-queue-view"));
 }
 
-function refreshAllTaskManagers() {
+function refreshAllTaskManagers(manager) {
+  const wmRef = manager || window.wm;
+  if (!wmRef) return;
   document.querySelectorAll(".window").forEach((w) => {
     if (w.dataset.type === "Task List") {
       const list = w.querySelector("#task-list");
-      if (list) refreshTaskList(list, w.dataset.id);
+      if (list) refreshTaskList(list, w.dataset.id, wmRef);
     }
   });
 }
@@ -3178,15 +3180,17 @@ function refreshAllProcessViews() {
   });
 }
 
-function refreshTaskList(listEl, winId) {
+function refreshTaskList(listEl, winId, manager) {
+  const wmRef = manager || window.wm;
+  if (!wmRef) return;
   listEl.innerHTML = "";
-  wm.windows.forEach((w) => {
+  wmRef.windows.forEach((w) => {
     const item = document.createElement("div");
     item.className = "task-item " + (selT[winId] === w.id ? "selected" : "");
     item.innerText = w.title;
     item.onclick = () => {
       selT[winId] = w.id;
-      refreshTaskList(listEl, winId);
+      refreshTaskList(listEl, winId, wmRef);
     };
     listEl.appendChild(item);
   });
@@ -3217,16 +3221,16 @@ function switchTask(e) {
   const winId = e.target.closest(".window").dataset.id;
   const targetId = selT[winId];
   if (targetId) {
-    wm.restoreWindow(targetId);
-    wm.focusWindow(targetId);
-    wm.closeWindow(winId);
+    window.wm?.restoreWindow(targetId);
+    window.wm?.focusWindow(targetId);
+    window.wm?.closeWindow(winId);
   }
 }
 
 function endTask(e) {
   const winId = e.target.closest(".window").dataset.id;
   const targetId = selT[winId];
-  if (targetId) wm.closeWindow(targetId);
+  if (targetId) window.wm?.closeWindow(targetId);
 }
 
 function initReversi(w) {
