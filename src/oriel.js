@@ -1748,8 +1748,13 @@ applyWallpaperSettings(
   initialDesktopState.wallpaper?.url || "",
   initialDesktopState.wallpaper?.mode || "tile"
 );
-const wm = new WindowManager(initialDesktopState);
-window.wm = wm;
+let wm = null;
+function bootDesktop() {
+  if (wm) return wm;
+  wm = new WindowManager(initialDesktopState);
+  window.wm = wm;
+  return wm;
+}
 let saverActive = false;
 let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
@@ -7239,6 +7244,7 @@ window.submitLockPassphrase = submitLockPassphrase;
 window.hideUnlockPrompt = hideUnlockPrompt;
 
 window.onload = () => {
-    initSplash();
-    initScreensaver();
+  bootDesktop();
+  initSplash();
+  initScreensaver();
 };
