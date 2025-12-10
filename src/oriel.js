@@ -1,137 +1,16 @@
 import { ICONS } from "./icons.js";
 import { PROGRAMS } from "./programs.js";
+import {
+  DEFAULT_MD_SAMPLE,
+  DEFAULT_PDF_DATA_URI,
+  DEFAULT_RSS_SAMPLE,
+  IRC_BOT_MESSAGES,
+  RSS_PRESETS
+} from "./defaults.js";
+import { loadDesktopState, persistDesktopState } from "./state.js";
+import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
+import { MOCK_FS, saveFileSystem } from "./filesystem.js";
 
-const DESKTOP_STATE_KEY = "oriel-desktop-state";
-
-let wallpaperSettings = { url: "", mode: "tile" };
-
-function loadDesktopState() {
-  try {
-    const stored = localStorage.getItem(DESKTOP_STATE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch (err) {
-    console.error("Failed to parse desktop state", err);
-  }
-  return { windows: [], wallpaper: null };
-}
-
-function persistDesktopState(state) {
-  localStorage.setItem(DESKTOP_STATE_KEY, JSON.stringify(state));
-}
-
-function applyWallpaperSettings(url = "", mode = "tile", persist = false) {
-  wallpaperSettings = { url, mode };
-  const body = document.body;
-  if (url) {
-    body.style.backgroundImage = `url('${url}')`;
-    if (mode === "tile") {
-      body.style.backgroundSize = "auto";
-      body.style.backgroundRepeat = "repeat";
-      body.style.backgroundPosition = "center";
-    } else if (mode === "center") {
-      body.style.backgroundSize = "auto";
-      body.style.backgroundRepeat = "no-repeat";
-      body.style.backgroundPosition = "center";
-    } else if (mode === "cover") {
-      body.style.backgroundSize = "cover";
-      body.style.backgroundRepeat = "no-repeat";
-      body.style.backgroundPosition = "center";
-    }
-  } else {
-    body.style.backgroundImage = "none";
-  }
-
-  if (persist && window.wm) {
-    window.wm.saveDesktopState();
-  }
-}
-
-const DEFAULT_PDF_DATA_URI =
-  "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMCA0IDAgUiA+PiA+PiAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSA+PgplbmRvYmoKNCAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL05hbWUgL0YwIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagogNSAwIG9iago8PCAvTGVuZ3RoIDY2ID4+CnN0cmVhbQpCVAovRjAgMjQgVGYKMTIwIDcwMCBUZAooSGVsbG8gV29ybGQhKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY3IDAwMDAwIG4gCjAwMDAwMDAxNjMgMDAwMDAgbiAKMDAwMDAwMDI2MiAwMDAwMCBuIAowMDAwMDAwMzQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiAvSW5mbyA1IDAgUiA+PgpzdGFydHhyZWYKNDY5CiUlRU9G";
-
-const DEFAULT_MD_SAMPLE = 
-  `# Welcome to Markdown Viewer\n\n
-  This is a simple markdown previewer. 
-  Try editing the text on the left and watch the preview update.\n\n
-  ## Features\n
-  - Headings, lists, and links\n
-  - **Bold** and *italic* text\n`;
-
-const FS_STORAGE_KEY = "oriel-fs-v1";
-
-const DEFAULT_FS = {
-  "C:\\": {
-    type: "dir",
-    children: {
-      ORIEL: {
-        type: "dir",
-        children: {
-          SYSTEM: { type: "dir", children: {} },
-          "CALC.EXE": { type: "file", app: "calc" },
-          "NOTEPAD.EXE": { type: "file", app: "notepad" },
-          "DOOM.EXE": { type: "file", app: "doom" },
-          "WRITE.EXE": { type: "file", app: "write" },
-          "CARDFILE.EXE": { type: "file", app: "cardfile" },
-          "WINMINE.EXE": { type: "file", app: "mines" },
-          "CHESS.EXE": { type: "file", app: "chess" },
-          "SOL.EXE": { type: "file", app: "solitaire" },
-          "REVERSI.EXE": { type: "file", app: "reversi" },
-          "PBRUSH.EXE": { type: "file", app: "paint" },
-          "ARTIST.EXE": { type: "file", app: "artist" },
-          "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
-          "MPLAYER.EXE": { type: "file", app: "mplayer" },
-          "SKIFREE.EXE": { type: "file", app: "skifree" },
-          "LINERIDR.EXE": { type: "file", app: "linerider" },
-          "SIMCITY.EXE": { type: "file", app: "simcity" },
-          "WINFILE.EXE": { type: "file", app: "winfile" },
-          "TASKMAN.EXE": { type: "file", app: "taskman" },
-          "CLIPBRD.EXE": { type: "file", app: "clipbrd" },
-          "DATAMGR.EXE": { type: "file", app: "database" },
-          "CHARMAP.EXE": { type: "file", app: "charmap" },
-          "SOUNDREC.EXE": { type: "file", app: "soundrec" },
-          "BEATLAB.EXE": { type: "file", app: "beatmaker" },
-          "RADIO.EXE": { type: "file", app: "radio" },
-          "CLOCK.EXE": { type: "file", app: "clock" },
-          "CONTROL.EXE": { type: "file", app: "control" },
-          "RSS.EXE": { type: "file", app: "rss" },
-          "WEB.EXE": { type: "file", app: "browser" },
-          "DISCORD.EXE": { type: "file", app: "discord" },
-          "IRC.EXE": { type: "file", app: "irc" },
-          "TINYC.EXE": { type: "file", app: "compiler" },
-          "PYTHON.EXE": { type: "file", app: "python" },
-          "CONSOLE.EXE": { type: "file", app: "console" },
-          "HEXEDIT.EXE": { type: "file", app: "hexedit" },
-          "IMGVIEW.EXE": { type: "file", app: "imageviewer" }
-        }
-      },
-      DOCUMENTS: {
-        type: "dir",
-        children: {
-          "README.TXT": { type: "file", app: "notepad", content: "Welcome to Oriel 1.0!" },
-          "TODO.TXT": { type: "file", app: "notepad", content: "- Buy Milk\n- Install DOOM" },
-          "MANUAL.PDF": { type: "file", app: "pdfreader", content: { name: "Manual.pdf", src: DEFAULT_PDF_DATA_URI } },
-          "README.MD": { type: "file", app: "markdown", content: DEFAULT_MD_SAMPLE },
-          "SCREEN.PNG": {
-            type: "file",
-            app: "imageviewer",
-            content: { name: "screen.png", src: "screen.png" }
-          }
-        }
-      }
-    }
-  }
-};
-
-function loadFileSystem() {
-  const stored = localStorage.getItem(FS_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : DEFAULT_FS;
-}
-
-function saveFileSystem() {
-  localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(MOCK_FS));
-}
-
-const MOCK_FS = loadFileSystem();
 
 function createFolder(btn) {
   const win = btn.closest(".window");
@@ -159,36 +38,7 @@ const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
 const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
 const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
 
-const RSS_PRESETS = [
-  { label: "Hacker News", url: "https://hnrss.org/frontpage" },
-  { label: "Lobsters", url: "https://lobste.rs/rss" },
-  { label: "BBC World", url: "http://feeds.bbci.co.uk/news/world/rss.xml" },
-  { label: "Ars Technica", url: "http://feeds.arstechnica.com/arstechnica/index" }
-];
-
-const DEFAULT_RSS_SAMPLE = [
-  {
-    title: "Welcome to Oriel RSS",
-    link: "https://example.com/",
-    date: new Date().toISOString(),
-    summary:
-      "Load a feed from the toolbar presets or paste any RSS/Atom URL. Items appear on the left and show details here."
-  }
-];
-
 const RSS_PROXY_ROOT = "https://api.allorigins.win/raw?url=";
-
-const IRC_BOT_MESSAGES = [
-  "Anyone else miss dial-up modems?",
-  "Set your away message with /away <msg>!",
-  "New high score in SkiFree: 12,430 points.",
-  "Reminder: backups save lives.",
-  "Try the checkpoint game—papers, please!",
-  "TinyC compile succeeded. No warnings.",
-  "Have you tweaked your wallpaper today?",
-  "Oriel 1.0 loves retro vibes.",
-  "Remember to hydrate and stretch."
-];
 
 const VOLUME_STORAGE_KEY = "oriel-volume";
 
@@ -829,7 +679,7 @@ class WindowManager {
     if (this.isRestoring) return;
     const state = {
       windows: this.getWindowStateSnapshot(),
-      wallpaper: wallpaperSettings
+      wallpaper: getWallpaperSettings()
     };
     persistDesktopState(state);
   }
@@ -1805,8 +1655,9 @@ function openCPDesktop(el, containerOverride) {
         `;
   const urlInput = body.querySelector("#bg-url");
   const modeSelect = body.querySelector("#bg-mode");
-  if (urlInput) urlInput.value = wallpaperSettings.url || "";
-  if (modeSelect) modeSelect.value = wallpaperSettings.mode || "tile";
+  const currentWallpaper = getWallpaperSettings();
+  if (urlInput) urlInput.value = currentWallpaper.url || "";
+  if (modeSelect) modeSelect.value = currentWallpaper.mode || "tile";
 }
 
 function openCPScreensaver(target, containerOverride) {
