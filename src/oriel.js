@@ -3,13 +3,29 @@ import { PROGRAMS } from "./programs.js";
 import {
   DEFAULT_MD_SAMPLE,
   DEFAULT_PDF_DATA_URI,
-  DEFAULT_RSS_SAMPLE,
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { MOCK_FS, saveFileSystem } from "./filesystem.js";
+import {
+  getLastNonZeroVolume,
+  getMediaPlayerTracks,
+  getSystemVolume,
+  playVolumeTest,
+  registerMediaElement,
+  setSystemVolume
+} from "./audio.js";
+import {
+  BROWSER_HOME,
+  browserSessions,
+  initBrowser,
+  initRadio,
+  initRadioGarden,
+  initRssReader
+} from "./networking.js";
+import { SimulatedKernel } from "./kernel.js";
 
 
 function createFolder(btn) {
@@ -32,204 +48,7 @@ function createFolder(btn) {
   }
 }
 
-const BROWSER_HOME = "https://example.com/";
-const browserSessions = {};
-const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
-const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
-const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
-
-const RSS_PROXY_ROOT = "https://api.allorigins.win/raw?url=";
-
-const VOLUME_STORAGE_KEY = "oriel-volume";
-
-function clampVolume(v) {
-  return Math.min(1, Math.max(0, v));
-}
-
-function loadStoredVolume() {
-  const stored = parseFloat(localStorage.getItem(VOLUME_STORAGE_KEY));
-  if (isNaN(stored)) return 0.7;
-  return clampVolume(stored);
-}
-
-let systemVolume = loadStoredVolume();
-let lastNonZeroVolume = systemVolume || 0.7;
-const activeMediaElements = new Set();
-
-function generateToneUrl(freq, duration = 1.2, sampleRate = 22050) {
-  const sampleCount = Math.floor(sampleRate * duration);
-  const buffer = new ArrayBuffer(44 + sampleCount * 2);
-  const view = new DataView(buffer);
-  const bytes = new Uint8Array(buffer);
-
-  const writeString = (offset, str) => {
-    for (let i = 0; i < str.length; i++) bytes[offset + i] = str.charCodeAt(i);
-  };
-
-  writeString(0, "RIFF");
-  view.setUint32(4, 36 + sampleCount * 2, true);
-  writeString(8, "WAVEfmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(36, "data");
-  view.setUint32(40, sampleCount * 2, true);
-
-  for (let i = 0; i < sampleCount; i++) {
-    const sample = Math.sin((2 * Math.PI * freq * i) / sampleRate) * 0.35;
-    view.setInt16(44 + i * 2, sample * 32767, true);
-  }
-
-  return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
-}
-
-let mediaPlayerTracks = null;
-
-function getMediaPlayerTracks() {
-  if (!mediaPlayerTracks) {
-    mediaPlayerTracks = [
-      {
-        name: "Synth Bell (C5)",
-        url: generateToneUrl(523.25, 1.2),
-        type: "audio/wav"
-      },
-      {
-        name: "Retro Chime (E4)",
-        url: generateToneUrl(329.63, 1.5),
-        type: "audio/wav"
-      },
-      {
-        name: "Soft Drone (A3)",
-        url: generateToneUrl(220, 2),
-        type: "audio/wav"
-      }
-    ];
-  }
-  return mediaPlayerTracks;
-}
-
-function getSystemVolume() {
-  return systemVolume;
-}
-
-function updateVolumeUIElements(volume) {
-  const percent = `${Math.round(volume * 100)}%`;
-  document
-    .querySelectorAll(".volume-slider")
-    .forEach((slider) => (slider.value = Math.round(volume * 100)));
-  document
-    .querySelectorAll(".volume-percent")
-    .forEach((label) => (label.textContent = percent));
-  document
-    .querySelectorAll(".volume-mute-toggle")
-    .forEach((chk) => (chk.checked = volume === 0));
-}
-
-function setSystemVolume(value) {
-  systemVolume = clampVolume(value);
-  if (systemVolume > 0) lastNonZeroVolume = systemVolume;
-  localStorage.setItem(VOLUME_STORAGE_KEY, systemVolume.toString());
-  activeMediaElements.forEach((el) => {
-    el.volume = systemVolume;
-  });
-  updateVolumeUIElements(systemVolume);
-}
-
-function registerMediaElement(el) {
-  if (!el) return;
-  el.volume = systemVolume;
-  activeMediaElements.add(el);
-  const cleanup = () => activeMediaElements.delete(el);
-  el.addEventListener("ended", cleanup, { once: true });
-  el.addEventListener("pause", () => {
-    if (el.currentTime === 0 || el.currentTime >= (el.duration || 0)) {
-      cleanup();
-    }
-  });
-}
-
-let testToneContext = null;
-
-function playVolumeTest() {
-  testToneContext =
-    testToneContext || new (window.AudioContext || window.webkitAudioContext)();
-  const ctx = testToneContext;
-  if (ctx.state === "suspended") ctx.resume();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.frequency.value = 880;
-  gain.gain.value = systemVolume;
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.4);
-}
-
-class SimulatedKernel {
-  constructor() {
-    this.processes = [];
-    this.schedulerInterval = null;
-    this.currentProcessIndex = 0;
-  }
-  registerProcess(pid, name) {
-    this.processes.push({
-      pid: pid,
-      name: name,
-      state: "READY",
-      priority: Math.floor(Math.random() * 10) + 1,
-      cpuTime: 0
-    });
-    this.startScheduler();
-  }
-  unregisterProcess(pid) {
-    const idx = this.processes.findIndex((p) => p.pid === pid);
-    if (idx > -1) this.processes.splice(idx, 1);
-  }
-  startScheduler() {
-    if (this.schedulerInterval) return;
-    this.schedulerInterval = setInterval(() => this.tick(), 200); // 5Hz simulated tick
-  }
-  tick() {
-    if (this.processes.length === 0) return;
-    // Bounds check in case a process was killed asynchronously
-    if (this.currentProcessIndex >= this.processes.length) {
-      this.currentProcessIndex = 0;
-    }
-    const p = this.processes[this.currentProcessIndex];
-    // Double check existence because async removals might happen
-    if (p) {
-      if (p.state !== "WAITING") {
-        p.state = "RUNNING";
-        p.cpuTime += 200; // ms
-      }
-    } else {
-      // If undefined, try to reset index and wait for next tick
-      this.currentProcessIndex = 0;
-      return;
-    }
-    // Simple Round Robin Simulation update for next tick
-    this.processes.forEach((proc, idx) => {
-      if (idx !== this.currentProcessIndex) {
-        if (proc.state === "RUNNING") proc.state = "READY";
-        // Randomly toggle WAITING state to simulate I/O
-        if (Math.random() < 0.1) proc.state = "WAITING";
-        else if (proc.state === "WAITING" && Math.random() < 0.3)
-          proc.state = "READY";
-      }
-    });
-    this.currentProcessIndex =
-      (this.currentProcessIndex + 1) % this.processes.length;
-    // Notify Task Managers
-    refreshAllProcessViews();
-  }
-}
-
-const kernel = new SimulatedKernel();
+const kernel = new SimulatedKernel(() => refreshAllProcessViews());
 
 class WindowManager {
   constructor(initialState = null) {
@@ -1800,7 +1619,7 @@ function openCPSound(target, containerOverride) {
     if (e.target.checked) {
       setSystemVolume(0);
     } else {
-      setSystemVolume(lastNonZeroVolume || 0.5);
+      setSystemVolume(getLastNonZeroVolume() || 0.5);
     }
     syncUI(getSystemVolume());
   });
@@ -1856,395 +1675,6 @@ function previewScreensaver() {
   screensaverType = chosen;
   idleTime = 0;
   startScreensaver(chosen);
-}
-
-function initRssReader(win) {
-  const urlInput = win.querySelector(".rss-url");
-  const presetSelect = win.querySelector(".rss-preset");
-  const loadBtn = win.querySelector(".rss-load");
-  const status = win.querySelector(".rss-status");
-  const list = win.querySelector(".rss-list");
-  const titleEl = win.querySelector(".rss-preview-title");
-  const metaEl = win.querySelector(".rss-preview-meta");
-  const textEl = win.querySelector(".rss-preview-text");
-  const linkEl = win.querySelector(".rss-preview-link");
-
-  if (!urlInput || !presetSelect || !loadBtn || !status || !list || !titleEl || !metaEl || !textEl || !linkEl) return;
-
-  let items = [];
-  let selected = -1;
-
-  const setStatus = (text, isError = false) => {
-    status.textContent = text;
-    status.classList.toggle("rss-status-error", isError);
-  };
-
-  const normalizeUrl = (raw) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
-    return trimmed;
-  };
-
-  const sanitizeText = (html) => {
-    const div = document.createElement("div");
-    div.innerHTML = html || "";
-    div.querySelectorAll("script,style").forEach((n) => n.remove());
-    return (div.textContent || "").trim();
-  };
-
-  const formatDate = (value) => {
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return "No date";
-    return dt.toLocaleString();
-  };
-
-  const renderItems = () => {
-    list.innerHTML = "";
-    if (!items.length) {
-      list.innerHTML = '<div class="rss-empty">No items in this feed.</div>';
-      return;
-    }
-    items.forEach((item, idx) => {
-      const row = document.createElement("div");
-      row.className = "rss-item" + (idx === selected ? " active" : "");
-      row.dataset.index = idx.toString();
-      row.innerHTML = `<div class="rss-item-title">${item.title || "(Untitled)"}</div><div class="rss-item-date">${formatDate(
-        item.date
-      )}</div>`;
-      list.appendChild(row);
-    });
-  };
-
-  const showItem = (idx) => {
-    const item = items[idx];
-    selected = idx;
-    renderItems();
-    if (!item) return;
-    titleEl.textContent = item.title || "(Untitled)";
-    metaEl.textContent = `${formatDate(item.date)} · ${item.link || "No link"}`;
-    textEl.textContent = sanitizeText(item.summary) || "(No description)";
-    if (item.link) {
-      linkEl.href = item.link;
-      linkEl.style.display = "inline";
-    } else {
-      linkEl.style.display = "none";
-    }
-  };
-
-  const parseFeed = (xmlText) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, "application/xml");
-    if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
-    const nodes = doc.querySelectorAll("item, entry");
-    return Array.from(nodes).map((node) => {
-      const get = (sel) => node.querySelector(sel)?.textContent?.trim() || "";
-      const resolveLink = () => {
-        const linkEl = node.querySelector("link[href]");
-        if (linkEl) return linkEl.getAttribute("href") || "";
-        return get("link");
-      };
-      return {
-        title: get("title"),
-        link: resolveLink(),
-        date: get("pubDate") || get("updated") || get("published"),
-        summary: get("description") || get("summary") || get("content")
-      };
-    });
-  };
-
-  const applyItems = (listItems) => {
-    items = listItems;
-    selected = items.length ? 0 : -1;
-    renderItems();
-    if (selected >= 0) showItem(selected);
-  };
-
-  const loadFeed = async (rawUrl) => {
-    const normalized = normalizeUrl(rawUrl);
-    if (!normalized) return;
-    setStatus("Loading...");
-    try {
-      const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      const parsed = parseFeed(text);
-      if (!parsed.length) throw new Error("Empty feed");
-      applyItems(parsed);
-      setStatus(`Loaded ${parsed.length} items`);
-    } catch (err) {
-      console.error("RSS load error", err);
-      setStatus("Failed to load feed. Showing sample items.", true);
-      applyItems(DEFAULT_RSS_SAMPLE);
-    }
-  };
-
-  list.addEventListener("click", (e) => {
-    const target = e.target.closest(".rss-item");
-    if (!target) return;
-    const idx = parseInt(target.dataset.index || "-1", 10);
-    if (!Number.isNaN(idx)) showItem(idx);
-  });
-
-  presetSelect.addEventListener("change", () => {
-    const value = presetSelect.value;
-    urlInput.value = value;
-    loadFeed(value);
-  });
-
-  loadBtn.addEventListener("click", () => loadFeed(urlInput.value));
-  urlInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") loadFeed(urlInput.value);
-  });
-
-  applyItems(DEFAULT_RSS_SAMPLE);
-  loadFeed(urlInput.value);
-}
-
-function initBrowser(win) {
-  const urlInput = win.querySelector(".browser-url");
-  const frame = win.querySelector(".browser-frame");
-  const status = win.querySelector(".browser-status");
-  const backBtn = win.querySelector('[data-action="back"]');
-  const fwdBtn = win.querySelector('[data-action="forward"]');
-  const refreshBtn = win.querySelector('[data-action="refresh"]');
-  const homeBtn = win.querySelector('[data-action="home"]');
-  const goBtn = win.querySelector('[data-action="go"]');
-  const sessionId = win.dataset.id;
-
-  if (!urlInput || !frame || !status) return;
-
-  browserSessions[sessionId] = {
-    history: [],
-    index: -1
-  };
-
-  const setStatus = (text) => {
-    status.textContent = text;
-  };
-
-  const normalizeUrl = (raw) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    if (!/^https?:\/\//i.test(trimmed)) {
-      return `https://${trimmed}`;
-    }
-    return trimmed;
-  };
-
-  const buildProxiedUrl = (url) => {
-    try {
-      const parsed = new URL(url);
-      const portPart = parsed.port ? `:${parsed.port}` : "";
-      return `${BROWSER_PROXY_PREFIX}${parsed.protocol}//${parsed.hostname}${portPart}${parsed.pathname}${parsed.search}${parsed.hash}`;
-    } catch (err) {
-      // Fallback for malformed URLs; r.jina.ai will still try to fetch it.
-      return `${BROWSER_PROXY_PREFIX}https://${url.replace(/^\/+/, "")}`;
-    }
-  };
-
-  const updateNavState = () => {
-    const session = browserSessions[sessionId];
-    if (!session) return;
-    const hasBack = session.index > 0;
-    const hasForward = session.index < session.history.length - 1;
-    if (backBtn) backBtn.disabled = !hasBack;
-    if (fwdBtn) fwdBtn.disabled = !hasForward;
-  };
-
-  const loadUrl = (rawUrl, pushHistory = true) => {
-    const url = normalizeUrl(rawUrl);
-    const session = browserSessions[sessionId];
-    if (!url || !session) return;
-    if (pushHistory) {
-      session.history = session.history.slice(0, session.index + 1);
-      session.history.push(url);
-      session.index = session.history.length - 1;
-    }
-    const proxied = buildProxiedUrl(url);
-    urlInput.value = url;
-    frame.src = proxied;
-    setStatus(`Loading ${url} (via text proxy)...`);
-    updateNavState();
-  };
-
-  if (backBtn)
-    backBtn.onclick = () => {
-      const session = browserSessions[sessionId];
-      if (!session || session.index <= 0) return;
-      session.index -= 1;
-      const target = session.history[session.index];
-      urlInput.value = target;
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Loading ${target} (via text proxy)...`);
-      updateNavState();
-    };
-
-  if (fwdBtn)
-    fwdBtn.onclick = () => {
-      const session = browserSessions[sessionId];
-      if (!session || session.index >= session.history.length - 1) return;
-      session.index += 1;
-      const target = session.history[session.index];
-      urlInput.value = target;
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Loading ${target} (via text proxy)...`);
-      updateNavState();
-    };
-
-  if (refreshBtn)
-    refreshBtn.onclick = () => {
-      const session = browserSessions[sessionId];
-      if (!session || session.index < 0) return;
-      const target = session.history[session.index];
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Refreshing ${target} (via text proxy)...`);
-    };
-
-  if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
-  if (goBtn) goBtn.onclick = () => loadUrl(urlInput.value);
-
-  urlInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") loadUrl(urlInput.value);
-  });
-
-  frame.addEventListener("load", () => {
-    const session = browserSessions[sessionId];
-    if (!session) return;
-    const currentUrl = session.history[session.index] || "";
-    setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
-  });
-
-  loadUrl(BROWSER_HOME);
-}
-
-function initRadioGarden(win) {
-  const input = win.querySelector(".radio-search-input");
-  const searchBtn = win.querySelector(".radio-search-btn");
-  const results = win.querySelector(".radio-results");
-  const status = win.querySelector(".radio-status");
-  const openSite = win.querySelector(".radio-open-site");
-
-  const setStatus = (text, isError = false) => {
-    if (!status) return;
-    status.textContent = text;
-    status.classList.toggle("radio-status-error", isError);
-  };
-
-  const buildLink = (path) => `https://radio.garden${path}`;
-
-  const renderResults = (stations) => {
-    if (!results) return;
-    if (!stations.length) {
-      results.innerHTML = `<div class="radio-empty">No stations found for that search.</div>`;
-      return;
-    }
-    results.innerHTML = stations
-      .map((station) => {
-        const title = station.page?.title || "Unknown Station";
-        const subtitle = station.page?.subtitle || "";
-        const url = station.page?.url ? buildLink(station.page.url) : null;
-        return `<div class="radio-card" role="listitem">
-                  <div class="radio-card-main">
-                    <div class="radio-card-title">${title}</div>
-                    <div class="radio-card-sub">${subtitle}</div>
-                  </div>
-                  <div class="radio-card-actions">
-                    <button class="radio-pill" data-radio-link="${url || ""}" ${url ? "" : "disabled"}>Open</button>
-                    <button class="radio-pill ghost" data-copy-link="${url || ""}" ${url ? "" : "disabled"}>Copy Link</button>
-                  </div>
-                </div>`;
-      })
-      .join("");
-  };
-
-  const parseRadioJson = (text) => {
-    const start = text.indexOf("{");
-    if (start === -1) throw new Error("Unexpected response format");
-    return JSON.parse(text.slice(start));
-  };
-
-  const extractStations = (data) => {
-    const sections = Array.isArray(data?.data?.content) ? data.data.content : [];
-    const lists = sections.filter((section) => Array.isArray(section.items));
-    return lists.flatMap((list) => list.items || []).filter((item) => item.page?.type === "channel");
-  };
-
-  const runSearch = async (query) => {
-    const trimmed = query.trim();
-    if (!trimmed) {
-      setStatus("Enter a station, city, or country to search.", true);
-      return;
-    }
-    setStatus(`Searching for "${trimmed}"…`);
-    if (results) results.innerHTML = "";
-    try {
-      const res = await fetch(
-        `${RADIO_GARDEN_PROXY}/api/ara/content/search?q=${encodeURIComponent(trimmed)}`
-      );
-      const text = await res.text();
-      const data = parseRadioJson(text);
-      const stations = extractStations(data);
-      renderResults(stations);
-      setStatus(`Showing ${stations.length} result${stations.length === 1 ? "" : "s"} for "${trimmed}".`);
-    } catch (err) {
-      console.error(err);
-      setStatus("Could not reach radio.garden right now. Try again later.", true);
-    }
-  };
-
-  const handleActionClick = (e) => {
-    const openBtn = e.target.closest("[data-radio-link]");
-    const copyBtn = e.target.closest("[data-copy-link]");
-    if (openBtn) {
-      const link = openBtn.getAttribute("data-radio-link");
-      if (link) window.open(link, "_blank", "noopener,noreferrer");
-    }
-    if (copyBtn) {
-      const link = copyBtn.getAttribute("data-copy-link");
-      if (!link) return;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard
-          .writeText(link)
-          .then(() => setStatus("Copied link to clipboard."));
-      } else {
-        const temp = document.createElement("textarea");
-        temp.value = link;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand("copy");
-        temp.remove();
-        setStatus("Copied link to clipboard.");
-      }
-    }
-  };
-
-  if (results) results.addEventListener("click", handleActionClick);
-
-  if (openSite) {
-    openSite.addEventListener("click", () =>
-      window.open("https://radio.garden", "_blank", "noopener,noreferrer")
-    );
-  }
-
-  if (searchBtn) {
-    searchBtn.addEventListener("click", () => runSearch(input?.value || ""));
-  }
-
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") runSearch(input.value);
-    });
-  }
-
-  win.querySelectorAll(".radio-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const q = chip.getAttribute("data-query") || "";
-      if (input) input.value = q;
-      runSearch(q);
-    });
-  });
 }
 
 function initIRC(win) {
@@ -2852,163 +2282,7 @@ function initReversi(w) {
   render();
 }
 
-async function initRadio(win) {
-  const listEl = win.querySelector(".radio-list");
-  const queryEl = win.querySelector(".radio-query");
-  const searchBtn = win.querySelector(".radio-search-btn");
-  const topBtn = win.querySelector(".radio-top-btn");
-  const statusEl = win.querySelector(".radio-status");
-  const nowEl = win.querySelector(".radio-now");
-  const metaEl = win.querySelector(".radio-meta");
-  const playBtn = win.querySelector(".radio-play");
-  const stopBtn = win.querySelector(".radio-stop");
-  const audioEl = win.querySelector(".radio-audio");
-
-  if (!listEl || !queryEl || !searchBtn || !topBtn || !audioEl) return;
-
-  registerMediaElement(audioEl);
-
-  let stations = [];
-  let selectedIndex = -1;
-
-  const setStatus = (msg, isError = false) => {
-    statusEl.textContent = msg;
-    statusEl.classList.toggle("radio-error", !!isError);
-  };
-
-  const renderStations = () => {
-    listEl.innerHTML = "";
-    if (!stations.length) {
-      listEl.innerHTML = "<div class='radio-empty'>No stations loaded yet.</div>";
-      return;
-    }
-    stations.forEach((st, idx) => {
-      const btn = document.createElement("button");
-      btn.className = "radio-item" + (idx === selectedIndex ? " active" : "");
-      btn.dataset.index = idx.toString();
-      btn.setAttribute("role", "option");
-      const tags = (st.tags || "")
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(", ");
-      btn.innerHTML = `
-        <div class="radio-station-title">${st.name || "Unnamed Station"}</div>
-        <div class="radio-meta-line">${st.country || ""}${
-        st.language ? " · " + st.language : ""
-      }</div>
-        <div class="radio-meta-line">${
-          st.codec ? st.codec.toUpperCase() + " · " : ""
-        }${st.bitrate ? st.bitrate + " kbps" : ""}${
-        tags ? " · " + tags : ""
-      }</div>`;
-      btn.addEventListener("click", () => selectStation(idx));
-      listEl.appendChild(btn);
-    });
-  };
-
-  const selectStation = (idx) => {
-    selectedIndex = idx;
-    const st = stations[idx];
-    listEl.querySelectorAll(".radio-item").forEach((el, i) => {
-      el.classList.toggle("active", i === selectedIndex);
-    });
-    const prettyName = `${st.name || "Unknown"}${
-      st.country ? " · " + st.country : ""
-    }`;
-    nowEl.textContent = `Now tuned to ${prettyName}`;
-    metaEl.textContent = `Codec: ${st.codec || "n/a"} · Bitrate: ${
-      st.bitrate || "--"
-    } kbps${st.tags ? " · Tags: " + st.tags.split(",").slice(0, 5).join(", ") : ""}`;
-    const streamUrl = st.url_resolved || st.url;
-    if (streamUrl) {
-      audioEl.src = streamUrl;
-      setStatus("Station ready. Press Play to start.");
-    } else {
-      setStatus("This station does not have a playable stream.", true);
-    }
-  };
-
-  const fetchStations = async (url, description) => {
-    setStatus(`Loading ${description}...`);
-    listEl.innerHTML = "<div class='radio-empty'>Fetching stations...</div>";
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-      const data = await res.json();
-      stations = Array.isArray(data) ? data.slice(0, 30) : [];
-      selectedIndex = -1;
-      nowEl.textContent = "No station selected.";
-      metaEl.textContent = "Use search or Top to load stations.";
-      renderStations();
-      if (stations.length === 0) {
-        setStatus("No stations found for that query.", true);
-      } else {
-        setStatus(`Loaded ${stations.length} stations (${description}).`);
-      }
-    } catch (err) {
-      console.error(err);
-      listEl.innerHTML =
-        "<div class='radio-empty'>Could not load stations. Please try again.</div>";
-      setStatus("Network error while contacting Radio Browser.", true);
-    }
-  };
-
-  const startPlayback = () => {
-    if (selectedIndex < 0 || !audioEl.src) {
-      setStatus("Pick a station first.", true);
-      return;
-    }
-    audioEl
-      .play()
-      .then(() => setStatus("Playing live radio."))
-      .catch(() => setStatus("Playback blocked. Try pressing Play again.", true));
-  };
-
-  const stopPlayback = () => {
-    audioEl.pause();
-    audioEl.currentTime = 0;
-    setStatus("Stopped.");
-  };
-
-  searchBtn.addEventListener("click", () => {
-    const q = queryEl.value.trim();
-    if (!q) {
-      setStatus("Enter a search term like 'jazz', 'news', or a city.", true);
-      return;
-    }
-    const url = `${RADIO_BROWSER_BASE}/stations/search?limit=30&name=${encodeURIComponent(q)}`;
-    fetchStations(url, `search for "${q}"`);
-  });
-
-  topBtn.addEventListener("click", () => {
-    const url = `${RADIO_BROWSER_BASE}/stations/topvote/30`;
-    fetchStations(url, "popular stations");
-  });
-
-  queryEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      searchBtn.click();
-    }
-  });
-
-  playBtn?.addEventListener("click", startPlayback);
-  stopBtn?.addEventListener("click", stopPlayback);
-
-  audioEl.addEventListener("playing", () => setStatus("Streaming..."));
-  audioEl.addEventListener("stalled", () =>
-    setStatus("Stream stalled. Trying to recover...", true)
-  );
-  audioEl.addEventListener("error", () =>
-    setStatus("Stream error. Try another station.", true)
-  );
-
-  fetchStations(`${RADIO_BROWSER_BASE}/stations/topvote/20`, "popular stations");
-}
-
-function initMediaPlayer(w) {
+async function initMediaPlayer(w) {
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
   const video = w.querySelector(".mplayer-video");
@@ -4684,7 +3958,7 @@ function initBeatMaker(win) {
 
   function connectWithVolume(node) {
     const gain = ensureContext().createGain();
-    gain.gain.value = systemVolume;
+    gain.gain.value = getSystemVolume();
     node.connect(gain);
     gain.connect(ensureContext().destination);
     return { node, gain };
@@ -4697,7 +3971,8 @@ function initBeatMaker(win) {
     osc.type = "sine";
     osc.frequency.setValueAtTime(140, time);
     osc.frequency.exponentialRampToValueAtTime(55, time + 0.25);
-    gain.gain.setValueAtTime(systemVolume, time);
+    const volume = getSystemVolume();
+    gain.gain.setValueAtTime(volume, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -4719,7 +3994,8 @@ function initBeatMaker(win) {
     filter.type = "highpass";
     filter.frequency.value = cutoff;
     const { gain } = connectWithVolume(noise);
-    gain.gain.setValueAtTime(systemVolume * 0.8, ctx.currentTime);
+    const volume = getSystemVolume();
+    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
     noise.connect(filter);
     filter.connect(gain);
@@ -4733,7 +4009,8 @@ function initBeatMaker(win) {
     const gain = ctx.createGain();
     osc.type = "triangle";
     osc.frequency.setValueAtTime(180, time);
-    gain.gain.setValueAtTime(systemVolume * 0.25, time);
+    const volume = getSystemVolume();
+    gain.gain.setValueAtTime(volume * 0.25, time);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.2);
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -4754,7 +4031,8 @@ function initBeatMaker(win) {
       const gain = ctx.createGain();
       osc.type = "square";
       osc.frequency.setValueAtTime(400, time + offset);
-      gain.gain.setValueAtTime(systemVolume * 0.2, time + offset);
+      const volume = getSystemVolume();
+      gain.gain.setValueAtTime(volume * 0.2, time + offset);
       gain.gain.exponentialRampToValueAtTime(0.0001, time + offset + 0.15);
       osc.connect(gain);
       gain.connect(ctx.destination);
