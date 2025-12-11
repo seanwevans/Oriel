@@ -7,6 +7,7 @@ import {
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
+import { NETWORK_CONFIG } from "./config.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { MOCK_FS, saveFileSystem } from "./filesystem.js";
@@ -32,13 +33,15 @@ function createFolder(btn) {
   }
 }
 
-const BROWSER_HOME = "https://example.com/";
 const browserSessions = {};
-const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
-const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
-const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
+const BROWSER_HOME = NETWORK_CONFIG.browserHome;
+const BROWSER_PROXY_PREFIX = NETWORK_CONFIG.browserProxyPrefix;
+const RADIO_BROWSER_BASE = NETWORK_CONFIG.radioBrowserBase;
+const RADIO_GARDEN_PROXY = NETWORK_CONFIG.radioGardenProxy;
 
-const RSS_PROXY_ROOT = "https://api.allorigins.win/raw?url=";
+const RSS_PROXY_ROOT = NETWORK_CONFIG.rssProxyRoot;
+const RSS_PLACEHOLDER = `${(BROWSER_HOME || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
+const BROWSER_PLACEHOLDER = BROWSER_HOME || "https://example.com";
 
 const VOLUME_STORAGE_KEY = "oriel-volume";
 
@@ -795,7 +798,7 @@ class WindowManager {
               <div class="rss-layout">
                 <div class="rss-toolbar">
                   <label class="rss-label">Feed:</label>
-                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="https://example.com/feed.xml">
+                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${RSS_PLACEHOLDER}">
                   <select class="rss-preset" title="Popular feeds">${presetOptions}</select>
                   <button class="task-btn rss-load">Load</button>
                   <span class="rss-status">Ready</span>
@@ -819,7 +822,7 @@ class WindowManager {
                 <button class="browser-btn" data-action="forward" title="Forward">▶</button>
                 <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
                 <button class="browser-btn" data-action="home" title="Home">⌂</button>
-                <input class="browser-url" type="text" placeholder="https://example.com" spellcheck="false">
+                <input class="browser-url" type="text" placeholder="${BROWSER_PLACEHOLDER}" spellcheck="false">
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
