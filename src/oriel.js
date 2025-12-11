@@ -50,7 +50,6 @@ function createFolder(btn) {
 }
 
 const kernel = new SimulatedKernel(() => refreshAllProcessViews());
-const browserSessions = {};
 const BROWSER_HOME = NETWORK_CONFIG.browserHome;
 const BROWSER_PROXY_PREFIX = NETWORK_CONFIG.browserProxyPrefix;
 const RADIO_BROWSER_BASE = NETWORK_CONFIG.radioBrowserBase;
