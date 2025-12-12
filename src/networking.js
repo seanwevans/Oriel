@@ -31,11 +31,6 @@ const baseNetworkConfig = { ...NETWORK_CONFIG };
 
 let mergedNetworkConfig = { ...baseNetworkConfig, ...loadStoredNetworkConfig() };
 
-export let BROWSER_HOME = mergedNetworkConfig.browserHome;
-export let BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
-export let RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
-export let RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
-export let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
 
 function syncNetworkConfig(overrides = null) {
   if (overrides) {
