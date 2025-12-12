@@ -68,22 +68,89 @@ function downloadJson(content, filename) {
   URL.revokeObjectURL(url);
 }
 
-function isValidFileSystemNode(node) {
-  if (!node || typeof node !== "object") return false;
-  if (node.type === "dir") {
-    if (typeof node.children !== "object") return false;
-    return Object.values(node.children).every((child) => isValidFileSystemNode(child));
+const FS_MAX_NODES = 500;
+const FS_MAX_SERIALIZED_SIZE = 500000; // ~0.5MB to avoid bloating localStorage
+const FS_MAX_DEPTH = 12;
+const ALLOWED_FILE_KEYS = new Set(["type", "app", "content"]);
+const ALLOWED_DIR_KEYS = new Set(["type", "children"]);
+const ALLOWED_CONTENT_KEYS = new Set(["name", "src", "mime"]);
+
+function sanitizeContent(content, stats) {
+  if (content === undefined) return undefined;
+  if (typeof content === "string") {
+    stats.totalContentSize += content.length;
+    if (stats.totalContentSize > FS_MAX_SERIALIZED_SIZE)
+      throw new Error("Import is too large to store locally");
+    return content;
   }
-  if (node.type === "file") return true;
-  return false;
+  if (content && typeof content === "object") {
+    const sanitized = {};
+    Object.entries(content).forEach(([key, value]) => {
+      if (!ALLOWED_CONTENT_KEYS.has(key))
+        throw new Error(`Unsupported content field: ${key}`);
+      if (typeof value !== "string")
+        throw new Error(`Content field ${key} must be a string`);
+      stats.totalContentSize += value.length;
+      sanitized[key] = value;
+    });
+    if (stats.totalContentSize > FS_MAX_SERIALIZED_SIZE)
+      throw new Error("Import is too large to store locally");
+    return sanitized;
+  }
+  throw new Error("Unsupported content format in import");
+}
+
+function normalizeFileSystemNode(node, depth, stats) {
+  stats.nodeCount += 1;
+  stats.maxDepth = Math.max(stats.maxDepth, depth);
+  if (stats.nodeCount > FS_MAX_NODES)
+    throw new Error("Import exceeds maximum allowed file count");
+  if (depth > FS_MAX_DEPTH) throw new Error("Import exceeds maximum folder depth");
+  if (!node || typeof node !== "object")
+    throw new Error("File system nodes must be objects");
+
+  if (node.type === "dir") {
+    if (Object.keys(node).some((key) => !ALLOWED_DIR_KEYS.has(key)))
+      throw new Error("Directory nodes contain unsupported fields");
+    if (!node.children || typeof node.children !== "object")
+      throw new Error("Directory nodes must define a children object");
+    const children = {};
+    for (const [name, child] of Object.entries(node.children)) {
+      if (typeof name !== "string" || !name.length)
+        throw new Error("Directory entries must have string names");
+      stats.totalContentSize += name.length;
+      if (stats.totalContentSize > FS_MAX_SERIALIZED_SIZE)
+        throw new Error("Import is too large to store locally");
+      children[name] = normalizeFileSystemNode(child, depth + 1, stats);
+    }
+    return { type: "dir", children };
+  }
+
+  if (node.type === "file") {
+    if (Object.keys(node).some((key) => !ALLOWED_FILE_KEYS.has(key)))
+      throw new Error("File nodes contain unsupported fields");
+    const normalized = { type: "file" };
+    if (node.app !== undefined) {
+      if (typeof node.app !== "string") throw new Error("File app must be a string");
+      normalized.app = node.app;
+    }
+    const cleanedContent = sanitizeContent(node.content, stats);
+    if (cleanedContent !== undefined) normalized.content = cleanedContent;
+    return normalized;
+  }
+
+  throw new Error("Unknown file system node type");
 }
 
 function normalizeImportedFileSystem(data) {
   if (!data || typeof data !== "object") throw new Error("Invalid JSON structure");
   const cDrive = data["C\\"] || data["C:\\\\"] || data["C:"] || data.C;
   if (!cDrive || cDrive.type !== "dir") throw new Error("Import is missing a C drive directory");
-  if (!isValidFileSystemNode(cDrive)) throw new Error("Import file system structure is invalid");
-  return { "C\\": cDrive };
+  const stats = { nodeCount: 0, totalContentSize: 0, maxDepth: 0 };
+  const normalizedCDrive = normalizeFileSystemNode(cDrive, 1, stats);
+  if (stats.nodeCount === 0)
+    throw new Error("Import did not contain any usable file system entries");
+  return { fs: { "C\\": normalizedCDrive }, stats };
 }
 
 function refreshOpenFileManagers() {
@@ -113,8 +180,12 @@ function importFileSystem(event) {
   reader.onload = (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
-      const normalized = normalizeImportedFileSystem(parsed);
-      replaceFileSystem(normalized);
+      const { fs: normalizedFs, stats } = normalizeImportedFileSystem(parsed);
+      if (!normalizedFs["C\\"].children || Object.keys(normalizedFs["C\\"].children).length === 0)
+        throw new Error("C drive cannot be empty");
+      if (stats.maxDepth > FS_MAX_DEPTH)
+        throw new Error("Import exceeds safe folder depth");
+      replaceFileSystem(normalizedFs);
       refreshOpenFileManagers();
       alert("File system imported successfully.");
     } catch (err) {
@@ -173,17 +244,19 @@ class WindowManager {
       this.endResize();
     });
     window.addEventListener("keydown", (e) => this.handleWindowShortcuts(e));
+    window.addEventListener("resize", () => this.ensureAllWindowsInBounds());
     // Restore prior desktop state
     if (initialState && initialState.windows?.length) {
       this.isRestoring = true;
       this.restoreWindows(initialState.windows);
       const top = this.getTopWindowByZ();
       if (top) this.focusWindow(top.id);
-      this.isRestoring = false;
       this.highestZ = Math.max(
         this.highestZ,
         ...initialState.windows.map((w) => w.zIndex || 100)
       );
+      this.isRestoring = false;
+      this.ensureAllWindowsInBounds(false);
       this.saveDesktopState();
     }
     if (this.windows.length === 0)
@@ -204,16 +277,14 @@ class WindowManager {
     const resolvedWidth =
       typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
     const resolvedHeight =
-    win.setAttribute("role", "dialog");
-    win.setAttribute("aria-label", title);
-    win.style.width =
-      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
-    win.style.height =
       typeof height === "number"
         ? `${height}px`
         : height || height === 0
           ? height
           : "";
+    if (resolvedHeight) win.dataset.expectedHeight = resolvedHeight;
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", title);
     const resolvedLeft =
       stateOverrides.left !== undefined
         ? stateOverrides.left
@@ -293,6 +364,68 @@ class WindowManager {
     win.addEventListener("mousedown", () => this.focusWindow(id));
     return win;
   }
+  getDesktopBounds() {
+    const rect = this.desktop?.getBoundingClientRect();
+    return {
+      width: rect?.width || window.innerWidth || 0,
+      height: rect?.height || window.innerHeight || 0
+    };
+  }
+  clampRectToDesktop(rect, bounds = this.getDesktopBounds()) {
+    const safeWidth = Math.min(rect.width ?? bounds.width, bounds.width);
+    const safeHeight = Math.min(rect.height ?? bounds.height, bounds.height);
+    const maxLeft = Math.max(0, bounds.width - safeWidth);
+    const maxTop = Math.max(0, bounds.height - safeHeight);
+    return {
+      left: Math.min(Math.max(rect.left ?? 0, 0), maxLeft),
+      top: Math.min(Math.max(rect.top ?? 0, 0), maxTop),
+      width: safeWidth,
+      height: safeHeight
+    };
+  }
+  positionElementInBounds(winEl, bounds = this.getDesktopBounds()) {
+    if (!winEl) return null;
+    const rect = winEl.getBoundingClientRect();
+    const currentRect = {
+      left: winEl.offsetLeft,
+      top: winEl.offsetTop,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height)
+    };
+    const clamped = this.clampRectToDesktop(currentRect, bounds);
+    winEl.style.left = `${clamped.left}px`;
+    winEl.style.top = `${clamped.top}px`;
+    winEl.style.width = `${clamped.width}px`;
+    winEl.style.height = `${clamped.height}px`;
+    return clamped;
+  }
+  ensureWindowInBounds(win, bounds = this.getDesktopBounds()) {
+    if (!win || !win.el) return;
+    if (win.prevRect) win.prevRect = this.clampRectToDesktop(win.prevRect, bounds);
+    if (win.maximized) return;
+    if (win.minimized) {
+      if (win.lastRect) win.lastRect = this.clampRectToDesktop(win.lastRect, bounds);
+      return;
+    }
+    const clamped = this.positionElementInBounds(win.el, bounds);
+    if (clamped) win.lastRect = clamped;
+  }
+  ensureAllWindowsInBounds(shouldSave = true) {
+    const bounds = this.getDesktopBounds();
+    this.windows.forEach((win) => this.ensureWindowInBounds(win, bounds));
+    if (shouldSave && !this.isRestoring) this.saveDesktopState();
+  }
+  verifyInitialWindowSize(winEl) {
+    const expected = winEl?.dataset?.expectedHeight;
+    if (!expected) return;
+    requestAnimationFrame(() => {
+      if (winEl.style.height !== expected) {
+        console.warn(
+          `Window ${winEl.dataset?.id || "unknown"} height mismatch: expected ${expected}, got ${winEl.style.height}`
+        );
+      }
+    });
+  }
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
     const id = stateOverrides.id || "win-" + Date.now();
     let content = "";
@@ -341,13 +474,18 @@ class WindowManager {
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
     this.desktop.appendChild(winEl);
+    const bounds = this.getDesktopBounds();
+    const clampedRect = stateOverrides.maximized
+      ? null
+      : this.positionElementInBounds(winEl, bounds);
     const rect = winEl.getBoundingClientRect();
-    const initialRect = {
-      left: winEl.offsetLeft,
-      top: winEl.offsetTop,
-      width: Math.round(rect.width),
-      height: Math.round(rect.height)
-    };
+    const initialRect =
+      clampedRect || {
+        left: winEl.offsetLeft,
+        top: winEl.offsetTop,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
     const winObj = {
       id,
       el: winEl,
@@ -363,6 +501,7 @@ class WindowManager {
       this.highestZ = Math.max(this.highestZ, stateOverrides.zIndex);
     }
     this.windows.push(winObj);
+    this.verifyInitialWindowSize(winEl);
     // Register Process
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);

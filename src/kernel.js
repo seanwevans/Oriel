@@ -18,13 +18,24 @@ export class SimulatedKernel {
   unregisterProcess(pid) {
     const idx = this.processes.findIndex((p) => p.pid === pid);
     if (idx > -1) this.processes.splice(idx, 1);
+    if (this.processes.length === 0) this.stopScheduler();
   }
   startScheduler() {
-    if (this.schedulerInterval) return;
+    if (this.schedulerInterval || this.processes.length === 0) return;
     this.schedulerInterval = setInterval(() => this.tick(), 200);
   }
+  stopScheduler() {
+    if (this.schedulerInterval) {
+      clearInterval(this.schedulerInterval);
+      this.schedulerInterval = null;
+      console.debug("SimulatedKernel scheduler stopped");
+    }
+  }
   tick() {
-    if (this.processes.length === 0) return;
+    if (this.processes.length === 0) {
+      this.stopScheduler();
+      return;
+    }
     if (this.currentProcessIndex >= this.processes.length) {
       this.currentProcessIndex = 0;
     }
