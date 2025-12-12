@@ -65,6 +65,24 @@ export function resetNetworkDefaults() {
   return syncNetworkConfig();
 }
 
+export function refreshNetworkedWindows() {
+  const windows = window?.wm?.windows;
+  if (!Array.isArray(windows)) return;
+
+  windows.forEach((win) => {
+    if (!win?.el) return;
+    if (win.type === "browser") {
+      win.el.browserReload?.();
+    } else if (win.type === "rss") {
+      win.el.reloadRssWithDefaults?.();
+    } else if (win.type === "radio") {
+      win.el.reloadRadioWithDefaults?.();
+    } else if (win.type === "radiogarden") {
+      win.el.refreshRadioGardenWithDefaults?.();
+    }
+  });
+}
+
 export const browserSessions = {};
 
 export function initRssReader(win) {
@@ -82,6 +100,7 @@ export function initRssReader(win) {
 
   let items = [];
   let selected = -1;
+  let lastRequestedUrl = null;
 
   const setStatus = (text, isError = false) => {
     status.textContent = text;
@@ -172,6 +191,7 @@ export function initRssReader(win) {
   const loadFeed = async (rawUrl) => {
     const normalized = normalizeUrl(rawUrl);
     if (!normalized) return;
+    lastRequestedUrl = normalized;
     setStatus("Loading...");
     try {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
@@ -222,6 +242,11 @@ export function initRssReader(win) {
 
   applyItems(DEFAULT_RSS_SAMPLE);
   loadFeed(urlInput.value);
+
+  win.reloadRssWithDefaults = () => {
+    const target = urlInput.value || lastRequestedUrl || RSS_PRESETS?.[0]?.url || "";
+    if (target) loadFeed(target);
+  };
 }
 
 export function initBrowser(win, sessions = browserSessions) {
@@ -237,10 +262,13 @@ export function initBrowser(win, sessions = browserSessions) {
 
   if (!urlInput || !frame || !status) return;
 
-  sessions[sessionId] = {
-    history: [],
-    index: -1
+  const resetSession = () => {
+    sessions[sessionId] = {
+      history: [],
+      index: -1
+    };
   };
+  resetSession();
 
   const setStatus = (text) => {
     status.textContent = text;
@@ -337,7 +365,13 @@ export function initBrowser(win, sessions = browserSessions) {
     setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
   });
 
-  loadUrl(BROWSER_HOME);
+  const reloadWithDefaults = () => {
+    resetSession();
+    loadUrl(BROWSER_HOME);
+  };
+
+  reloadWithDefaults();
+  win.browserReload = reloadWithDefaults;
 }
 
 export function initRadioGarden(win) {
@@ -352,6 +386,8 @@ export function initRadioGarden(win) {
     status.textContent = text;
     status.classList.toggle("radio-status-error", isError);
   };
+
+  let lastSearchTerm = null;
 
   const buildLink = (path) => `https://radio.garden${path}`;
 
@@ -398,6 +434,7 @@ export function initRadioGarden(win) {
       setStatus("Enter a station, city, or country to search.", true);
       return;
     }
+    lastSearchTerm = trimmed;
     setStatus(`Searching for "${trimmed}"…`);
     if (results) results.innerHTML = "";
     try {
@@ -466,6 +503,11 @@ export function initRadioGarden(win) {
       runSearch(q);
     });
   });
+
+  win.refreshRadioGardenWithDefaults = () => {
+    if (lastSearchTerm) runSearch(lastSearchTerm);
+    else setStatus("Ready. Enter a station, city, or country to search.");
+  };
 }
 
 export async function initRadio(win) {
@@ -486,6 +528,7 @@ export async function initRadio(win) {
 
   let stations = [];
   let selectedIndex = -1;
+  let lastRequest = null;
   const RADIO_CACHE_KEY = "oriel-radio-cache-v1";
 
   const setStatus = (msg, isError = false) => {
@@ -566,6 +609,7 @@ export async function initRadio(win) {
   };
 
   const fetchStations = async (url, description) => {
+    lastRequest = { url, description };
     setStatus(`Loading ${description}...`);
     listEl.innerHTML = "<div class='radio-empty'>Fetching stations...</div>";
     try {
@@ -663,4 +707,10 @@ export async function initRadio(win) {
   );
 
   fetchStations(`${RADIO_BROWSER_BASE}/stations/topvote/20`, "popular stations");
+
+  win.reloadRadioWithDefaults = () => {
+    const url = lastRequest?.url || `${RADIO_BROWSER_BASE}/stations/topvote/20`;
+    const description = lastRequest?.description || "popular stations";
+    fetchStations(url, description);
+  };
 }
