@@ -75,3 +75,13 @@ export function saveFileSystem(fs = MOCK_FS) {
 }
 
 export const MOCK_FS = loadFileSystem();
+
+export function exportFileSystemAsJson(fs = MOCK_FS) {
+  return JSON.stringify(fs, null, 2);
+}
+
+export function replaceFileSystem(newFs) {
+  Object.keys(MOCK_FS).forEach((key) => delete MOCK_FS[key]);
+  Object.assign(MOCK_FS, newFs);
+  saveFileSystem(MOCK_FS);
+}

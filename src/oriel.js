@@ -8,7 +8,12 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
-import { MOCK_FS, saveFileSystem } from "./filesystem.js";
+import {
+  MOCK_FS,
+  exportFileSystemAsJson,
+  replaceFileSystem,
+  saveFileSystem
+} from "./filesystem.js";
 import {
   getLastNonZeroVolume,
   getMediaPlayerTracks,
@@ -48,6 +53,74 @@ function createFolder(btn) {
     rFT(win);
     rFL(win);
   }
+}
+
+function downloadJson(content, filename) {
+  const blob = new Blob([content], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function isValidFileSystemNode(node) {
+  if (!node || typeof node !== "object") return false;
+  if (node.type === "dir") {
+    if (typeof node.children !== "object") return false;
+    return Object.values(node.children).every((child) => isValidFileSystemNode(child));
+  }
+  if (node.type === "file") return true;
+  return false;
+}
+
+function normalizeImportedFileSystem(data) {
+  if (!data || typeof data !== "object") throw new Error("Invalid JSON structure");
+  const cDrive = data["C\\"] || data["C:\\\\"] || data["C:"] || data.C;
+  if (!cDrive || cDrive.type !== "dir") throw new Error("Import is missing a C drive directory");
+  if (!isValidFileSystemNode(cDrive)) throw new Error("Import file system structure is invalid");
+  return { "C\\": cDrive };
+}
+
+function refreshOpenFileManagers() {
+  if (!wm?.windows) return;
+  wm.windows.forEach((win) => {
+    if (win.type === "winfile") {
+      win.el.cP = "C\\";
+      win.el.cD = MOCK_FS["C\\"];
+      win.el.currentDirObj = win.el.cD;
+      rFT(win.el);
+      rFL(win.el);
+    }
+  });
+}
+
+function exportFileSystem() {
+  const json = exportFileSystemAsJson();
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadJson(json, `oriel-fs-${stamp}.json`);
+}
+
+function importFileSystem(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const normalized = normalizeImportedFileSystem(parsed);
+      replaceFileSystem(normalized);
+      refreshOpenFileManagers();
+      alert("File system imported successfully.");
+    } catch (err) {
+      alert(`Failed to import file system: ${err.message}`);
+    } finally {
+      if (input) input.value = "";
+    }
+  };
+  reader.readAsText(file);
 }
 
 const kernel = new SimulatedKernel(() => refreshAllProcessViews());
@@ -874,7 +947,43 @@ class WindowManager {
     return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add-btn">Add</button><button class="task-btn" id="card-del-btn">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
   }
   getWinFileContent() {
-    return `<div class="winfile-layout"><div class="drive-bar"><div class="drive-icon active">a:</div><div class="drive-icon active">c:</div><div class="drive-icon active">d:</div><div style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"><input type="text" id="new-folder-name" style="width:80px;height:18px;font-size:11px;" placeholder="Folder Name"><button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button><span>C:\\</span></div></div><div class="winfile-main"><div class="winfile-pane winfile-tree"><div class="winfile-pane-header">C:\\</div><div id="file-tree-root"></div></div><div class="winfile-pane winfile-list"><div class="winfile-pane-header" id="file-list-header">C:\\*.*</div><div class="file-list-view" id="file-list-view"></div></div></div><div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div></div>`;
+    return `
+      <div class="winfile-layout">
+        <div class="drive-bar">
+          <div class="drive-icon active">a:</div>
+          <div class="drive-icon active">c:</div>
+          <div class="drive-icon active">d:</div>
+          <div
+            style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"
+          >
+            <input
+              type="text"
+              id="new-folder-name"
+              style="width:80px;height:18px;font-size:11px;"
+              placeholder="Folder Name"
+            >
+            <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
+            <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
+            <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
+              Import
+              <input type="file" accept="application/json" onchange="importFileSystem(event)">
+            </label>
+            <span>C\</span>
+          </div>
+        </div>
+        <div class="winfile-main">
+          <div class="winfile-pane winfile-tree">
+            <div class="winfile-pane-header">C\</div>
+            <div id="file-tree-root"></div>
+          </div>
+          <div class="winfile-pane winfile-list">
+            <div class="winfile-pane-header" id="file-list-header">C\*.*</div>
+            <div class="file-list-view" id="file-list-view"></div>
+          </div>
+        </div>
+        <div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div>
+      </div>
+    `;
   }
   getSoundRecContent() {
     return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
@@ -6215,6 +6324,8 @@ window.clearPaint = clearPaint;
 window.copyCharMap = copyCharMap;
 window.runCompiler = runCompiler;
 window.runPython = runPython;
+window.exportFileSystem = exportFileSystem;
+window.importFileSystem = importFileSystem;
 
 // Database App
 window.addDbRecord = addDbRecord;
