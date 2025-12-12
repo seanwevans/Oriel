@@ -31,6 +31,7 @@ import {
   initRadio,
   initRadioGarden,
   initRssReader,
+  refreshNetworkedWindows,
   resetNetworkDefaults,
   updateNetworkDefaults
 } from "./networking.js";
@@ -2019,6 +2020,7 @@ function openCPDefaults(target, containerOverride) {
       rssProxyRoot: body.querySelector("#cp-net-rss")?.value?.trim() || network.rssProxyRoot
     };
     updateNetworkDefaults(newConfig);
+    refreshNetworkedWindows();
     setNetworkStatus("Network defaults saved for future sessions.");
   });
 
@@ -2034,6 +2036,7 @@ function openCPDefaults(target, containerOverride) {
     if (radio) radio.value = resetConfig.radioBrowserBase || "";
     if (garden) garden.value = resetConfig.radioGardenProxy || "";
     if (rss) rss.value = resetConfig.rssProxyRoot || "";
+    refreshNetworkedWindows();
     setNetworkStatus("Network defaults reset to built-in values.");
   });
 }
