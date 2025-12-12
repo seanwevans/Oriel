@@ -1,4 +1,8 @@
-import { DEFAULT_MD_SAMPLE, DEFAULT_PDF_DATA_URI } from "./defaults.js";
+import {
+  DEFAULT_MD_SAMPLE,
+  DEFAULT_PDF_DATA_URI,
+  DEFAULT_SCREEN_IMAGE
+} from "./defaults.js";
 
 export const FS_STORAGE_KEY = "oriel-fs-v1";
 
@@ -57,7 +61,7 @@ export const DEFAULT_FS = {
           "SCREEN.PNG": {
             type: "file",
             app: "imageviewer",
-            content: { name: "screen.png", src: "screen.png" }
+            content: { name: "screen.png", src: DEFAULT_SCREEN_IMAGE }
           }
         }
       }
@@ -75,3 +79,13 @@ export function saveFileSystem(fs = MOCK_FS) {
 }
 
 export const MOCK_FS = loadFileSystem();
+
+export function exportFileSystemAsJson(fs = MOCK_FS) {
+  return JSON.stringify(fs, null, 2);
+}
+
+export function replaceFileSystem(newFs) {
+  Object.keys(MOCK_FS).forEach((key) => delete MOCK_FS[key]);
+  Object.assign(MOCK_FS, newFs);
+  saveFileSystem(MOCK_FS);
+}

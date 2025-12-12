@@ -1,11 +1,73 @@
-import { DEFAULT_RSS_SAMPLE, RSS_PRESETS } from "./defaults.js";
+import { DEFAULT_RSS_SAMPLE, RADIO_FALLBACK_PRESETS, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
+import { NETWORK_CONFIG } from "./config.js";
+
+const NETWORK_STORAGE_KEY = "oriel-network-defaults";
+
+function loadStoredNetworkConfig() {
+  try {
+    const raw = localStorage.getItem(NETWORK_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed;
+  } catch (err) {
+    console.warn("Failed to parse stored network config", err);
+  }
+  return {};
+}
+
+function persistNetworkConfig(cfg) {
+  const toStore = {
+    browserHome: cfg.browserHome,
+    browserProxyPrefix: cfg.browserProxyPrefix,
+    radioBrowserBase: cfg.radioBrowserBase,
+    radioGardenProxy: cfg.radioGardenProxy,
+    rssProxyRoot: cfg.rssProxyRoot
+  };
+  localStorage.setItem(NETWORK_STORAGE_KEY, JSON.stringify(toStore));
+}
+
+const baseNetworkConfig = { ...NETWORK_CONFIG };
+
+let mergedNetworkConfig = { ...baseNetworkConfig, ...loadStoredNetworkConfig() };
+
+export let BROWSER_HOME = mergedNetworkConfig.browserHome;
+export let BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
+export let RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
+export let RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
+export let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+
+function syncNetworkConfig(overrides = null) {
+  if (overrides) {
+    mergedNetworkConfig = { ...mergedNetworkConfig, ...overrides };
+    persistNetworkConfig(mergedNetworkConfig);
+  }
+  BROWSER_HOME = mergedNetworkConfig.browserHome;
+  BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
+  RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
+  RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
+  RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+  return mergedNetworkConfig;
+}
+
+export function getNetworkDefaults() {
+  return { ...mergedNetworkConfig };
+}
+
+export function updateNetworkDefaults(partial = {}) {
+  return syncNetworkConfig(partial);
+}
 
 export const BROWSER_HOME = "https://example.com/";
 export const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
 export const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
 export const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
 export const RSS_PROXY_ROOT = "https://api.allorigins.win/get?url=";
+export function resetNetworkDefaults() {
+  mergedNetworkConfig = { ...baseNetworkConfig };
+  localStorage.removeItem(NETWORK_STORAGE_KEY);
+  return syncNetworkConfig();
+}
 
 export const browserSessions = {};
 
@@ -428,10 +490,29 @@ export async function initRadio(win) {
 
   let stations = [];
   let selectedIndex = -1;
+  const RADIO_CACHE_KEY = "oriel-radio-cache-v1";
 
   const setStatus = (msg, isError = false) => {
     statusEl.textContent = msg;
     statusEl.classList.toggle("radio-error", !!isError);
+  };
+
+  const loadCachedStations = () => {
+    try {
+      const raw = localStorage.getItem(RADIO_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn("Could not read cached stations", err);
+      return null;
+    }
+  };
+
+  const persistCachedStations = (data) => {
+    try {
+      localStorage.setItem(RADIO_CACHE_KEY, JSON.stringify(data));
+    } catch (err) {
+      console.warn("Could not cache radio stations", err);
+    }
   };
 
   const renderStations = () => {
@@ -496,6 +577,7 @@ export async function initRadio(win) {
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       stations = Array.isArray(data) ? data.slice(0, 30) : [];
+      persistCachedStations(stations);
       selectedIndex = -1;
       nowEl.textContent = "No station selected.";
       metaEl.textContent = "Use search or Top to load stations.";
@@ -507,6 +589,27 @@ export async function initRadio(win) {
       }
     } catch (err) {
       console.error(err);
+      const cached = loadCachedStations();
+      if (Array.isArray(cached) && cached.length) {
+        stations = cached;
+        selectedIndex = -1;
+        nowEl.textContent = "No station selected.";
+        metaEl.textContent = "Using cached station list.";
+        renderStations();
+        setStatus("Network error. Showing cached stations instead.", true);
+        return;
+      }
+
+      if (Array.isArray(RADIO_FALLBACK_PRESETS) && RADIO_FALLBACK_PRESETS.length) {
+        stations = RADIO_FALLBACK_PRESETS;
+        selectedIndex = -1;
+        nowEl.textContent = "No station selected.";
+        metaEl.textContent = "Using built-in presets.";
+        renderStations();
+        setStatus("Offline presets loaded due to network error.", true);
+        return;
+      }
+
       listEl.innerHTML =
         "<div class='radio-empty'>Could not load stations. Please try again.</div>";
       setStatus("Network error while contacting Radio Browser.", true);
