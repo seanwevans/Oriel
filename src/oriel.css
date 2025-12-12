@@ -613,6 +613,18 @@ body {
   border-right: 1px solid white;
 }
 
+.file-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .pdf-reader {
   display: flex;
   flex-direction: column;
