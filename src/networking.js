@@ -1,4 +1,4 @@
-import { DEFAULT_RSS_SAMPLE, RSS_PRESETS } from "./defaults.js";
+import { DEFAULT_RSS_SAMPLE, RADIO_FALLBACK_PRESETS, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
 
 export const BROWSER_HOME = "https://example.com/";
@@ -419,10 +419,29 @@ export async function initRadio(win) {
 
   let stations = [];
   let selectedIndex = -1;
+  const RADIO_CACHE_KEY = "oriel-radio-cache-v1";
 
   const setStatus = (msg, isError = false) => {
     statusEl.textContent = msg;
     statusEl.classList.toggle("radio-error", !!isError);
+  };
+
+  const loadCachedStations = () => {
+    try {
+      const raw = localStorage.getItem(RADIO_CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn("Could not read cached stations", err);
+      return null;
+    }
+  };
+
+  const persistCachedStations = (data) => {
+    try {
+      localStorage.setItem(RADIO_CACHE_KEY, JSON.stringify(data));
+    } catch (err) {
+      console.warn("Could not cache radio stations", err);
+    }
   };
 
   const renderStations = () => {
@@ -487,6 +506,7 @@ export async function initRadio(win) {
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       stations = Array.isArray(data) ? data.slice(0, 30) : [];
+      persistCachedStations(stations);
       selectedIndex = -1;
       nowEl.textContent = "No station selected.";
       metaEl.textContent = "Use search or Top to load stations.";
@@ -498,6 +518,27 @@ export async function initRadio(win) {
       }
     } catch (err) {
       console.error(err);
+      const cached = loadCachedStations();
+      if (Array.isArray(cached) && cached.length) {
+        stations = cached;
+        selectedIndex = -1;
+        nowEl.textContent = "No station selected.";
+        metaEl.textContent = "Using cached station list.";
+        renderStations();
+        setStatus("Network error. Showing cached stations instead.", true);
+        return;
+      }
+
+      if (Array.isArray(RADIO_FALLBACK_PRESETS) && RADIO_FALLBACK_PRESETS.length) {
+        stations = RADIO_FALLBACK_PRESETS;
+        selectedIndex = -1;
+        nowEl.textContent = "No station selected.";
+        metaEl.textContent = "Using built-in presets.";
+        renderStations();
+        setStatus("Offline presets loaded due to network error.", true);
+        return;
+      }
+
       listEl.innerHTML =
         "<div class='radio-empty'>Could not load stations. Please try again.</div>";
       setStatus("Network error while contacting Radio Browser.", true);

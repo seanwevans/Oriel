@@ -3597,12 +3597,9 @@ body {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;    
-    background-color: black;    
-    background-image: url('https://images.unsplash.com/photo-1556139918-9b92e8b00105');    
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    height: 100vh;
+    background-color: black;
+    background-image: none;
     z-index: 20000;
     display: flex;
     justify-content: center;
