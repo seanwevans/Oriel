@@ -3,13 +3,18 @@ import { PROGRAMS } from "./programs.js";
 import {
   DEFAULT_MD_SAMPLE,
   DEFAULT_PDF_DATA_URI,
+  DEFAULT_SPLASH_IMAGE,
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
-import { NETWORK_CONFIG } from "./config.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
-import { MOCK_FS, saveFileSystem } from "./filesystem.js";
+import {
+  MOCK_FS,
+  exportFileSystemAsJson,
+  replaceFileSystem,
+  saveFileSystem
+} from "./filesystem.js";
 import {
   getLastNonZeroVolume,
   getMediaPlayerTracks,
@@ -19,12 +24,14 @@ import {
   setSystemVolume
 } from "./audio.js";
 import {
-  BROWSER_HOME,
   browserSessions,
+  getNetworkDefaults,
   initBrowser,
   initRadio,
   initRadioGarden,
-  initRssReader
+  initRssReader,
+  resetNetworkDefaults,
+  updateNetworkDefaults
 } from "./networking.js";
 import { SimulatedKernel } from "./kernel.js";
 
@@ -49,15 +56,84 @@ function createFolder(btn) {
   }
 }
 
+function downloadJson(content, filename) {
+  const blob = new Blob([content], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function isValidFileSystemNode(node) {
+  if (!node || typeof node !== "object") return false;
+  if (node.type === "dir") {
+    if (typeof node.children !== "object") return false;
+    return Object.values(node.children).every((child) => isValidFileSystemNode(child));
+  }
+  if (node.type === "file") return true;
+  return false;
+}
+
+function normalizeImportedFileSystem(data) {
+  if (!data || typeof data !== "object") throw new Error("Invalid JSON structure");
+  const cDrive = data["C\\"] || data["C:\\\\"] || data["C:"] || data.C;
+  if (!cDrive || cDrive.type !== "dir") throw new Error("Import is missing a C drive directory");
+  if (!isValidFileSystemNode(cDrive)) throw new Error("Import file system structure is invalid");
+  return { "C\\": cDrive };
+}
+
+function refreshOpenFileManagers() {
+  if (!wm?.windows) return;
+  wm.windows.forEach((win) => {
+    if (win.type === "winfile") {
+      win.el.cP = "C\\";
+      win.el.cD = MOCK_FS["C\\"];
+      win.el.currentDirObj = win.el.cD;
+      rFT(win.el);
+      rFL(win.el);
+    }
+  });
+}
+
+function exportFileSystem() {
+  const json = exportFileSystemAsJson();
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadJson(json, `oriel-fs-${stamp}.json`);
+}
+
+function importFileSystem(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const normalized = normalizeImportedFileSystem(parsed);
+      replaceFileSystem(normalized);
+      refreshOpenFileManagers();
+      alert("File system imported successfully.");
+    } catch (err) {
+      alert(`Failed to import file system: ${err.message}`);
+    } finally {
+      if (input) input.value = "";
+    }
+  };
+  reader.readAsText(file);
+}
+
 const kernel = new SimulatedKernel(() => refreshAllProcessViews());
+const getBrowserPlaceholder = () => {
+  const { browserHome } = getNetworkDefaults();
+  return browserHome || "https://example.com";
+};
 
-const BROWSER_PROXY_PREFIX = NETWORK_CONFIG.browserProxyPrefix;
-const RADIO_BROWSER_BASE = NETWORK_CONFIG.radioBrowserBase;
-const RADIO_GARDEN_PROXY = NETWORK_CONFIG.radioGardenProxy;
-
-const RSS_PROXY_ROOT = NETWORK_CONFIG.rssProxyRoot;
-const RSS_PLACEHOLDER = `${(BROWSER_HOME || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
-const BROWSER_PLACEHOLDER = BROWSER_HOME || "https://example.com";
+const getRssPlaceholder = () => {
+  const { browserHome } = getNetworkDefaults();
+  return `${(browserHome || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
+};
 
 class WindowManager {
   constructor(initialState = null) {
@@ -94,6 +170,7 @@ class WindowManager {
       this.endDrag();
       this.endResize();
     });
+    window.addEventListener("keydown", (e) => this.handleWindowShortcuts(e));
     // Restore prior desktop state
     if (initialState && initialState.windows?.length) {
       this.isRestoring = true;
@@ -110,12 +187,26 @@ class WindowManager {
     if (this.windows.length === 0)
       this.openWindow("progman", "Program Manager", 500, 480);
   }
+  addKeyboardActivation(el, handler) {
+    if (!el) return;
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handler();
+      }
+    });
+  }
   createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
     const resolvedWidth =
       typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
     const resolvedHeight =
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", title);
+    win.style.width =
+      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
+    win.style.height =
       typeof height === "number"
         ? `${height}px`
         : height || height === 0
@@ -172,6 +263,24 @@ class WindowManager {
         return;
       this.startDrag(e, win);
     });
+    // Accessibility: make window controls keyboard operable
+    const closeBtn = win.querySelector(".sys-box");
+    closeBtn.setAttribute("role", "button");
+    closeBtn.setAttribute("aria-label", `Close ${title}`);
+    closeBtn.tabIndex = 0;
+    this.addKeyboardActivation(closeBtn, () => this.closeWindow(id));
+
+    const minimizeBtn = win.querySelector(".win-btn:nth-child(1)");
+    minimizeBtn.setAttribute("role", "button");
+    minimizeBtn.setAttribute("aria-label", `Minimize ${title}`);
+    minimizeBtn.tabIndex = 0;
+    this.addKeyboardActivation(minimizeBtn, () => this.minimizeWindow(id));
+
+    const maximizeBtn = win.querySelector(".win-btn:nth-child(2)");
+    maximizeBtn.setAttribute("role", "button");
+    maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
+    maximizeBtn.tabIndex = 0;
+    this.addKeyboardActivation(maximizeBtn, () => this.maximizeWindow(id));
     // Resize Start
     win.querySelectorAll(".resizer").forEach((r) => {
       r.addEventListener("mousedown", (e) =>
@@ -336,6 +445,12 @@ class WindowManager {
     const icon = document.createElement("div");
     icon.id = "min-" + id;
     icon.className = "desktop-icon minimized";
+    icon.setAttribute("role", "button");
+    icon.setAttribute(
+      "aria-label",
+      `Restore ${win.el.querySelector(".title-bar-text").innerText} window`
+    );
+    icon.tabIndex = 0;
     icon.innerHTML = `
                 <div class="icon-img">${this.getIconForType(win.type)}</div>
                 <div class="icon-label">${
@@ -343,6 +458,7 @@ class WindowManager {
                 }</div>
             `;
     icon.onclick = () => this.restoreWindow(id);
+    this.addKeyboardActivation(icon, () => this.restoreWindow(id));
     this.minimizedContainer.appendChild(icon);
     this.saveDesktopState();
   }
@@ -543,6 +659,22 @@ class WindowManager {
       return currentZ >= topZ ? current : top;
     });
   }
+  handleWindowShortcuts(event) {
+    const active = this.getTopWindowByZ();
+    if (!active || event.defaultPrevented) return;
+    if (event.altKey && event.key === "F4") {
+      event.preventDefault();
+      this.closeWindow(active.id);
+    }
+    if (event.altKey && event.key.toLowerCase() === "m") {
+      event.preventDefault();
+      this.minimizeWindow(active.id);
+    }
+    if (event.altKey && event.key.toLowerCase() === "x") {
+      event.preventDefault();
+      this.maximizeWindow(active.id);
+    }
+  }
   saveDesktopState() {
     if (this.isRestoring) return;
     const state = {
@@ -663,7 +795,7 @@ class WindowManager {
               <div class="rss-layout">
                 <div class="rss-toolbar">
                   <label class="rss-label">Feed:</label>
-                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${RSS_PLACEHOLDER}">
+                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${getRssPlaceholder()}">
                   <select class="rss-preset" title="Popular feeds">${presetOptions}</select>
                   <button class="task-btn rss-load">Load</button>
                   <span class="rss-status">Ready</span>
@@ -687,7 +819,7 @@ class WindowManager {
                 <button class="browser-btn" data-action="forward" title="Forward">▶</button>
                 <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
                 <button class="browser-btn" data-action="home" title="Home">⌂</button>
-                <input class="browser-url" type="text" placeholder="${BROWSER_PLACEHOLDER}" spellcheck="false">
+                <input class="browser-url" type="text" placeholder="${getBrowserPlaceholder()}" spellcheck="false">
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
@@ -859,7 +991,43 @@ class WindowManager {
     return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add-btn">Add</button><button class="task-btn" id="card-del-btn">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
   }
   getWinFileContent() {
-    return `<div class="winfile-layout"><div class="drive-bar"><div class="drive-icon active">a:</div><div class="drive-icon active">c:</div><div class="drive-icon active">d:</div><div style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"><input type="text" id="new-folder-name" style="width:80px;height:18px;font-size:11px;" placeholder="Folder Name"><button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button><span>C:\\</span></div></div><div class="winfile-main"><div class="winfile-pane winfile-tree"><div class="winfile-pane-header">C:\\</div><div id="file-tree-root"></div></div><div class="winfile-pane winfile-list"><div class="winfile-pane-header" id="file-list-header">C:\\*.*</div><div class="file-list-view" id="file-list-view"></div></div></div><div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div></div>`;
+    return `
+      <div class="winfile-layout">
+        <div class="drive-bar">
+          <div class="drive-icon active">a:</div>
+          <div class="drive-icon active">c:</div>
+          <div class="drive-icon active">d:</div>
+          <div
+            style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"
+          >
+            <input
+              type="text"
+              id="new-folder-name"
+              style="width:80px;height:18px;font-size:11px;"
+              placeholder="Folder Name"
+            >
+            <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
+            <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
+            <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
+              Import
+              <input type="file" accept="application/json" onchange="importFileSystem(event)">
+            </label>
+            <span>C\</span>
+          </div>
+        </div>
+        <div class="winfile-main">
+          <div class="winfile-pane winfile-tree">
+            <div class="winfile-pane-header">C\</div>
+            <div id="file-tree-root"></div>
+          </div>
+          <div class="winfile-pane winfile-list">
+            <div class="winfile-pane-header" id="file-list-header">C\*.*</div>
+            <div class="file-list-view" id="file-list-view"></div>
+          </div>
+        </div>
+        <div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div>
+      </div>
+    `;
   }
   getSoundRecContent() {
     return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
@@ -1680,6 +1848,174 @@ function openCPSound(target, containerOverride) {
 
   body.querySelector(".volume-test-btn")?.addEventListener("click", () => {
     playVolumeTest();
+  });
+}
+
+function openCPDefaults(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "defaults")
+      );
+  }
+
+  const wallpaper = getWallpaperSettings();
+  const volumePercent = Math.round(getSystemVolume() * 100);
+  const network = getNetworkDefaults();
+
+  body.innerHTML = `<div class="cp-settings-layout">
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Wallpaper defaults</div>
+            <label style="display:block;font-size:12px;">Image URL</label>
+            <input type="text" id="cp-default-wallpaper-url" style="width:100%;margin-bottom:8px;" value="${
+              wallpaper.url || ""
+            }">
+            <label style="display:block;font-size:12px;">Display mode</label>
+            <select id="cp-default-wallpaper-mode" style="width:100%;margin-bottom:8px;">
+                <option value="tile">Tile</option>
+                <option value="center">Center</option>
+                <option value="cover">Stretch (Cover)</option>
+            </select>
+            <div style="text-align:right;">
+                <button class="task-btn" id="cp-apply-wallpaper">Save & Apply</button>
+            </div>
+            <div class="cp-saver-note">Saved to your browser storage so the desktop remembers.</div>
+        </div>
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Sound defaults</div>
+            <div class="volume-row">
+                <input type="range" min="0" max="100" value="${volumePercent}" class="volume-slider" id="cp-default-volume" aria-label="Default volume">
+                <span class="volume-percent" id="cp-default-volume-label">${volumePercent}%</span>
+            </div>
+            <label class="volume-mute"><input type="checkbox" class="volume-mute-toggle" ${
+              volumePercent === 0 ? "checked" : ""
+            }>Mute</label>
+            <div class="volume-actions">
+                <button class="task-btn" id="cp-volume-test">Test Beep</button>
+                <button class="task-btn" id="cp-volume-reset">Reset</button>
+            </div>
+            <div class="volume-note">Adjust the global default volume stored in localStorage.</div>
+        </div>
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Network defaults</div>
+            <label style="display:block;font-size:12px;">Browser home</label>
+            <input type="text" id="cp-net-home" style="width:100%;margin-bottom:6px;" value="${
+              network.browserHome || ""
+            }" placeholder="https://example.com/">
+            <label style="display:block;font-size:12px;">Proxy prefix</label>
+            <input type="text" id="cp-net-proxy" style="width:100%;margin-bottom:6px;" value="${
+              network.browserProxyPrefix || ""
+            }" placeholder="https://r.jina.ai/">
+            <label style="display:block;font-size:12px;">Radio Browser API</label>
+            <input type="text" id="cp-net-radio" style="width:100%;margin-bottom:6px;" value="${
+              network.radioBrowserBase || ""
+            }" placeholder="https://de1.api.radio-browser.info/json">
+            <label style="display:block;font-size:12px;">Radio Garden proxy</label>
+            <input type="text" id="cp-net-garden" style="width:100%;margin-bottom:6px;" value="${
+              network.radioGardenProxy || ""
+            }" placeholder="https://r.jina.ai/http://radio.garden">
+            <label style="display:block;font-size:12px;">RSS proxy root</label>
+            <input type="text" id="cp-net-rss" style="width:100%;margin-bottom:8px;" value="${
+              network.rssProxyRoot || ""
+            }" placeholder="https://api.allorigins.win/raw?url=">
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+                <button class="task-btn" id="cp-net-reset">Reset to built-in</button>
+                <button class="task-btn" id="cp-net-save">Save network defaults</button>
+            </div>
+            <div class="cp-saver-note" id="cp-net-status">Overrides live in localStorage and update new browser/radio sessions.</div>
+        </div>
+    </div>`;
+
+  const modeSelect = body.querySelector("#cp-default-wallpaper-mode");
+  if (modeSelect) modeSelect.value = wallpaper.mode || "tile";
+
+  const applyWallpaper = () => {
+    const url = body.querySelector("#cp-default-wallpaper-url")?.value || "";
+    const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "tile";
+    applyWallpaperSettings(url, mode, true);
+  };
+
+  body.querySelector("#cp-apply-wallpaper")?.addEventListener("click", applyWallpaper);
+
+  const volumeSlider = body.querySelector("#cp-default-volume");
+  const volumeLabel = body.querySelector("#cp-default-volume-label");
+  const volumeMute = body.querySelector(".volume-mute-toggle");
+  const syncVolumeLabel = (val) => {
+    if (volumeLabel) volumeLabel.textContent = `${Math.round(val * 100)}%`;
+    if (volumeSlider) volumeSlider.value = Math.round(val * 100);
+    if (volumeMute) volumeMute.checked = val === 0;
+  };
+
+  volumeSlider?.addEventListener("input", (e) => {
+    const v = Number(e.target.value) / 100;
+    setSystemVolume(v);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  volumeMute?.addEventListener("change", (e) => {
+    if (e.target.checked) setSystemVolume(0);
+    else setSystemVolume(getLastNonZeroVolume() || 0.7);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  body.querySelector("#cp-volume-reset")?.addEventListener("click", () => {
+    setSystemVolume(0.7);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  body.querySelector("#cp-volume-test")?.addEventListener("click", () => {
+    playVolumeTest();
+  });
+
+  const setNetworkStatus = (text) => {
+    const status = body.querySelector("#cp-net-status");
+    if (status) status.textContent = text;
+  };
+
+  body.querySelector("#cp-net-save")?.addEventListener("click", () => {
+    const newConfig = {
+      browserHome: body.querySelector("#cp-net-home")?.value?.trim() || network.browserHome,
+      browserProxyPrefix:
+        body.querySelector("#cp-net-proxy")?.value?.trim() || network.browserProxyPrefix,
+      radioBrowserBase:
+        body.querySelector("#cp-net-radio")?.value?.trim() || network.radioBrowserBase,
+      radioGardenProxy:
+        body.querySelector("#cp-net-garden")?.value?.trim() || network.radioGardenProxy,
+      rssProxyRoot: body.querySelector("#cp-net-rss")?.value?.trim() || network.rssProxyRoot
+    };
+    updateNetworkDefaults(newConfig);
+    setNetworkStatus("Network defaults saved for future sessions.");
+  });
+
+  body.querySelector("#cp-net-reset")?.addEventListener("click", () => {
+    const resetConfig = resetNetworkDefaults();
+    const home = body.querySelector("#cp-net-home");
+    const proxy = body.querySelector("#cp-net-proxy");
+    const radio = body.querySelector("#cp-net-radio");
+    const garden = body.querySelector("#cp-net-garden");
+    const rss = body.querySelector("#cp-net-rss");
+    if (home) home.value = resetConfig.browserHome || "";
+    if (proxy) proxy.value = resetConfig.browserProxyPrefix || "";
+    if (radio) radio.value = resetConfig.radioBrowserBase || "";
+    if (garden) garden.value = resetConfig.radioGardenProxy || "";
+    if (rss) rss.value = resetConfig.rssProxyRoot || "";
+    setNetworkStatus("Network defaults reset to built-in values.");
   });
 }
 
@@ -2934,6 +3270,7 @@ function initControlPanel(w) {
     <div class="menu-item cp-menu-item" data-view="screensaver">Screensaver</div>
     <div class="menu-item cp-menu-item" data-view="sound">Sound</div>
     <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
+    <div class="menu-item cp-menu-item" data-view="defaults">Defaults</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
 
@@ -2944,6 +3281,7 @@ function initControlPanel(w) {
       <button class="task-btn cp-tab-btn" data-view="screensaver">Screensaver</button>
       <button class="task-btn cp-tab-btn" data-view="sound">Sound</button>
       <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
+      <button class="task-btn cp-tab-btn" data-view="defaults">Defaults</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
     <div class="cp-view-area"></div>
@@ -2971,6 +3309,7 @@ function initControlPanel(w) {
     else if (view === "screensaver") openCPScreensaver(viewArea);
     else if (view === "sound") openCPSound(viewArea);
     else if (view === "fonts") openCPFonts(viewArea);
+    else if (view === "defaults") openCPDefaults(viewArea);
     else renderHome();
   };
 
@@ -5997,7 +6336,12 @@ function stopMinesTimer() {
 function initSplash() {
   const splash = document.getElementById("splash-screen");
   if (!splash) return;
-  
+
+  splash.style.backgroundImage = `url('${DEFAULT_SPLASH_IMAGE}')`;
+  splash.style.backgroundSize = "cover";
+  splash.style.backgroundPosition = "center";
+  splash.style.backgroundRepeat = "no-repeat";
+
   const removeSplash = () => {
     splash.style.opacity = "0";
     setTimeout(() => {
@@ -6029,6 +6373,8 @@ window.clearPaint = clearPaint;
 window.copyCharMap = copyCharMap;
 window.runCompiler = runCompiler;
 window.runPython = runPython;
+window.exportFileSystem = exportFileSystem;
+window.importFileSystem = importFileSystem;
 
 // Database App
 window.addDbRecord = addDbRecord;
@@ -6049,6 +6395,7 @@ window.openCPDesktop = openCPDesktop;
 window.openCPScreensaver = openCPScreensaver;
 window.openCPSound = openCPSound;
 window.openCPFonts = openCPFonts;
+window.openCPDefaults = openCPDefaults;
 window.applyTheme = applyTheme;
 window.setWallpaper = setWallpaper;
 window.previewScreensaver = previewScreensaver;

@@ -39,7 +39,7 @@
 </div>
 
 <div id="desktop">
-<div id="minimized-container" class="desktop-icon-container"></div>
+<div id="minimized-container" class="desktop-icon-container" role="toolbar" aria-label="Taskbar"></div>
 </div>
 
 <div id="screensaver">
@@ -52,9 +52,9 @@
         </div>
     </div>
     <div id="saver-lock">
-        <div class="saver-lock-dialog">
-            <div class="saver-lock-title">Screen Locked</div>
-            <div class="saver-lock-text">Enter your passphrase to exit the screensaver.</div>
+        <div class="saver-lock-dialog" role="dialog" aria-modal="true" aria-labelledby="saver-lock-title" aria-describedby="saver-lock-text">
+            <div class="saver-lock-title" id="saver-lock-title">Screen Locked</div>
+            <div class="saver-lock-text" id="saver-lock-text">Enter your passphrase to exit the screensaver.</div>
             <input type="password" id="saver-pass-input" placeholder="Passphrase" aria-label="Passphrase to unlock" />
             <div class="saver-lock-error" id="saver-lock-error"></div>
             <div class="saver-lock-actions">
