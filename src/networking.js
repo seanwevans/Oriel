@@ -31,6 +31,11 @@ const baseNetworkConfig = { ...NETWORK_CONFIG };
 
 let mergedNetworkConfig = { ...baseNetworkConfig, ...loadStoredNetworkConfig() };
 
+let BROWSER_HOME = mergedNetworkConfig.browserHome;
+let BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
+let RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
+let RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
+let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
 
 function syncNetworkConfig(overrides = null) {
   if (overrides) {
@@ -53,11 +58,7 @@ export function updateNetworkDefaults(partial = {}) {
   return syncNetworkConfig(partial);
 }
 
-export const BROWSER_HOME = "https://example.com/";
-export const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
-export const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
-export const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
-export const RSS_PROXY_ROOT = "https://api.allorigins.win/get?url=";
+export { BROWSER_HOME, BROWSER_PROXY_PREFIX, RADIO_BROWSER_BASE, RADIO_GARDEN_PROXY, RSS_PROXY_ROOT };
 export function resetNetworkDefaults() {
   mergedNetworkConfig = { ...baseNetworkConfig };
   localStorage.removeItem(NETWORK_STORAGE_KEY);
