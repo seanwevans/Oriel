@@ -58,6 +58,11 @@ export function updateNetworkDefaults(partial = {}) {
   return syncNetworkConfig(partial);
 }
 
+export const BROWSER_HOME = "https://example.com/";
+export const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
+export const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
+export const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
+export const RSS_PROXY_ROOT = "https://api.allorigins.win/get?url=";
 export function resetNetworkDefaults() {
   mergedNetworkConfig = { ...baseNetworkConfig };
   localStorage.removeItem(NETWORK_STORAGE_KEY);
@@ -176,7 +181,16 @@ export function initRssReader(win) {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
       const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
+      let text;
+
+      try {
+        const data = await res.json();
+        text = data?.contents || "";
+      } catch (jsonErr) {
+        console.warn("RSS proxy did not return JSON, falling back to text", jsonErr);
+        text = await res.text();
+      }
+
       const parsed = parseFeed(text);
       if (!parsed.length) throw new Error("Empty feed");
       applyItems(parsed);
