@@ -113,16 +113,26 @@ class WindowManager {
   createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
-    win.style.width =
-      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
-    win.style.height =
+    const resolvedWidth =
+      typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
+    const resolvedHeight =
       typeof height === "number"
-        ? height + "px"
+        ? `${height}px`
         : height || height === 0
           ? height
           : "";
-    win.style.left = stateOverrides.left || 40 + this.windows.length * 20 + "px";
-    win.style.top = stateOverrides.top || 40 + this.windows.length * 20 + "px";
+    const resolvedLeft =
+      stateOverrides.left !== undefined
+        ? stateOverrides.left
+        : `${40 + this.windows.length * 20}px`;
+    const resolvedTop =
+      stateOverrides.top !== undefined
+        ? stateOverrides.top
+        : `${40 + this.windows.length * 20}px`;
+    win.style.width = resolvedWidth;
+    win.style.height = resolvedHeight;
+    win.style.left = typeof resolvedLeft === "number" ? `${resolvedLeft}px` : resolvedLeft;
+    win.style.top = typeof resolvedTop === "number" ? `${resolvedTop}px` : resolvedTop;
     win.dataset.id = id;
     win.dataset.type = title; // For task manager filter
     // HTML Structure with Resize Handles
@@ -458,8 +468,14 @@ class WindowManager {
   restoreWindows(windowsState = []) {
     windowsState.forEach((winState) => {
       const defaults = PROGRAMS.find((p) => p.type === winState.type);
-      const width = winState.width || defaults?.width || 500;
-      const height = winState.height || defaults?.height || 400;
+      const width =
+        typeof winState.width === "number"
+          ? winState.width
+          : winState.width || defaults?.width || 500;
+      const height =
+        typeof winState.height === "number"
+          ? winState.height
+          : winState.height || defaults?.height || 400;
       this.openWindow(
         winState.type || "progman",
         winState.title || defaults?.title || "Window",
@@ -481,19 +497,22 @@ class WindowManager {
     });
   }
   getWindowStateSnapshot() {
-    return this.windows.map((w) => ({
-      id: w.id,
-      type: w.type,
-      title: w.title,
-      left: w.el.style.left,
-      top: w.el.style.top,
-      width: w.el.style.width,
-      height: w.el.style.height,
-      minimized: w.minimized,
-      maximized: w.maximized,
-      prevRect: w.prevRect,
-      zIndex: parseInt(w.el.style.zIndex || `${this.highestZ}`, 10)
-    }));
+    return this.windows.map((w) => {
+      const rect = w.el.getBoundingClientRect();
+      return {
+        id: w.id,
+        type: w.type,
+        title: w.title,
+        left: w.el.offsetLeft,
+        top: w.el.offsetTop,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        minimized: w.minimized,
+        maximized: w.maximized,
+        prevRect: w.prevRect,
+        zIndex: parseInt(w.el.style.zIndex || `${this.highestZ}`, 10)
+      };
+    });
   }
   getTopWindowByZ() {
     if (this.windows.length === 0) return null;
