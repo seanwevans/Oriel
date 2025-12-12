@@ -1,10 +1,16 @@
-let wallpaperSettings = { url: "", mode: "tile" };
+import { DEFAULT_WALLPAPER } from "./defaults.js";
+
+let wallpaperSettings = { url: DEFAULT_WALLPAPER, mode: "tile" };
 
 export function getWallpaperSettings() {
   return wallpaperSettings;
 }
 
-export function applyWallpaperSettings(url = "", mode = "tile", persist = false) {
+export function applyWallpaperSettings(
+  url = DEFAULT_WALLPAPER,
+  mode = "tile",
+  persist = false
+) {
   wallpaperSettings = { url, mode };
   const body = document.body;
   if (url) {

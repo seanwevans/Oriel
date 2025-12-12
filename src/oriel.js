@@ -4,6 +4,7 @@ import {
   DEFAULT_MD_SAMPLE,
   DEFAULT_PDF_DATA_URI,
   DEFAULT_SPLASH_IMAGE,
+  DEFAULT_WALLPAPER,
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
@@ -1285,7 +1286,7 @@ class WindowManager {
 
 const initialDesktopState = loadDesktopState();
 applyWallpaperSettings(
-  initialDesktopState.wallpaper?.url || "",
+  initialDesktopState.wallpaper?.url ?? DEFAULT_WALLPAPER,
   initialDesktopState.wallpaper?.mode || "tile"
 );
 let wm = null;

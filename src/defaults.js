@@ -11,6 +11,7 @@ export const DEFAULT_MD_SAMPLE =
 
 export const DEFAULT_SPLASH_IMAGE = new URL("./assets/splash2.jpeg", import.meta.url).href;
 export const DEFAULT_SCREEN_IMAGE = new URL("./assets/screen.png", import.meta.url).href;
+export const DEFAULT_WALLPAPER = new URL("./assets/wallpaper.png", import.meta.url).href;
 
 export const RSS_PRESETS = [
   { label: "Hacker News", url: "https://hnrss.org/frontpage" },
