@@ -9,7 +9,7 @@ export const DEFAULT_MD_SAMPLE =
   - Headings, lists, and links\n
   - **Bold** and *italic* text\n`;
 
-export const DEFAULT_SPLASH_IMAGE = new URL("./assets/splash.png", import.meta.url).href;
+export const DEFAULT_SPLASH_IMAGE = new URL("./assets/splash2.jpeg", import.meta.url).href;
 export const DEFAULT_SCREEN_IMAGE = new URL("./assets/screen.png", import.meta.url).href;
 
 export const RSS_PRESETS = [
