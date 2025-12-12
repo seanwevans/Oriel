@@ -328,6 +328,7 @@ class WindowManager {
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
     if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
+    if (type === "reset") content = this.getResetContent();
     if (type === "rss") content = this.getRssReaderContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
@@ -382,6 +383,7 @@ class WindowManager {
     if (type === "winfile") initFileManager(winEl);
     if (type === "clock") initClock(winEl);
     if (type === "control") initControlPanel(winEl);
+    if (type === "reset") initReset(winEl);
     if (type === "chess") initChess(winEl);
     if (type === "console") initConsole(winEl);
     if (type === "write") initWrite(winEl);
@@ -1097,6 +1099,22 @@ class WindowManager {
   }
   getControlPanelContent() {
     return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPSound(this)">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+  }
+  getResetContent() {
+    return `<div class="reset-layout" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+                <div class="reset-warning" style="background:#fff3cd; border:1px solid #e0c25c; padding:10px;">
+                    <strong>Reset Oriel</strong>
+                    <div>This will clear all saved desktop windows, wallpaper, volume, network defaults, and file or app data.</div>
+                </div>
+                <ul style="margin:0 0 4px 20px; padding:0; line-height:1.4;">
+                    <li>Desktop layout & wallpaper</li>
+                    <li>File system changes</li>
+                    <li>Sound levels & network presets</li>
+                    <li>App data such as Cardfile or Data Manager</li>
+                </ul>
+                <button class="task-btn reset-now-btn" style="width:180px;">Reset and Reload</button>
+                <div class="reset-status" aria-live="polite">No changes yet.</div>
+            </div>`;
   }
   getNotepadContent(txt) {
     return `<textarea class="notepad-area" spellcheck="false">${
@@ -3322,6 +3340,42 @@ function initControlPanel(w) {
   });
 
   switchView("desktop");
+}
+
+function initReset(w) {
+  const btn = w.querySelector(".reset-now-btn");
+  const status = w.querySelector(".reset-status");
+
+  const setStatus = (msg) => {
+    if (status) status.textContent = msg;
+  };
+
+  if (!btn) return;
+
+  btn.onclick = () => {
+    const confirmed = window.confirm(
+      "This will clear all saved Oriel data and reload the desktop. Continue?"
+    );
+    if (!confirmed) {
+      setStatus("Reset cancelled.");
+      return;
+    }
+
+    const keysToClear = [
+      "oriel-desktop-state",
+      "oriel-fs-v1",
+      "oriel-volume",
+      "oriel-network-defaults",
+      "oriel-radio-cache-v1",
+      "w31-cards",
+      "w31-db"
+    ];
+
+    keysToClear.forEach((key) => localStorage.removeItem(key));
+    setStatus("Saved data cleared. Reloading to apply defaults…");
+
+    setTimeout(() => window.location.reload(), 300);
+  };
 }
 
 function openCPFonts(target, containerOverride) {

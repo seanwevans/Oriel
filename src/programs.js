@@ -168,6 +168,14 @@ export const PROGRAMS = [
     label: "Control"
   },
   {
+    type: "reset",
+    title: "Reset System",
+    width: 400,
+    height: 260,
+    icon: "reset",
+    label: "Reset"
+  },
+  {
     type: "imageviewer",
     title: "Image Viewer",
     width: 720,

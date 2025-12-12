@@ -40,6 +40,7 @@ export const DEFAULT_FS = {
           "RADIO.EXE": { type: "file", app: "radio" },
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
+          "RESET.EXE": { type: "file", app: "reset" },
           "RSS.EXE": { type: "file", app: "rss" },
           "WEB.EXE": { type: "file", app: "browser" },
           "DISCORD.EXE": { type: "file", app: "discord" },
