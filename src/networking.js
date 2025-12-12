@@ -1,11 +1,68 @@
 import { DEFAULT_RSS_SAMPLE, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
+import { NETWORK_CONFIG } from "./config.js";
 
-export const BROWSER_HOME = "https://example.com/";
-export const BROWSER_PROXY_PREFIX = "https://r.jina.ai/";
-export const RADIO_BROWSER_BASE = "https://de1.api.radio-browser.info/json";
-export const RADIO_GARDEN_PROXY = `${BROWSER_PROXY_PREFIX}http://radio.garden`;
-export const RSS_PROXY_ROOT = "https://api.allorigins.win/raw?url=";
+const NETWORK_STORAGE_KEY = "oriel-network-defaults";
+
+function loadStoredNetworkConfig() {
+  try {
+    const raw = localStorage.getItem(NETWORK_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed;
+  } catch (err) {
+    console.warn("Failed to parse stored network config", err);
+  }
+  return {};
+}
+
+function persistNetworkConfig(cfg) {
+  const toStore = {
+    browserHome: cfg.browserHome,
+    browserProxyPrefix: cfg.browserProxyPrefix,
+    radioBrowserBase: cfg.radioBrowserBase,
+    radioGardenProxy: cfg.radioGardenProxy,
+    rssProxyRoot: cfg.rssProxyRoot
+  };
+  localStorage.setItem(NETWORK_STORAGE_KEY, JSON.stringify(toStore));
+}
+
+const baseNetworkConfig = { ...NETWORK_CONFIG };
+
+let mergedNetworkConfig = { ...baseNetworkConfig, ...loadStoredNetworkConfig() };
+
+export let BROWSER_HOME = mergedNetworkConfig.browserHome;
+export let BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
+export let RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
+export let RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
+export let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+
+function syncNetworkConfig(overrides = null) {
+  if (overrides) {
+    mergedNetworkConfig = { ...mergedNetworkConfig, ...overrides };
+    persistNetworkConfig(mergedNetworkConfig);
+  }
+  BROWSER_HOME = mergedNetworkConfig.browserHome;
+  BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
+  RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
+  RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
+  RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+  return mergedNetworkConfig;
+}
+
+export function getNetworkDefaults() {
+  return { ...mergedNetworkConfig };
+}
+
+export function updateNetworkDefaults(partial = {}) {
+  return syncNetworkConfig(partial);
+}
+
+export function resetNetworkDefaults() {
+  mergedNetworkConfig = { ...baseNetworkConfig };
+  localStorage.removeItem(NETWORK_STORAGE_KEY);
+  return syncNetworkConfig();
+}
 
 export const browserSessions = {};
 

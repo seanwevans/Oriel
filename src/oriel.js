@@ -6,7 +6,6 @@ import {
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
-import { NETWORK_CONFIG } from "./config.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { MOCK_FS, saveFileSystem } from "./filesystem.js";
@@ -19,12 +18,14 @@ import {
   setSystemVolume
 } from "./audio.js";
 import {
-  BROWSER_HOME,
   browserSessions,
+  getNetworkDefaults,
   initBrowser,
   initRadio,
   initRadioGarden,
-  initRssReader
+  initRssReader,
+  resetNetworkDefaults,
+  updateNetworkDefaults
 } from "./networking.js";
 import { SimulatedKernel } from "./kernel.js";
 
@@ -50,14 +51,15 @@ function createFolder(btn) {
 }
 
 const kernel = new SimulatedKernel(() => refreshAllProcessViews());
+const getBrowserPlaceholder = () => {
+  const { browserHome } = getNetworkDefaults();
+  return browserHome || "https://example.com";
+};
 
-const BROWSER_PROXY_PREFIX = NETWORK_CONFIG.browserProxyPrefix;
-const RADIO_BROWSER_BASE = NETWORK_CONFIG.radioBrowserBase;
-const RADIO_GARDEN_PROXY = NETWORK_CONFIG.radioGardenProxy;
-
-const RSS_PROXY_ROOT = NETWORK_CONFIG.rssProxyRoot;
-const RSS_PLACEHOLDER = `${(BROWSER_HOME || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
-const BROWSER_PLACEHOLDER = BROWSER_HOME || "https://example.com";
+const getRssPlaceholder = () => {
+  const { browserHome } = getNetworkDefaults();
+  return `${(browserHome || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
+};
 
 class WindowManager {
   constructor(initialState = null) {
@@ -676,7 +678,7 @@ class WindowManager {
               <div class="rss-layout">
                 <div class="rss-toolbar">
                   <label class="rss-label">Feed:</label>
-                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${RSS_PLACEHOLDER}">
+                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${getRssPlaceholder()}">
                   <select class="rss-preset" title="Popular feeds">${presetOptions}</select>
                   <button class="task-btn rss-load">Load</button>
                   <span class="rss-status">Ready</span>
@@ -700,7 +702,7 @@ class WindowManager {
                 <button class="browser-btn" data-action="forward" title="Forward">▶</button>
                 <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
                 <button class="browser-btn" data-action="home" title="Home">⌂</button>
-                <input class="browser-url" type="text" placeholder="${BROWSER_PLACEHOLDER}" spellcheck="false">
+                <input class="browser-url" type="text" placeholder="${getBrowserPlaceholder()}" spellcheck="false">
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
@@ -1693,6 +1695,174 @@ function openCPSound(target, containerOverride) {
 
   body.querySelector(".volume-test-btn")?.addEventListener("click", () => {
     playVolumeTest();
+  });
+}
+
+function openCPDefaults(target, containerOverride) {
+  let targetContainer = containerOverride;
+  if (!targetContainer && target?.classList?.contains("cp-view-area")) {
+    targetContainer = target;
+  }
+  if (!targetContainer && target?.closest) {
+    const area = target.closest(".cp-view-area");
+    if (area) targetContainer = area;
+  }
+  const w = target?.closest ? target.closest(".window") : null;
+  const body =
+    targetContainer ||
+    (w ? w.querySelector(".window-body") : null) ||
+    (target instanceof HTMLElement ? target : null);
+  if (!body) return;
+
+  if (w) {
+    w
+      .querySelectorAll(".cp-tab-btn, .cp-menu-item")
+      .forEach((btn) =>
+        btn.classList.toggle("active", btn.dataset.view === "defaults")
+      );
+  }
+
+  const wallpaper = getWallpaperSettings();
+  const volumePercent = Math.round(getSystemVolume() * 100);
+  const network = getNetworkDefaults();
+
+  body.innerHTML = `<div class="cp-settings-layout">
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Wallpaper defaults</div>
+            <label style="display:block;font-size:12px;">Image URL</label>
+            <input type="text" id="cp-default-wallpaper-url" style="width:100%;margin-bottom:8px;" value="${
+              wallpaper.url || ""
+            }">
+            <label style="display:block;font-size:12px;">Display mode</label>
+            <select id="cp-default-wallpaper-mode" style="width:100%;margin-bottom:8px;">
+                <option value="tile">Tile</option>
+                <option value="center">Center</option>
+                <option value="cover">Stretch (Cover)</option>
+            </select>
+            <div style="text-align:right;">
+                <button class="task-btn" id="cp-apply-wallpaper">Save & Apply</button>
+            </div>
+            <div class="cp-saver-note">Saved to your browser storage so the desktop remembers.</div>
+        </div>
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Sound defaults</div>
+            <div class="volume-row">
+                <input type="range" min="0" max="100" value="${volumePercent}" class="volume-slider" id="cp-default-volume" aria-label="Default volume">
+                <span class="volume-percent" id="cp-default-volume-label">${volumePercent}%</span>
+            </div>
+            <label class="volume-mute"><input type="checkbox" class="volume-mute-toggle" ${
+              volumePercent === 0 ? "checked" : ""
+            }>Mute</label>
+            <div class="volume-actions">
+                <button class="task-btn" id="cp-volume-test">Test Beep</button>
+                <button class="task-btn" id="cp-volume-reset">Reset</button>
+            </div>
+            <div class="volume-note">Adjust the global default volume stored in localStorage.</div>
+        </div>
+        <div class="cp-section">
+            <div style="font-weight:bold;margin-bottom:6px;">Network defaults</div>
+            <label style="display:block;font-size:12px;">Browser home</label>
+            <input type="text" id="cp-net-home" style="width:100%;margin-bottom:6px;" value="${
+              network.browserHome || ""
+            }" placeholder="https://example.com/">
+            <label style="display:block;font-size:12px;">Proxy prefix</label>
+            <input type="text" id="cp-net-proxy" style="width:100%;margin-bottom:6px;" value="${
+              network.browserProxyPrefix || ""
+            }" placeholder="https://r.jina.ai/">
+            <label style="display:block;font-size:12px;">Radio Browser API</label>
+            <input type="text" id="cp-net-radio" style="width:100%;margin-bottom:6px;" value="${
+              network.radioBrowserBase || ""
+            }" placeholder="https://de1.api.radio-browser.info/json">
+            <label style="display:block;font-size:12px;">Radio Garden proxy</label>
+            <input type="text" id="cp-net-garden" style="width:100%;margin-bottom:6px;" value="${
+              network.radioGardenProxy || ""
+            }" placeholder="https://r.jina.ai/http://radio.garden">
+            <label style="display:block;font-size:12px;">RSS proxy root</label>
+            <input type="text" id="cp-net-rss" style="width:100%;margin-bottom:8px;" value="${
+              network.rssProxyRoot || ""
+            }" placeholder="https://api.allorigins.win/raw?url=">
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+                <button class="task-btn" id="cp-net-reset">Reset to built-in</button>
+                <button class="task-btn" id="cp-net-save">Save network defaults</button>
+            </div>
+            <div class="cp-saver-note" id="cp-net-status">Overrides live in localStorage and update new browser/radio sessions.</div>
+        </div>
+    </div>`;
+
+  const modeSelect = body.querySelector("#cp-default-wallpaper-mode");
+  if (modeSelect) modeSelect.value = wallpaper.mode || "tile";
+
+  const applyWallpaper = () => {
+    const url = body.querySelector("#cp-default-wallpaper-url")?.value || "";
+    const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "tile";
+    applyWallpaperSettings(url, mode, true);
+  };
+
+  body.querySelector("#cp-apply-wallpaper")?.addEventListener("click", applyWallpaper);
+
+  const volumeSlider = body.querySelector("#cp-default-volume");
+  const volumeLabel = body.querySelector("#cp-default-volume-label");
+  const volumeMute = body.querySelector(".volume-mute-toggle");
+  const syncVolumeLabel = (val) => {
+    if (volumeLabel) volumeLabel.textContent = `${Math.round(val * 100)}%`;
+    if (volumeSlider) volumeSlider.value = Math.round(val * 100);
+    if (volumeMute) volumeMute.checked = val === 0;
+  };
+
+  volumeSlider?.addEventListener("input", (e) => {
+    const v = Number(e.target.value) / 100;
+    setSystemVolume(v);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  volumeMute?.addEventListener("change", (e) => {
+    if (e.target.checked) setSystemVolume(0);
+    else setSystemVolume(getLastNonZeroVolume() || 0.7);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  body.querySelector("#cp-volume-reset")?.addEventListener("click", () => {
+    setSystemVolume(0.7);
+    syncVolumeLabel(getSystemVolume());
+  });
+
+  body.querySelector("#cp-volume-test")?.addEventListener("click", () => {
+    playVolumeTest();
+  });
+
+  const setNetworkStatus = (text) => {
+    const status = body.querySelector("#cp-net-status");
+    if (status) status.textContent = text;
+  };
+
+  body.querySelector("#cp-net-save")?.addEventListener("click", () => {
+    const newConfig = {
+      browserHome: body.querySelector("#cp-net-home")?.value?.trim() || network.browserHome,
+      browserProxyPrefix:
+        body.querySelector("#cp-net-proxy")?.value?.trim() || network.browserProxyPrefix,
+      radioBrowserBase:
+        body.querySelector("#cp-net-radio")?.value?.trim() || network.radioBrowserBase,
+      radioGardenProxy:
+        body.querySelector("#cp-net-garden")?.value?.trim() || network.radioGardenProxy,
+      rssProxyRoot: body.querySelector("#cp-net-rss")?.value?.trim() || network.rssProxyRoot
+    };
+    updateNetworkDefaults(newConfig);
+    setNetworkStatus("Network defaults saved for future sessions.");
+  });
+
+  body.querySelector("#cp-net-reset")?.addEventListener("click", () => {
+    const resetConfig = resetNetworkDefaults();
+    const home = body.querySelector("#cp-net-home");
+    const proxy = body.querySelector("#cp-net-proxy");
+    const radio = body.querySelector("#cp-net-radio");
+    const garden = body.querySelector("#cp-net-garden");
+    const rss = body.querySelector("#cp-net-rss");
+    if (home) home.value = resetConfig.browserHome || "";
+    if (proxy) proxy.value = resetConfig.browserProxyPrefix || "";
+    if (radio) radio.value = resetConfig.radioBrowserBase || "";
+    if (garden) garden.value = resetConfig.radioGardenProxy || "";
+    if (rss) rss.value = resetConfig.rssProxyRoot || "";
+    setNetworkStatus("Network defaults reset to built-in values.");
   });
 }
 
@@ -2947,6 +3117,7 @@ function initControlPanel(w) {
     <div class="menu-item cp-menu-item" data-view="screensaver">Screensaver</div>
     <div class="menu-item cp-menu-item" data-view="sound">Sound</div>
     <div class="menu-item cp-menu-item" data-view="fonts">Fonts</div>
+    <div class="menu-item cp-menu-item" data-view="defaults">Defaults</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
 
@@ -2957,6 +3128,7 @@ function initControlPanel(w) {
       <button class="task-btn cp-tab-btn" data-view="screensaver">Screensaver</button>
       <button class="task-btn cp-tab-btn" data-view="sound">Sound</button>
       <button class="task-btn cp-tab-btn" data-view="fonts">Fonts</button>
+      <button class="task-btn cp-tab-btn" data-view="defaults">Defaults</button>
       <button class="task-btn cp-tab-btn" data-view="home">Home</button>
     </div>
     <div class="cp-view-area"></div>
@@ -2984,6 +3156,7 @@ function initControlPanel(w) {
     else if (view === "screensaver") openCPScreensaver(viewArea);
     else if (view === "sound") openCPSound(viewArea);
     else if (view === "fonts") openCPFonts(viewArea);
+    else if (view === "defaults") openCPDefaults(viewArea);
     else renderHome();
   };
 
@@ -6062,6 +6235,7 @@ window.openCPDesktop = openCPDesktop;
 window.openCPScreensaver = openCPScreensaver;
 window.openCPSound = openCPSound;
 window.openCPFonts = openCPFonts;
+window.openCPDefaults = openCPDefaults;
 window.applyTheme = applyTheme;
 window.setWallpaper = setWallpaper;
 window.previewScreensaver = previewScreensaver;
