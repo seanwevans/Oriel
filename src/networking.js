@@ -4,12 +4,21 @@ import { NETWORK_CONFIG } from "./config.js";
 
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
 
+function sanitizeNetworkOverrides(raw = {}) {
+  return Object.entries(raw).reduce((acc, [key, value]) => {
+    if (value === undefined || value === null) return acc;
+    if (typeof value === "string" && value.trim() === "") return acc;
+    acc[key] = value;
+    return acc;
+  }, {});
+}
+
 function loadStoredNetworkConfig() {
   try {
     const raw = localStorage.getItem(NETWORK_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") return parsed;
+    if (parsed && typeof parsed === "object") return sanitizeNetworkOverrides(parsed);
   } catch (err) {
     console.warn("Failed to parse stored network config", err);
   }
@@ -17,14 +26,12 @@ function loadStoredNetworkConfig() {
 }
 
 function persistNetworkConfig(cfg) {
-  const toStore = {
-    browserHome: cfg.browserHome,
-    browserProxyPrefix: cfg.browserProxyPrefix,
-    radioBrowserBase: cfg.radioBrowserBase,
-    radioGardenProxy: cfg.radioGardenProxy,
-    rssProxyRoot: cfg.rssProxyRoot
-  };
-  localStorage.setItem(NETWORK_STORAGE_KEY, JSON.stringify(toStore));
+  const sanitized = sanitizeNetworkOverrides(cfg);
+  const explicitOverrides = Object.entries(sanitized).reduce((acc, [key, value]) => {
+    if (value !== baseNetworkConfig[key]) acc[key] = value;
+    return acc;
+  }, {});
+  localStorage.setItem(NETWORK_STORAGE_KEY, JSON.stringify(explicitOverrides));
 }
 
 const baseNetworkConfig = { ...NETWORK_CONFIG };
@@ -39,7 +46,8 @@ let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
 
 function syncNetworkConfig(overrides = null) {
   if (overrides) {
-    mergedNetworkConfig = { ...mergedNetworkConfig, ...overrides };
+    const sanitizedOverrides = sanitizeNetworkOverrides(overrides);
+    mergedNetworkConfig = { ...mergedNetworkConfig, ...sanitizedOverrides };
     persistNetworkConfig(mergedNetworkConfig);
   }
   BROWSER_HOME = mergedNetworkConfig.browserHome;
