@@ -1,4 +1,8 @@
-import { DEFAULT_MD_SAMPLE, DEFAULT_PDF_DATA_URI } from "./defaults.js";
+import {
+  DEFAULT_MD_SAMPLE,
+  DEFAULT_PDF_DATA_URI,
+  DEFAULT_SCREEN_IMAGE
+} from "./defaults.js";
 
 export const FS_STORAGE_KEY = "oriel-fs-v1";
 
@@ -57,7 +61,7 @@ export const DEFAULT_FS = {
           "SCREEN.PNG": {
             type: "file",
             app: "imageviewer",
-            content: { name: "screen.png", src: "screen.png" }
+            content: { name: "screen.png", src: DEFAULT_SCREEN_IMAGE }
           }
         }
       }

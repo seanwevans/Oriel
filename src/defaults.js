@@ -9,6 +9,9 @@ export const DEFAULT_MD_SAMPLE =
   - Headings, lists, and links\n
   - **Bold** and *italic* text\n`;
 
+export const DEFAULT_SPLASH_IMAGE = new URL("./assets/splash.png", import.meta.url).href;
+export const DEFAULT_SCREEN_IMAGE = new URL("./assets/screen.png", import.meta.url).href;
+
 export const RSS_PRESETS = [
   { label: "Hacker News", url: "https://hnrss.org/frontpage" },
   { label: "Lobsters", url: "https://lobste.rs/rss" },
@@ -36,4 +39,57 @@ export const IRC_BOT_MESSAGES = [
   "Have you tweaked your wallpaper today?",
   "Oriel 1.0 loves retro vibes.",
   "Remember to hydrate and stretch."
+];
+
+export const RADIO_FALLBACK_PRESETS = [
+  {
+    name: "BBC Radio 4",
+    country: "United Kingdom",
+    language: "English",
+    tags: "news,spoken word",
+    codec: "aac",
+    bitrate: 128,
+    url: "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_fourfm",
+    url_resolved: "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_fourfm"
+  },
+  {
+    name: "WQXR 105.9 FM",
+    country: "United States",
+    language: "English",
+    tags: "classical,new york",
+    codec: "aac",
+    bitrate: 96,
+    url: "https://stream.wqxr.org/wqxr-web",
+    url_resolved: "https://stream.wqxr.org/wqxr-web"
+  },
+  {
+    name: "FM4",
+    country: "Austria",
+    language: "German",
+    tags: "eclectic,alt",
+    codec: "mp3",
+    bitrate: 128,
+    url: "https://orf-live.ors-shoutcast.at/fm4-q2a",
+    url_resolved: "https://orf-live.ors-shoutcast.at/fm4-q2a"
+  },
+  {
+    name: "KEXP 90.3 FM",
+    country: "United States",
+    language: "English",
+    tags: "indie,alternative",
+    codec: "aac",
+    bitrate: 128,
+    url: "https://kexp-mp3-streaming.xcr.com/kexp128.mp3",
+    url_resolved: "https://kexp-mp3-streaming.xcr.com/kexp128.mp3"
+  },
+  {
+    name: "FIP",
+    country: "France",
+    language: "French",
+    tags: "eclectic,jazz,world",
+    codec: "aac",
+    bitrate: 128,
+    url: "https://icecast.radiofrance.fr/fip-hifi.aac",
+    url_resolved: "https://icecast.radiofrance.fr/fip-hifi.aac"
+  }
 ];

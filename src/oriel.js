@@ -3,6 +3,7 @@ import { PROGRAMS } from "./programs.js";
 import {
   DEFAULT_MD_SAMPLE,
   DEFAULT_PDF_DATA_URI,
+  DEFAULT_SPLASH_IMAGE,
   IRC_BOT_MESSAGES,
   RSS_PRESETS
 } from "./defaults.js";
@@ -6292,7 +6293,12 @@ function stopMinesTimer() {
 function initSplash() {
   const splash = document.getElementById("splash-screen");
   if (!splash) return;
-  
+
+  splash.style.backgroundImage = `url('${DEFAULT_SPLASH_IMAGE}')`;
+  splash.style.backgroundSize = "cover";
+  splash.style.backgroundPosition = "center";
+  splash.style.backgroundRepeat = "no-repeat";
+
   const removeSplash = () => {
     splash.style.opacity = "0";
     setTimeout(() => {
