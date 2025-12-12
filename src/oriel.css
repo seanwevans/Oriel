@@ -221,6 +221,17 @@ body {
   cursor: pointer;
 }
 
+.sys-box:focus-visible,
+.win-btn:focus-visible,
+.desktop-icon:focus-visible,
+.desktop-icon .icon-img:focus-visible,
+.task-btn:focus-visible,
+.menu-item:focus-visible,
+#minimized-container .desktop-icon:focus-visible {
+  outline: 2px solid var(--win-blue);
+  outline-offset: 2px;
+}
+
 .sys-box:active,
 .win-btn:active {
   border-top: 1px solid var(--win-gray-dark);
