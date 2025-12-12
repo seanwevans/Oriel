@@ -72,7 +72,16 @@ export const DEFAULT_FS = {
 
 export function loadFileSystem() {
   const stored = localStorage.getItem(FS_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : DEFAULT_FS;
+  if (!stored) return DEFAULT_FS;
+
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : DEFAULT_FS;
+  } catch (err) {
+    console.warn("Failed to parse stored file system, resetting to defaults", err);
+    localStorage.removeItem(FS_STORAGE_KEY);
+    return DEFAULT_FS;
+  }
 }
 
 export function saveFileSystem(fs = MOCK_FS) {
