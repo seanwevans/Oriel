@@ -94,6 +94,7 @@ class WindowManager {
       this.endDrag();
       this.endResize();
     });
+    window.addEventListener("keydown", (e) => this.handleWindowShortcuts(e));
     // Restore prior desktop state
     if (initialState && initialState.windows?.length) {
       this.isRestoring = true;
@@ -110,9 +111,20 @@ class WindowManager {
     if (this.windows.length === 0)
       this.openWindow("progman", "Program Manager", 500, 480);
   }
+  addKeyboardActivation(el, handler) {
+    if (!el) return;
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handler();
+      }
+    });
+  }
   createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", title);
     win.style.width =
       typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
     win.style.height =
@@ -162,6 +174,24 @@ class WindowManager {
         return;
       this.startDrag(e, win);
     });
+    // Accessibility: make window controls keyboard operable
+    const closeBtn = win.querySelector(".sys-box");
+    closeBtn.setAttribute("role", "button");
+    closeBtn.setAttribute("aria-label", `Close ${title}`);
+    closeBtn.tabIndex = 0;
+    this.addKeyboardActivation(closeBtn, () => this.closeWindow(id));
+
+    const minimizeBtn = win.querySelector(".win-btn:nth-child(1)");
+    minimizeBtn.setAttribute("role", "button");
+    minimizeBtn.setAttribute("aria-label", `Minimize ${title}`);
+    minimizeBtn.tabIndex = 0;
+    this.addKeyboardActivation(minimizeBtn, () => this.minimizeWindow(id));
+
+    const maximizeBtn = win.querySelector(".win-btn:nth-child(2)");
+    maximizeBtn.setAttribute("role", "button");
+    maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
+    maximizeBtn.tabIndex = 0;
+    this.addKeyboardActivation(maximizeBtn, () => this.maximizeWindow(id));
     // Resize Start
     win.querySelectorAll(".resizer").forEach((r) => {
       r.addEventListener("mousedown", (e) =>
@@ -317,6 +347,12 @@ class WindowManager {
     const icon = document.createElement("div");
     icon.id = "min-" + id;
     icon.className = "desktop-icon minimized";
+    icon.setAttribute("role", "button");
+    icon.setAttribute(
+      "aria-label",
+      `Restore ${win.el.querySelector(".title-bar-text").innerText} window`
+    );
+    icon.tabIndex = 0;
     icon.innerHTML = `
                 <div class="icon-img">${this.getIconForType(win.type)}</div>
                 <div class="icon-label">${
@@ -324,6 +360,7 @@ class WindowManager {
                 }</div>
             `;
     icon.onclick = () => this.restoreWindow(id);
+    this.addKeyboardActivation(icon, () => this.restoreWindow(id));
     this.minimizedContainer.appendChild(icon);
     this.saveDesktopState();
   }
@@ -502,6 +539,22 @@ class WindowManager {
       const topZ = parseInt(top.el.style.zIndex || "0", 10);
       return currentZ >= topZ ? current : top;
     });
+  }
+  handleWindowShortcuts(event) {
+    const active = this.getTopWindowByZ();
+    if (!active || event.defaultPrevented) return;
+    if (event.altKey && event.key === "F4") {
+      event.preventDefault();
+      this.closeWindow(active.id);
+    }
+    if (event.altKey && event.key.toLowerCase() === "m") {
+      event.preventDefault();
+      this.minimizeWindow(active.id);
+    }
+    if (event.altKey && event.key.toLowerCase() === "x") {
+      event.preventDefault();
+      this.maximizeWindow(active.id);
+    }
   }
   saveDesktopState() {
     if (this.isRestoring) return;
