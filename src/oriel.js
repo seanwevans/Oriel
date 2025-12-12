@@ -229,6 +229,13 @@ class WindowManager {
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
     this.desktop.appendChild(winEl);
+    const rect = winEl.getBoundingClientRect();
+    const initialRect = {
+      left: winEl.offsetLeft,
+      top: winEl.offsetTop,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height)
+    };
     const winObj = {
       id,
       el: winEl,
@@ -236,7 +243,8 @@ class WindowManager {
       title,
       minimized: false,
       maximized: false,
-      prevRect: stateOverrides.prevRect || null
+      prevRect: stateOverrides.prevRect || null,
+      lastRect: initialRect
     };
     if (stateOverrides.zIndex) {
       winEl.style.zIndex = stateOverrides.zIndex;
@@ -318,6 +326,7 @@ class WindowManager {
   minimizeWindow(id) {
     const win = this.windows.find((w) => w.id === id);
     if (!win) return;
+    win.lastRect = this.getWindowRectSnapshot(win);
     if (win.minimized) return;
     win.el.style.display = "none";
     win.minimized = true;
@@ -498,21 +507,33 @@ class WindowManager {
   }
   getWindowStateSnapshot() {
     return this.windows.map((w) => {
-      const rect = w.el.getBoundingClientRect();
+      const rect = this.getWindowRectSnapshot(w);
       return {
         id: w.id,
         type: w.type,
         title: w.title,
-        left: w.el.offsetLeft,
-        top: w.el.offsetTop,
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
         minimized: w.minimized,
         maximized: w.maximized,
         prevRect: w.prevRect,
         zIndex: parseInt(w.el.style.zIndex || `${this.highestZ}`, 10)
       };
     });
+  }
+  getWindowRectSnapshot(win) {
+    if (win.minimized && win.lastRect) return win.lastRect;
+    const rect = win.el.getBoundingClientRect();
+    const snapshot = {
+      left: win.el.offsetLeft,
+      top: win.el.offsetTop,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height)
+    };
+    win.lastRect = snapshot;
+    return snapshot;
   }
   getTopWindowByZ() {
     if (this.windows.length === 0) return null;
