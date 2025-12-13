@@ -5489,7 +5489,21 @@ function calcInput(e, v) {
   if (v === "C") d.dataset.val = "0";
   else if (v === "=") {
     try {
-      d.dataset.val = eval(val).toString();
+      const sanitized = val.replace(/\s+/g, "");
+      const mathPattern = /^-?(\d+(?:\.\d+)?)([+\-*/]-?\d+(?:\.\d+)?)*$/;
+      if (!mathPattern.test(sanitized)) {
+        throw new Error("Invalid expression");
+      }
+
+      // Evaluate the sanitized expression using Function for isolation.
+      // This avoids the broad security risks of eval while still supporting
+      // basic arithmetic used by the calculator UI.
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`"use strict"; return (${sanitized});`)();
+
+      if (!Number.isFinite(result)) throw new Error("Invalid result");
+
+      d.dataset.val = result.toString();
     } catch {
       d.dataset.val = "Err";
     }
