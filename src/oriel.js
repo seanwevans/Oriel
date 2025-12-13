@@ -5422,6 +5422,20 @@ function unixifyPath(path) {
   return path.replace(/^C:\\/, "/").replace(/\\/g, "/") || "/";
 }
 
+function resolveParentAndNameFromUnix(targetPath, cwd) {
+  const unixCwd = unixifyPath(cwd);
+  const normalized = (targetPath || "").replace(/\\/g, "/");
+  const combined = normalized.startsWith("/") ? normalized : `${unixCwd}/${normalized}`;
+  const segments = combined
+    .split("/")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const name = segments.pop();
+  const parentUnix = `/${segments.join("/")}`;
+  const { node: parent, path: parentPath } = consolePathFromUnix(parentUnix || "/", cwd);
+  return { parent, parentPath, name: name ? name.toUpperCase() : null };
+}
+
 function cashLs(pathArg, state) {
   const { node } = consolePathFromUnix(pathArg || state.cwd, state.cwd);
   if (!node || node.type !== "dir") {
@@ -5487,6 +5501,118 @@ function cashTouch(argLine, state) {
   return { lines: created.map((c) => `updated ${c}`) };
 }
 
+function cashRm(argLine, state) {
+  if (!argLine) return { error: "rm: missing operand" };
+  const parts = argLine.split(/\s+/).filter(Boolean);
+  const hasRecursiveFlag = parts.includes("-r");
+  const targetArg = parts.find((p) => p !== "-r");
+
+  if (!targetArg) return { error: "rm: missing operand" };
+
+  const { node } = consolePathFromUnix(targetArg, state.cwd);
+  if (!node) return { error: `rm: cannot remove '${targetArg}': No such file or directory` };
+  if (node.type === "dir" && !hasRecursiveFlag)
+    return { error: "rm: cannot remove a directory without -r" };
+
+  const { parent, name } = resolveParentAndNameFromUnix(targetArg, state.cwd);
+  if (!parent || !parent.children?.[name])
+    return { error: `rm: cannot remove '${targetArg}': No such file or directory` };
+
+  delete parent.children[name];
+  saveFileSystem();
+  return { lines: [`removed ${targetArg}`] };
+}
+
+function cashCp(argLine, state) {
+  const args = argLine?.split(/\s+/).filter(Boolean) || [];
+  if (args.length < 2) return { error: "cp: missing file operand" };
+
+  const [sourceArg, destArg] = args;
+  const { path: sourcePath, node: sourceNode } = consolePathFromUnix(sourceArg, state.cwd);
+  if (!sourceNode) return { error: `cp: cannot stat '${sourceArg}': No such file or directory` };
+
+  const sourceName = sourcePath.split(/\\/).filter(Boolean).pop();
+  const destResolved = consolePathFromUnix(destArg, state.cwd);
+  let destParent = null;
+  let destParentPath = null;
+  let destName = null;
+
+  if (destResolved.node && destResolved.node.type === "dir") {
+    destParent = destResolved.node;
+    destParentPath = destResolved.path;
+    destName = sourceName;
+  } else {
+    ({ parent: destParent, parentPath: destParentPath, name: destName } =
+      resolveParentAndNameFromUnix(destArg, state.cwd));
+  }
+
+  if (!destParent || destParent.type !== "dir")
+    return { error: `cp: cannot create file '${destArg}': No such directory` };
+  if (!destName) return { error: "cp: missing destination file operand" };
+  if (destParent.children?.[destName])
+    return { error: `cp: cannot overwrite '${destArg}': File exists` };
+
+  const clone = structuredClone(sourceNode);
+  destParent.children[destName] = clone;
+  saveFileSystem();
+  return { lines: [`copied ${sourceArg} to ${destArg}`] };
+}
+
+function cashMv(argLine, state) {
+  const args = argLine?.split(/\s+/).filter(Boolean) || [];
+  if (args.length < 2) return { error: "mv: missing file operand" };
+
+  const [sourceArg, destArg] = args;
+  const { path: sourcePath, node: sourceNode } = consolePathFromUnix(sourceArg, state.cwd);
+  if (!sourceNode) return { error: `mv: cannot stat '${sourceArg}': No such file or directory` };
+
+  const sourceName = sourcePath.split(/\\/).filter(Boolean).pop();
+  const { parent: sourceParent } = resolveParentAndNameFromUnix(sourceArg, state.cwd);
+  if (!sourceParent || !sourceParent.children?.[sourceName])
+    return { error: `mv: cannot move '${sourceArg}': No such file or directory` };
+
+  const destResolved = consolePathFromUnix(destArg, state.cwd);
+  let destParent = null;
+  let destParentPath = null;
+  let destName = null;
+
+  if (destResolved.node && destResolved.node.type === "dir") {
+    destParent = destResolved.node;
+    destParentPath = destResolved.path;
+    destName = sourceName;
+  } else {
+    ({ parent: destParent, parentPath: destParentPath, name: destName } =
+      resolveParentAndNameFromUnix(destArg, state.cwd));
+  }
+
+  if (!destParent || destParent.type !== "dir")
+    return { error: `mv: cannot move to '${destArg}': No such directory` };
+  if (!destName) return { error: "mv: missing destination file operand" };
+
+  const destFullPath = destParentPath.endsWith("\\")
+    ? `${destParentPath}${destName}`
+    : `${destParentPath}\\${destName}`;
+
+  if (sourceNode.type === "dir") {
+    const normalizedSourcePath = sourcePath.replace(/\\+$/, "");
+    const normalizedDestPath = destFullPath.replace(/\\+$/, "");
+    if (
+      normalizedDestPath === normalizedSourcePath ||
+      normalizedDestPath.startsWith(`${normalizedSourcePath}\\`)
+    ) {
+      return { error: "mv: cannot move a directory into itself" };
+    }
+  }
+
+  if (destParent.children?.[destName])
+    return { error: `mv: cannot overwrite '${destArg}': File exists` };
+
+  destParent.children[destName] = sourceNode;
+  delete sourceParent.children[sourceName];
+  saveFileSystem();
+  return { lines: [`moved ${sourceArg} to ${destArg}`] };
+}
+
 function registerDefaultConsoleCommands() {
   const register = (name, handler) => kernel.registerCommand(name, handler);
 
@@ -5497,6 +5623,9 @@ function registerDefaultConsoleCommands() {
   register("echo", ({ argLine }) => cashEcho(argLine));
   register("mkdir", ({ argLine, state }) => cashMkdir(argLine, state));
   register("touch", ({ argLine, state }) => cashTouch(argLine, state));
+  register("rm", ({ argLine, state }) => cashRm(argLine, state));
+  register("cp", ({ argLine, state }) => cashCp(argLine, state));
+  register("mv", ({ argLine, state }) => cashMv(argLine, state));
   register("cd", ({ argLine, state, updatePrompt }) => {
     if (!argLine) return { lines: [state.cwd] };
     const { path, node } = consolePathFromUnix(argLine, state.cwd);
