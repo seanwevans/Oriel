@@ -99,8 +99,8 @@ function refreshOpenFileManagers() {
   });
 }
 
-function exportFileSystem() {
-  const json = exportFileSystemAsJson();
+async function exportFileSystem() {
+  const json = await exportFileSystemAsJson();
   const stamp = new Date().toISOString().slice(0, 10);
   downloadJson(json, `oriel-fs-${stamp}.json`);
 }
@@ -110,11 +110,11 @@ function importFileSystem(event) {
   const file = input?.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
       const normalized = normalizeImportedFileSystem(parsed);
-      replaceFileSystem(normalized);
+      await replaceFileSystem(normalized);
       refreshOpenFileManagers();
       alert("File system imported successfully.");
     } catch (err) {
