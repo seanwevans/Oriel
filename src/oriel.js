@@ -10,6 +10,8 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
+import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
+import { clearPaint, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -36,6 +38,44 @@ import {
   updateNetworkDefaults
 } from "./networking.js";
 import { SimulatedKernel } from "./kernel.js";
+
+const APP_INITIALIZERS = {
+  mines: initMinesweeper,
+  solitaire: initSolitaire,
+  reversi: initReversi,
+  paint: initPaint,
+  photoshop: initPhotoshop,
+  artist: initArtist,
+  mplayer: initMediaPlayer,
+  simcity: initSimCity,
+  skifree: initSkiFree,
+  linerider: initLineRider,
+  database: initDatabase,
+  soundrec: initSoundRecorder,
+  radio: initRadio,
+  beatmaker: initBeatMaker,
+  charmap: initCharMap,
+  winfile: initFileManager,
+  clock: initClock,
+  control: initControlPanel,
+  reset: initReset,
+  chess: initChess,
+  console: initConsole,
+  write: initWrite,
+  cardfile: initCardfile,
+  taskman: initTaskMan,
+  pdfreader: initPdfReader,
+  imageviewer: initImageViewer,
+  markdown: initMarkdownViewer,
+  rss: initRssReader,
+  browser: initBrowser,
+  radiogarden: initRadioGarden,
+  discord: initDiscord,
+  irc: initIRC,
+  doom: initDoom,
+  papers: initPapersPlease,
+  hexedit: initHexEditor
+};
 
 
 function createFolder(btn) {
@@ -367,41 +407,8 @@ class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
-    if (type === "mines") initMinesweeper(winEl);
-    if (type === "solitaire") initSolitaire(winEl);
-    if (type === "reversi") initReversi(winEl);
-    if (type === "paint") initPaint(winEl);
-    if (type === "photoshop") initPhotoshop(winEl);
-    if (type === "artist") initArtist(winEl);
-    if (type === "mplayer") initMediaPlayer(winEl);
-    if (type === "simcity") initSimCity(winEl);
-    if (type === "skifree") initSkiFree(winEl);
-    if (type === "linerider") initLineRider(winEl);
-    if (type === "database") initDatabase(winEl);
-    if (type === "soundrec") initSoundRecorder(winEl);
-    if (type === "radio") initRadio(winEl);
-    if (type === "beatmaker") initBeatMaker(winEl);
-    if (type === "charmap") initCharMap(winEl);
-    if (type === "winfile") initFileManager(winEl);
-    if (type === "clock") initClock(winEl);
-    if (type === "control") initControlPanel(winEl);
-    if (type === "reset") initReset(winEl);
-    if (type === "chess") initChess(winEl);
-    if (type === "console") initConsole(winEl);
-    if (type === "write") initWrite(winEl);
-    if (type === "cardfile") initCardfile(winEl);
-    if (type === "taskman") initTaskMan(winEl, this);
-    if (type === "pdfreader") initPdfReader(winEl, initData);
-    if (type === "imageviewer") initImageViewer(winEl, initData);
-    if (type === "markdown") initMarkdownViewer(winEl, initData);
-    if (type === "rss") initRssReader(winEl);
-    if (type === "browser") initBrowser(winEl);
-    if (type === "radiogarden") initRadioGarden(winEl);
-    if (type === "discord") initDiscord(winEl);
-    if (type === "irc") initIRC(winEl);
-    if (type === "doom") initDoom(winEl);
-    if (type === "papers") initPapersPlease(winEl);
-    if (type === "hexedit") initHexEditor(winEl);
+    const initializer = APP_INITIALIZERS[type];
+    if (initializer) initializer(winEl, initData, this);
     // Refresh logic
     refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
@@ -5023,87 +5030,6 @@ function psExport(btn) {
   document.body.removeChild(link);
 }
 
-function initPaint(w) {
-  const c = w.querySelector("canvas"),
-    ctx = c.getContext("2d"),
-    p = w.querySelector("#paint-palette");
-  w.pS = {
-    d: false,
-    t: "brush",
-    c: "#000",
-    lx: 0,
-    ly: 0
-  };
-  ctx.fillStyle = "#FFF";
-  ctx.fillRect(0, 0, c.width, c.height);
-  const cols = [
-    "#000",
-    "#FFF",
-    "#808080",
-    "#C0C0C0",
-    "#800000",
-    "#F00",
-    "#808000",
-    "#FF0",
-    "#008000",
-    "#0F0",
-    "#008080",
-    "#0FF",
-    "#000080",
-    "#00F",
-    "#800080",
-    "#F0F"
-  ];
-  cols.forEach((x) => {
-    const s = document.createElement("div");
-    s.className = "color-swatch";
-    s.style.background = x;
-    s.onclick = () => {
-      w.querySelectorAll(".color-swatch").forEach((z) =>
-        z.classList.remove("active")
-      );
-      s.classList.add("active");
-      w.pS.c = x;
-    };
-    p.appendChild(s);
-  });
-  c.onmousedown = (e) => {
-    w.pS.d = true;
-    const r = c.getBoundingClientRect();
-    w.pS.lx = e.clientX - r.left;
-    w.pS.ly = e.clientY - r.top;
-  };
-  c.onmousemove = (e) => {
-    if (!w.pS.d) return;
-    const r = c.getBoundingClientRect(),
-      x = e.clientX - r.left,
-      y = e.clientY - r.top;
-    ctx.beginPath();
-    ctx.moveTo(w.pS.lx, w.pS.ly);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = w.pS.t === "eraser" ? "#FFF" : w.pS.c;
-    ctx.lineWidth = w.pS.t === "eraser" ? 10 : 2;
-    ctx.stroke();
-    w.pS.lx = x;
-    w.pS.ly = y;
-  };
-  window.onmouseup = () => {
-    if (w.pS) w.pS.d = false;
-  };
-}
-
-function selectPaintTool(el, t) {
-  const w = el.closest(".window");
-  w.querySelectorAll(".tool-btn").forEach((b) => b.classList.remove("active"));
-  el.classList.add("active");
-  w.pS.t = t;
-}
-
-function clearPaint(el) {
-  const c = el.closest(".window").querySelector("canvas");
-  c.getContext("2d").fillRect(0, 0, c.width, c.height);
-}
-
 function initConsole(w) {
   w.consoleState = {
     cwd: "C:\\",
@@ -6180,216 +6106,6 @@ function initPapersPlease(win) {
   renderEntrant();
 }
 
-const MINES_ROWS = 9;
-const MINES_COLS = 9;
-const MINES_COUNT = 10;
-
-let mines = [];
-let mineState = "ready";
-let mineTimer = null;
-let mineStartTime = null;
-let mineFlags = 0;
-
-function initMinesweeper(w) {
-  resetMines(w);
-}
-
-function resetMines(w) {
-  const win = w || document.querySelector(".window.active");
-  if (!win) return;
-
-  const g = win.querySelector("#mines-grid");
-  const counter = win.querySelector("#mines-count");
-  const timer = win.querySelector("#mines-timer");
-  const face = win.querySelector("#mines-face");
-
-  stopMinesTimer();
-  mineStartTime = null;
-  mineState = "ready";
-  mineFlags = 0;
-
-  updateMinesLCD(counter, MINES_COUNT);
-  updateMinesLCD(timer, 0);
-  if (face) face.textContent = ":)";
-
-  g.innerHTML = "";
-  mines = Array.from({ length: MINES_ROWS * MINES_COLS }, () => ({
-    m: false,
-    r: false,
-    f: false,
-    n: 0
-  }));
-
-  placeMines();
-  calculateAdjacency();
-
-  for (let i = 0; i < mines.length; i++) {
-    const c = document.createElement("div");
-    c.className = "mine-cell";
-    c.onclick = () => clickMine(i, g, win);
-    c.oncontextmenu = (e) => toggleMineFlag(e, i, g, win);
-    g.appendChild(c);
-  }
-}
-
-function updateMinesLCD(el, val) {
-  if (!el) return;
-  el.textContent = String(Math.max(0, Math.min(999, val))).padStart(3, "0");
-}
-
-function placeMines() {
-  let planted = 0;
-  while (planted < MINES_COUNT) {
-    const idx = Math.floor(Math.random() * mines.length);
-    if (!mines[idx].m) {
-      mines[idx].m = true;
-      planted++;
-    }
-  }
-}
-
-function calculateAdjacency() {
-  for (let i = 0; i < mines.length; i++) {
-    mines[i].n = getMineNeighbors(i).filter((n) => mines[n].m).length;
-  }
-}
-
-function getMineNeighbors(i) {
-  const x = i % MINES_COLS;
-  const y = Math.floor(i / MINES_COLS);
-  const neighbors = [];
-
-  for (let r = -1; r <= 1; r++) {
-    for (let c = -1; c <= 1; c++) {
-      if (r === 0 && c === 0) continue;
-      const nx = x + c;
-      const ny = y + r;
-      if (nx < 0 || ny < 0 || nx >= MINES_COLS || ny >= MINES_ROWS) continue;
-      neighbors.push(ny * MINES_COLS + nx);
-    }
-  }
-
-  return neighbors;
-}
-
-function toggleMineFlag(e, i, g, win) {
-  e.preventDefault();
-  if (mineState === "lost" || mineState === "won") return;
-
-  const cell = mines[i];
-  if (cell.r) return;
-
-  cell.f = !cell.f;
-  mineFlags += cell.f ? 1 : -1;
-
-  const counter = win.querySelector("#mines-count");
-  updateMinesLCD(counter, MINES_COUNT - mineFlags);
-
-  const el = g.children[i];
-  if (cell.f) {
-    el.classList.add("flagged");
-    el.textContent = "⚑";
-  } else {
-    el.classList.remove("flagged");
-    el.textContent = "";
-  }
-}
-
-function clickMine(i, g, win) {
-  if (mineState === "lost" || mineState === "won") return;
-  const cell = mines[i];
-  if (cell.r || cell.f) return;
-
-  const timer = win.querySelector("#mines-timer");
-  const face = win.querySelector("#mines-face");
-  if (!mineStartTime) startMinesTimer(timer);
-
-  revealMineCell(i, g);
-
-  if (cell.m) {
-    mineState = "lost";
-    if (face) face.textContent = "X(";
-    revealAllMines(g, i);
-    stopMinesTimer();
-    return;
-  }
-
-  checkMinesWin(win, g);
-}
-
-function revealMineCell(i, g) {
-  const cell = mines[i];
-  if (cell.r) return;
-
-  const el = g.children[i];
-  cell.r = true;
-  el.classList.add("revealed");
-  el.classList.remove("flagged");
-  el.textContent = "";
-
-  if (cell.m) {
-    el.classList.add("bomb");
-    el.textContent = "*";
-    return;
-  }
-
-  if (cell.n > 0) {
-    el.textContent = cell.n;
-    el.classList.add(`c${Math.min(cell.n, 3)}`);
-    return;
-  }
-
-  getMineNeighbors(i).forEach((n) => {
-    if (!mines[n].r && !mines[n].m) revealMineCell(n, g);
-  });
-}
-
-function revealAllMines(g, triggeredIndex) {
-  mines.forEach((cell, idx) => {
-    const el = g.children[idx];
-    if (cell.m) {
-      el.classList.add("revealed", "bomb");
-      el.textContent = "*";
-      if (idx === triggeredIndex) el.classList.add("blown");
-    } else if (cell.f) {
-      el.classList.add("revealed");
-      el.textContent = "✕";
-    }
-  });
-}
-
-function checkMinesWin(win, g) {
-  const revealedSafe = mines.filter((c) => c.r && !c.m).length;
-  if (revealedSafe !== MINES_ROWS * MINES_COLS - MINES_COUNT) return;
-
-  mineState = "won";
-  const face = win.querySelector("#mines-face");
-  if (face) face.textContent = "B)";
-  stopMinesTimer();
-
-  // Auto-flag remaining mines
-  mines.forEach((cell, idx) => {
-    if (cell.m && !cell.f) {
-      g.children[idx].textContent = "⚑";
-      g.children[idx].classList.add("flagged");
-    }
-  });
-}
-
-function startMinesTimer(timerEl) {
-  mineStartTime = Date.now();
-  mineTimer = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - mineStartTime) / 1000);
-    updateMinesLCD(timerEl, elapsed);
-  }, 1000);
-}
-
-function stopMinesTimer() {
-  if (mineTimer) {
-    clearInterval(mineTimer);
-    mineTimer = null;
-  }
-}
 
 function initSplash() {
   const splash = document.getElementById("splash-screen");
