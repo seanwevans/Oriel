@@ -1,6 +1,7 @@
 import { DEFAULT_RSS_SAMPLE, RADIO_FALLBACK_PRESETS, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
 import { NETWORK_CONFIG } from "./config.js";
+import { publish } from "./eventBus.js";
 
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
 
@@ -63,14 +64,18 @@ export function getNetworkDefaults() {
 }
 
 export function updateNetworkDefaults(partial = {}) {
-  return syncNetworkConfig(partial);
+  const updated = syncNetworkConfig(partial);
+  publish("network:config-update", { config: updated });
+  return updated;
 }
 
 export { BROWSER_HOME, BROWSER_PROXY_PREFIX, RADIO_BROWSER_BASE, RADIO_GARDEN_PROXY, RSS_PROXY_ROOT };
 export function resetNetworkDefaults() {
   mergedNetworkConfig = { ...baseNetworkConfig };
   localStorage.removeItem(NETWORK_STORAGE_KEY);
-  return syncNetworkConfig();
+  const reset = syncNetworkConfig();
+  publish("network:config-update", { config: reset });
+  return reset;
 }
 
 export function refreshNetworkedWindows() {

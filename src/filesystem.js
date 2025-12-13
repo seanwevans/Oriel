@@ -3,6 +3,7 @@ import {
   DEFAULT_PDF_DATA_URI,
   DEFAULT_SCREEN_IMAGE
 } from "./defaults.js";
+import { publish } from "./eventBus.js";
 
 export const FS_STORAGE_KEY = "oriel-fs-v1";
 
@@ -86,6 +87,7 @@ export function loadFileSystem() {
 
 export function saveFileSystem(fs = MOCK_FS) {
   localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fs));
+  publish("fs:change", { fs });
 }
 
 export const MOCK_FS = loadFileSystem();
