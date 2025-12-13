@@ -4,6 +4,7 @@ export class SimulatedKernel {
     this.schedulerInterval = null;
     this.currentProcessIndex = 0;
     this.onTick = onTick;
+    this.commandHandlers = new Map();
   }
   registerProcess(pid, name) {
     this.processes.push({
@@ -22,6 +23,25 @@ export class SimulatedKernel {
   startScheduler() {
     if (this.schedulerInterval) return;
     this.schedulerInterval = setInterval(() => this.tick(), 200);
+  }
+  normalizeCommandName(name) {
+    return typeof name === "string" ? name.trim().toLowerCase() : "";
+  }
+  registerCommand(name, handler) {
+    const normalized = this.normalizeCommandName(name);
+    if (!normalized || typeof handler !== "function") return () => {};
+    this.commandHandlers.set(normalized, handler);
+    return () => this.unregisterCommand(normalized, handler);
+  }
+  unregisterCommand(name, handler) {
+    const normalized = this.normalizeCommandName(name);
+    if (!normalized) return;
+    const existing = this.commandHandlers.get(normalized);
+    if (handler && existing && existing !== handler) return;
+    this.commandHandlers.delete(normalized);
+  }
+  getCommandHandler(name) {
+    return this.commandHandlers.get(this.normalizeCommandName(name));
   }
   tick() {
     if (this.processes.length === 0) return;
