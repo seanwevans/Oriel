@@ -18,6 +18,7 @@ import {
   replaceFileSystem,
   saveFileSystem
 } from "./filesystem.js";
+import { publish, subscribe } from "./eventBus.js";
 import {
   getLastNonZeroVolume,
   getMediaPlayerTracks,
@@ -126,13 +127,37 @@ function normalizeImportedFileSystem(data) {
   return { "C\\": cDrive };
 }
 
+function resolveFileManagerPath(path = "C\\") {
+  const normalized = (path || "C\\").replace(/^C:\\?/, "C\\").replace(/\\+/g, "\\");
+  const segments = normalized.split("\\").filter(Boolean);
+  let current = MOCK_FS["C\\"];
+  let resolvedPath = "C\\";
+
+  for (let i = 1; i < segments.length; i++) {
+    if (!current?.children) return null;
+    const next = current.children[segments[i]];
+    if (!next || next.type !== "dir") return null;
+    resolvedPath = resolvedPath.endsWith("\\")
+      ? `${resolvedPath}${segments[i]}`
+      : `${resolvedPath}\\${segments[i]}`;
+    current = next;
+  }
+
+  return { path: resolvedPath, node: current };
+}
+
 function refreshOpenFileManagers() {
   if (!wm?.windows) return;
   wm.windows.forEach((win) => {
-    if (win.type === "winfile") {
-      win.el.cP = "C\\";
-      win.el.cD = MOCK_FS["C\\"];
-      win.el.currentDirObj = win.el.cD;
+    if (win.type === "winfile" && win.el) {
+      const resolved =
+        resolveFileManagerPath(win.el.cP || "C\\") || resolveFileManagerPath("C\\");
+      const resolvedPath = resolved?.path || "C\\";
+      const resolvedDir = resolved?.node || MOCK_FS["C\\"];
+
+      win.el.cP = resolvedPath;
+      win.el.cD = resolvedDir;
+      win.el.currentDirObj = resolvedDir;
       rFT(win.el);
       rFL(win.el);
     }
@@ -165,6 +190,9 @@ function importFileSystem(event) {
   };
   reader.readAsText(file);
 }
+
+subscribe("fs:change", refreshOpenFileManagers);
+subscribe("network:config-update", refreshNetworkedWindows);
 
 const kernel = new SimulatedKernel(() => refreshAllProcessViews());
 const getBrowserPlaceholder = () => {
@@ -2080,7 +2108,6 @@ function openCPDefaults(target, containerOverride) {
       rssProxyRoot: body.querySelector("#cp-net-rss")?.value?.trim() || network.rssProxyRoot
     };
     updateNetworkDefaults(newConfig);
-    refreshNetworkedWindows();
     setNetworkStatus("Network defaults saved for future sessions.");
   });
 
@@ -2096,7 +2123,6 @@ function openCPDefaults(target, containerOverride) {
     if (radio) radio.value = resetConfig.radioBrowserBase || "";
     if (garden) garden.value = resetConfig.radioGardenProxy || "";
     if (rss) rss.value = resetConfig.rssProxyRoot || "";
-    refreshNetworkedWindows();
     setNetworkStatus("Network defaults reset to built-in values.");
   });
 }
@@ -3684,6 +3710,7 @@ function applyTheme() {
     r.setProperty("--win-teal", "#008080");
     r.setProperty("--win-gray", "#C0C0C0");
   }
+  publish("theme:change", { theme: v });
 }
 
 let ircLibPromise = null;
