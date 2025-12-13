@@ -15,6 +15,9 @@ import { clearPaint, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
+  hydrateNativeDirectory,
+  isNativeFsSupported,
+  mountNativeFolder,
   replaceFileSystem,
   saveFileSystem
 } from "./filesystem.js";
@@ -45,6 +48,7 @@ const APP_INITIALIZERS = {
   solitaire: initSolitaire,
   reversi: initReversi,
   paint: initPaint,
+  notepad: initNotepad,
   photoshop: initPhotoshop,
   artist: initArtist,
   mplayer: initMediaPlayer,
@@ -79,23 +83,56 @@ const APP_INITIALIZERS = {
 };
 
 
-function createFolder(btn) {
+async function createFolder(btn) {
   const win = btn.closest(".window");
   const input = win.querySelector("#new-folder-name");
   const name = input.value.trim();
   if (name && win.currentDirObj) {
-    if (win.currentDirObj.children[name]) {
+    if (win.currentDirObj.children?.[name]) {
       alert("Folder already exists!");
       return;
     }
-    win.currentDirObj.children[name] = {
-      type: "dir",
-      children: {}
-    };
-    saveFileSystem(); // Save changes
+    if (win.currentDirObj.nativeHandle) {
+      try {
+        await win.currentDirObj.nativeHandle.getDirectoryHandle(name, { create: true });
+        await hydrateNativeDirectory(win.currentDirObj);
+      } catch (err) {
+        alert(`Failed to create directory: ${err.message}`);
+        return;
+      }
+    } else {
+      win.currentDirObj.children[name] = {
+        type: "dir",
+        children: {}
+      };
+      saveFileSystem(); // Save changes
+    }
     input.value = "";
-    rFT(win);
-    rFL(win);
+    await rFT(win);
+    await rFL(win);
+  }
+}
+
+async function mountLocalFolder(btn) {
+  if (!isNativeFsSupported()) {
+    alert("Mounting a local folder requires a compatible browser.");
+    return;
+  }
+
+  try {
+    const driveNode = await mountNativeFolder();
+    await hydrateNativeDirectory(driveNode);
+    const win = btn.closest(".window");
+    if (win) {
+      win.cP = Object.keys(MOCK_FS).includes("D\\") ? "D\\" : win.cP;
+      win.cD = MOCK_FS[win.cP] || driveNode;
+      win.currentDirObj = win.cD;
+      await rFT(win);
+      await rFL(win);
+    }
+  } catch (err) {
+    if (err?.name === "AbortError") return;
+    alert(`Failed to mount folder: ${err.message}`);
   }
 }
 
@@ -128,12 +165,15 @@ function normalizeImportedFileSystem(data) {
 }
 
 function resolveFileManagerPath(path = "C\\") {
-  const normalized = (path || "C\\").replace(/^C:\\?/, "C\\").replace(/\\+/g, "\\");
-  const segments = normalized.split("\\").filter(Boolean);
-  let current = MOCK_FS["C\\"];
-  let resolvedPath = "C\\";
+  const normalized = (path || "C\\").replace(/\\+/g, "\\");
+  const driveMatch = normalized.match(/^([A-Za-z]:?)(?:\\|$)/);
+  const driveKey = driveMatch ? `${driveMatch[1].toUpperCase().replace(/:$/, "")}\\` : "C\\";
+  const remainder = normalized.slice(driveKey.length).replace(/^\\/, "");
+  const segments = remainder.split("\\").filter(Boolean);
+  let current = MOCK_FS[driveKey];
+  let resolvedPath = driveKey;
 
-  for (let i = 1; i < segments.length; i++) {
+  for (let i = 0; i < segments.length; i++) {
     if (!current?.children) return null;
     const next = current.children[segments[i]];
     if (!next || next.type !== "dir") return null;
@@ -1104,6 +1144,7 @@ class WindowManager {
               Import
               <input type="file" accept="application/json" onchange="importFileSystem(event)">
             </label>
+            <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">Mount Local</button>
             <span>C\</span>
           </div>
         </div>
@@ -1207,9 +1248,20 @@ class WindowManager {
             </div>`;
   }
   getNotepadContent(txt) {
-    return `<textarea class="notepad-area" spellcheck="false">${
-      txt || "Welcome to Oriel 1.0!"
-    }</textarea>`;
+    const text = typeof txt === "string" ? txt : txt?.text;
+    const showToolbar = Boolean(txt?.nativeFileHandle);
+    return `
+      <div class="notepad-layout">
+        ${
+          showToolbar
+            ? `<div class="notepad-toolbar"><button class="task-btn notepad-save">Save</button><span class="notepad-status"></span></div>`
+            : ""
+        }
+        <textarea class="notepad-area" spellcheck="false">${
+          text || "Welcome to Oriel 1.0!"
+        }</textarea>
+      </div>
+    `;
   }
   getCompilerContent() {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runCompiler(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
@@ -4021,12 +4073,46 @@ function initChess(w) {
     .catch(() => setStatus("Failed to load chess.js"));
 }
 
-function initFileManager(w) {
-  w.cP = "C:\\";
-  w.cD = MOCK_FS["C:\\"];
+async function initFileManager(w) {
+  const defaultDrive = Object.keys(MOCK_FS)[0] || "C\\";
+  w.cP = defaultDrive;
+  w.cD = MOCK_FS[defaultDrive];
   w.currentDirObj = w.cD;
-  rFT(w);
-  rFL(w);
+  await rFT(w);
+  await rFL(w);
+}
+
+function initNotepad(win, initData = {}) {
+  const saveBtn = win.querySelector(".notepad-save");
+  const status = win.querySelector(".notepad-status");
+  const textarea = win.querySelector(".notepad-area");
+  const handle = initData?.nativeFileHandle;
+
+  if (!saveBtn) return;
+
+  const setStatus = (msg, isError = false) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.classList.toggle("error", isError);
+    if (msg) setTimeout(() => (status.textContent = ""), 2000);
+  };
+
+  if (!handle) {
+    saveBtn.disabled = true;
+    saveBtn.title = "Open a mounted file to enable saving.";
+    return;
+  }
+
+  saveBtn.addEventListener("click", async () => {
+    try {
+      const writable = await handle.createWritable();
+      await writable.write(textarea?.value || "");
+      await writable.close();
+      setStatus("Saved");
+    } catch (err) {
+      setStatus(`Save failed: ${err.message}`, true);
+    }
+  });
 }
 
 function renderMarkdown(text) {
@@ -4439,79 +4525,140 @@ function initHexEditor(win) {
   );
 }
 
-function rFT(w) {
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function openNativeFile(node, displayName) {
+  const handle = node?.nativeHandle;
+  if (!handle?.getFile) throw new Error("Native file handle unavailable.");
+
+  const file = await handle.getFile();
+  const name = node?.nativeName || displayName || file.name;
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  const textExts = ["txt", "md", "json", "csv", "js", "ts", "css", "log"]; // default to notepad
+
+  if (textExts.includes(ext)) {
+    const text = await file.text();
+    wm.openWindow("notepad", name, 400, 300, {
+      text,
+      nativeFileHandle: handle,
+      fileName: name
+    });
+    return;
+  }
+
+  if (file.type.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+    const src = await readFileAsDataUrl(file);
+    wm.openWindow("imageviewer", name, 720, 540, { name, src });
+    return;
+  }
+
+  if (file.type === "application/pdf" || ext === "pdf") {
+    const src = await readFileAsDataUrl(file);
+    wm.openWindow("pdfreader", name, 700, 500, { name, src });
+    return;
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  wm.openWindow("hexedit", name, 640, 520, buffer);
+}
+
+async function rFT(w) {
   const r = w.querySelector("#file-tree-root");
   r.innerHTML = "";
-  const b = (c, p, o) => {
+  const updateHeaders = (path) => {
+    const treeHeader = w.querySelector(".winfile-tree .winfile-pane-header");
+    if (treeHeader) treeHeader.textContent = path.split("\\")[0] + "\\";
+  };
+
+  const b = async (c, p, o) => {
+    if (o?.nativeHandle) await hydrateNativeDirectory(o);
     const d = document.createElement("div");
     d.className = "tree-item " + (w.cP === p ? "selected" : "");
     d.innerHTML =
-      ICONS.folder + `<span>${p.split("\\").pop() || "C:\\"}</span>`;
-    d.onclick = (e) => {
+      ICONS.folder + `<span>${p.split("\\").pop() || "C\\"}</span>`;
+    d.onclick = async (e) => {
       e.stopPropagation();
       w.cP = p;
       w.cD = o;
       w.currentDirObj = o;
-      rFT(w);
-      rFL(w);
+      await rFT(w);
+      await rFL(w);
     };
     c.appendChild(d);
     if (o.children) {
       const s = document.createElement("div");
       s.style.paddingLeft = "15px";
-      Object.keys(o.children).forEach((k) => {
-        if (o.children[k].type === "dir")
-          b(s, p === "C:\\" ? p + k : p + "\\" + k, o.children[k]);
-      });
+      const dirEntries = Object.keys(o.children).filter((k) => o.children[k].type === "dir");
+      for (const k of dirEntries) {
+        await b(s, p === "C\\" ? p + k : p + "\\" + k, o.children[k]);
+      }
       c.appendChild(s);
     }
   };
-  b(r, "C:\\", MOCK_FS["C:\\"]);
+  const drives = Object.entries(MOCK_FS);
+  for (const [driveKey, node] of drives) {
+    await b(r, driveKey, node);
+  }
+  updateHeaders(w.cP || "C\\");
 }
 
-function rFL(w) {
+async function rFL(w) {
   const v = w.querySelector("#file-list-view");
   w.querySelector("#file-list-header").innerText = w.cP + "*.*";
   v.innerHTML = "";
+  if (w.cD?.nativeHandle) await hydrateNativeDirectory(w.cD);
   if (w.cD && w.cD.children)
-    Object.keys(w.cD.children).forEach((k) => {
-      const i = w.cD.children[k],
-        r = document.createElement("div");
-      r.className = "file-item";
-      r.innerHTML =
-        (i.type === "file"
-          ? k.endsWith(".EXE")
-            ? ICONS.file_exe
-            : ICONS.file_txt
-          : ICONS.folder) + `<span>${k}</span>`;
-      r.ondblclick = () => {
-        if (i.type === "dir") {
-          const np = w.cP === "C\\" ? w.cP + k : w.cP + "\\" + k;
-          w.cP = np;
-          w.cD = i;
-          w.currentDirObj = i;
-          rFT(w);
-          rFL(w);
-        } else if (i.app) {
-          const size =
-            i.app === "skifree"
-              ? { w: 520, h: 520 }
-              : i.app === "imageviewer"
-                ? { w: 720, h: 540 }
-                : i.app === "beatmaker"
-                  ? { w: 720, h: 420 }
-                  : { w: 400, h: 300 };
-          wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
-        }
-      };
-      r.onclick = () => {
-        w.querySelectorAll(".file-item").forEach((x) =>
-          x.classList.remove("selected")
-        );
-        r.classList.add("selected");
-      };
-      v.appendChild(r);
-    });
+    Object.keys(w.cD.children)
+      .sort()
+      .forEach((k) => {
+        const i = w.cD.children[k],
+          r = document.createElement("div");
+        r.className = "file-item";
+        r.innerHTML =
+          (i.type === "file"
+            ? k.endsWith(".EXE")
+              ? ICONS.file_exe
+              : ICONS.file_txt
+            : ICONS.folder) + `<span>${k}</span>`;
+        r.ondblclick = async () => {
+          if (i.type === "dir") {
+            const np = w.cP.endsWith("\\") ? w.cP + k : w.cP + "\\" + k;
+            w.cP = np;
+            w.cD = i;
+            w.currentDirObj = i;
+            await rFT(w);
+            await rFL(w);
+          } else if (i.nativeHandle) {
+            openNativeFile(i, k).catch((err) => {
+              alert(`Unable to open file: ${err.message}`);
+            });
+          } else if (i.app) {
+            const size =
+              i.app === "skifree"
+                ? { w: 520, h: 520 }
+                : i.app === "imageviewer"
+                  ? { w: 720, h: 540 }
+                  : i.app === "beatmaker"
+                    ? { w: 720, h: 420 }
+                    : { w: 400, h: 300 };
+            wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
+          }
+        };
+        r.onclick = () => {
+          w.querySelectorAll(".file-item").forEach((x) =>
+            x.classList.remove("selected")
+          );
+          r.classList.add("selected");
+        };
+        v.appendChild(r);
+      });
 }
 
 let jsDosLoadPromise = null;
