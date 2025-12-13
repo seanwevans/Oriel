@@ -194,7 +194,7 @@ function importFileSystem(event) {
 subscribe("fs:change", refreshOpenFileManagers);
 subscribe("network:config-update", refreshNetworkedWindows);
 
-const kernel = new SimulatedKernel(() => refreshAllProcessViews());
+export const kernel = new SimulatedKernel(() => refreshAllProcessViews());
 const getBrowserPlaceholder = () => {
   const { browserHome } = getNetworkDefaults();
   return browserHome || "https://example.com";
@@ -5343,34 +5343,46 @@ function cashTouch(argLine, state) {
   return { lines: created.map((c) => `updated ${c}`) };
 }
 
-function processCashCommand(w, cmd, argLine, rawCmd) {
-  const state = getConsoleState(w);
-  switch (cmd) {
-    case "ls":
-      return cashLs(argLine, state);
-    case "pwd":
-      return cashPwd(state);
-    case "cat":
-      return cashCat(argLine, state);
-    case "echo":
-      return cashEcho(argLine);
-    case "mkdir":
-      return cashMkdir(argLine, state);
-    case "touch":
-      return cashTouch(argLine, state);
-    case "cd": {
-      if (!argLine) return { lines: [state.cwd] };
-      const { path, node } = consolePathFromUnix(argLine, state.cwd);
-      if (node && node.type === "dir" && path) {
-        state.cwd = path;
-        updateConsolePrompt(w);
-        return { lines: [] };
-      }
-      return { error: `cd: ${argLine}: No such file or directory` };
+function registerDefaultConsoleCommands() {
+  const register = (name, handler) => kernel.registerCommand(name, handler);
+
+  register("ls", ({ argLine, state }) => cashLs(argLine || state.cwd, state));
+  register("dir", ({ argLine, state }) => cashLs(argLine || state.cwd, state));
+  register("pwd", ({ state }) => cashPwd(state));
+  register("cat", ({ argLine, state }) => cashCat(argLine, state));
+  register("echo", ({ argLine }) => cashEcho(argLine));
+  register("mkdir", ({ argLine, state }) => cashMkdir(argLine, state));
+  register("touch", ({ argLine, state }) => cashTouch(argLine, state));
+  register("cd", ({ argLine, state, updatePrompt }) => {
+    if (!argLine) return { lines: [state.cwd] };
+    const { path, node } = consolePathFromUnix(argLine, state.cwd);
+    if (node && node.type === "dir" && path) {
+      state.cwd = path;
+      if (updatePrompt) updatePrompt();
+      return { lines: [] };
     }
-    default:
-      return { error: `'${rawCmd}' is not recognized as an internal or external command.` };
-  }
+    return { error: `cd: ${argLine}: No such file or directory` };
+  });
+}
+
+registerDefaultConsoleCommands();
+
+function processCashCommand(w, cmd, argLine, rawCmd, state) {
+  const handler = kernel.getCommandHandler(cmd);
+  if (!handler)
+    return { error: `'${rawCmd}' is not recognized as an internal or external command.` };
+
+  const context = {
+    argLine,
+    args: argLine ? argLine.split(/\s+/).filter(Boolean) : [],
+    rawCmd,
+    state,
+    window: w,
+    updatePrompt: () => updateConsolePrompt(w),
+    appendLine: (line) => appendConsoleLine(w, line)
+  };
+
+  return handler(context) || { lines: [] };
 }
 
 function getPathSegments(pathStr) {
@@ -5422,7 +5434,7 @@ function appendConsoleLine(w, text = "") {
   if (consoleEl) consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-function processConsoleCommand(w, input) {
+async function processConsoleCommand(w, input) {
   const state = getConsoleState(w);
   appendConsoleLine(w, `${state.cwd}>${input}`);
   if (!input.trim()) {
@@ -5436,6 +5448,7 @@ function processConsoleCommand(w, input) {
   if (cmd === "cls") {
     const output = w.querySelector(".console-output");
     if (output) output.innerHTML = "";
+    updateConsolePrompt(w);
     return;
   }
   if (cmd === "help") {
@@ -5451,26 +5464,25 @@ function processConsoleCommand(w, input) {
       "CLS     - Clear the screen",
       "ECHO    - Print text"
     ].forEach((line) => appendConsoleLine(w, line));
-    return;
-  }
-  if (cmd === "dir") {
-    const { lines, error } = cashLs(lowerArgs || state.cwd, state);
-    (error ? [error] : lines).forEach((line) => appendConsoleLine(w, line));
+    updateConsolePrompt(w);
     return;
   }
 
-  const result = processCashCommand(w, cmd, lowerArgs, rawCmd);
-  if (result.error) appendConsoleLine(w, result.error);
-  (result.lines || []).forEach((line) => appendConsoleLine(w, line));
+  const result = await Promise.resolve(
+    processCashCommand(w, cmd, lowerArgs, rawCmd, state)
+  );
+  if (result?.error) appendConsoleLine(w, result.error);
+  (result?.lines || []).forEach((line) => appendConsoleLine(w, line));
+  updateConsolePrompt(w);
 }
 
-function handleConsoleKey(e) {
+async function handleConsoleKey(e) {
   const win = e.target.closest(".window");
   if (!win) return;
   const state = getConsoleState(win);
   if (e.key === "Enter") {
     e.preventDefault();
-    processConsoleCommand(win, e.target.value);
+    await processConsoleCommand(win, e.target.value);
     if (e.target.value.trim()) {
       state.history.push(e.target.value.trim());
     }
@@ -6357,6 +6369,7 @@ function initSplash() {
 window.createFolder = createFolder;
 window.switchTask = switchTask;
 window.endTask = endTask;
+window.kernel = kernel;
 
 // Apps
 window.handleConsoleKey = handleConsoleKey; // Fixes the Console App
