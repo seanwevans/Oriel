@@ -266,6 +266,13 @@ body {
   cursor: default;
 }
 
+.menu-item:focus-visible {
+  outline: 2px solid var(--win-blue);
+  outline-offset: 1px;
+  background-color: var(--win-blue);
+  color: white;
+}
+
 .menu-item::first-letter {
   text-decoration: underline;
 }
@@ -2752,6 +2759,11 @@ body {
   position: relative;
   width: 71px;
   height: 100%;
+}
+
+.sol-focus {
+  outline: 2px solid yellow;
+  outline-offset: 3px;
 }
 
 .card {

@@ -198,6 +198,58 @@ class WindowManager {
       }
     });
   }
+  setupMenuBar(win) {
+    const menuBar = win.querySelector(".menu-bar");
+    if (!menuBar) return;
+    const items = Array.from(menuBar.querySelectorAll(".menu-item"));
+    if (!items.length) return;
+
+    menuBar.setAttribute("role", "menubar");
+    let focusedIndex = 0;
+
+    const focusItem = (idx) => {
+      const safeIndex = ((idx % items.length) + items.length) % items.length;
+      focusedIndex = safeIndex;
+      items.forEach((item, i) => {
+        item.tabIndex = i === safeIndex ? 0 : -1;
+      });
+      items[safeIndex].focus();
+    };
+
+    items.forEach((item, idx) => {
+      item.setAttribute("role", "menuitem");
+      item.tabIndex = idx === 0 ? 0 : -1;
+      item.addEventListener("focus", () => {
+        focusedIndex = idx;
+      });
+      item.addEventListener("click", () => {
+        focusedIndex = idx;
+        focusItem(idx);
+      });
+      item.addEventListener("keydown", (e) => {
+        const key = e.key;
+        if (key === "ArrowRight") {
+          e.preventDefault();
+          focusItem(focusedIndex + 1);
+        } else if (key === "ArrowLeft") {
+          e.preventDefault();
+          focusItem(focusedIndex - 1);
+        } else if (key === "Home") {
+          e.preventDefault();
+          focusItem(0);
+        } else if (key === "End") {
+          e.preventDefault();
+          focusItem(items.length - 1);
+        } else if (key === "Enter" || key === " ") {
+          e.preventDefault();
+          item.click();
+        } else if (key === "Escape") {
+          e.preventDefault();
+          item.blur();
+        }
+      });
+    });
+  }
   createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
@@ -283,6 +335,7 @@ class WindowManager {
     maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
     maximizeBtn.tabIndex = 0;
     this.addKeyboardActivation(maximizeBtn, () => this.maximizeWindow(id));
+    this.setupMenuBar(win);
     // Resize Start
     win.querySelectorAll(".resizer").forEach((r) => {
       r.addEventListener("mousedown", (e) =>
@@ -1210,7 +1263,7 @@ class WindowManager {
     return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
   }
   getPaintContent() {
-    return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
+    return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button><button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button><button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
   getArtistContent() {
     const defaultPrompt = "retro desktop art of a cozy computer lab";
@@ -2926,6 +2979,102 @@ function initSolitaire(w) {
     c: w.querySelector("#sol-f-c"),
     s: w.querySelector("#sol-f-s")
   };
+  const layout = w.querySelector(".sol-layout");
+  if (layout) {
+    layout.tabIndex = 0;
+    layout.setAttribute("role", "application");
+    layout.setAttribute("aria-label", "Solitaire game");
+  }
+  [
+    [elS, "Stock pile"],
+    [elW, "Waste pile"],
+    [elF.h, "Hearts foundation"],
+    [elF.d, "Diamonds foundation"],
+    [elF.c, "Clubs foundation"],
+    [elF.s, "Spades foundation"]
+  ].forEach(([el, label]) => {
+    if (!el) return;
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", label);
+  });
+
+  let focusIndex = 0;
+
+  const getFocusTargets = () => {
+    const tableauCols = Array.from(elT.querySelectorAll(".sol-col"));
+    return [
+      { type: "stock", el: elS },
+      { type: "waste", el: elW },
+      { type: "foundation", el: elF.h, suit: "h" },
+      { type: "foundation", el: elF.d, suit: "d" },
+      { type: "foundation", el: elF.c, suit: "c" },
+      { type: "foundation", el: elF.s, suit: "s" },
+      ...tableauCols.map((el, i) => ({ type: "tableau", el, col: i }))
+    ].filter((t) => t.el);
+  };
+
+  const updateFocusHighlight = () => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    if (focusIndex >= targets.length) focusIndex = 0;
+    const shouldFocus =
+      (layout && layout.contains(document.activeElement)) ||
+      document.activeElement === document.body;
+    targets.forEach((t, i) => {
+      t.el.classList.toggle("sol-focus", i === focusIndex);
+      t.el.tabIndex = i === focusIndex ? 0 : -1;
+    });
+    if (shouldFocus) targets[focusIndex].el.focus();
+  };
+
+  const setFocusIndex = (idx) => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    focusIndex = ((idx % targets.length) + targets.length) % targets.length;
+    updateFocusHighlight();
+  };
+
+  const moveFocus = (delta) => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    setFocusIndex(focusIndex + delta);
+  };
+
+  const handleTableauKeyboard = (colIdx) => {
+    const col = t[colIdx] || [];
+    if (!col.length) {
+      tryTableau(colIdx);
+      return;
+    }
+    if (sel) {
+      tryTableau(colIdx);
+      return;
+    }
+    const topCard = col[col.length - 1];
+    if (topCard.u) selectCard(topCard, "tableau", colIdx, col.length - 1);
+    else {
+      topCard.u = true;
+      render();
+    }
+  };
+
+  const activateFocusedTarget = () => {
+    const targets = getFocusTargets();
+    const target = targets[focusIndex];
+    if (!target) return;
+
+    if (target.type === "stock") {
+      elS?.onclick?.({ preventDefault: () => {} });
+    } else if (target.type === "waste") {
+      const topWaste = elW.querySelector(".card:last-child");
+      if (topWaste) topWaste.click();
+    } else if (target.type === "foundation") {
+      tryFoundation(target.suit);
+    } else if (target.type === "tableau") {
+      handleTableauKeyboard(target.col);
+    }
+  };
 
   const renderCard = (card, cb) => {
     const d = document.createElement("div");
@@ -2948,22 +3097,19 @@ function initSolitaire(w) {
 
   const render = () => {
     elS.innerHTML = "";
-    if (stock.length > 0)
-      elS.appendChild(
-        renderCard(
-          { u: false },
-          () => {
-            if (stock.length > 0) {
-              const card = stock.pop();
-              card.u = true;
-              waste.push(card);
-              sel = null;
-              render();
-            }
-          }
-        )
-      );
-    else
+    const drawFromStock = () => {
+      if (stock.length > 0) {
+        const card = stock.pop();
+        card.u = true;
+        waste.push(card);
+        sel = null;
+        render();
+      }
+    };
+    if (stock.length > 0) {
+      elS.appendChild(renderCard({ u: false }, drawFromStock));
+      elS.onclick = drawFromStock;
+    } else {
       elS.onclick = () => {
         while (waste.length > 0) {
           const card = waste.pop();
@@ -2973,6 +3119,7 @@ function initSolitaire(w) {
         sel = null;
         render();
       };
+    }
 
     elW.innerHTML = "";
     if (waste.length > 0) {
@@ -3002,6 +3149,9 @@ function initSolitaire(w) {
     t.forEach((col, ci) => {
       const cd = document.createElement("div");
       cd.className = "sol-col";
+      cd.tabIndex = 0;
+      cd.setAttribute("role", "button");
+      cd.setAttribute("aria-label", `Tableau column ${ci + 1}`);
       cd.onclick = () => tryTableau(ci);
       col.forEach((card, i) => {
         const d = renderCard(card, () => {
@@ -3026,7 +3176,35 @@ function initSolitaire(w) {
       });
       elT.appendChild(cd);
     });
+    updateFocusHighlight();
   };
+
+  if (layout) {
+    layout.addEventListener("focus", () => updateFocusHighlight());
+    layout.addEventListener("keydown", (e) => {
+      const key = e.key;
+      if (key === "ArrowRight" || key === "ArrowDown") {
+        e.preventDefault();
+        moveFocus(1);
+      } else if (key === "ArrowLeft" || key === "ArrowUp") {
+        e.preventDefault();
+        moveFocus(-1);
+      } else if (key === "Home") {
+        e.preventDefault();
+        setFocusIndex(0);
+      } else if (key === "End") {
+        e.preventDefault();
+        setFocusIndex(getFocusTargets().length - 1);
+      } else if (key === "Enter" || key === " ") {
+        e.preventDefault();
+        activateFocusedTarget();
+      } else if (key === "Escape") {
+        e.preventDefault();
+        sel = null;
+        render();
+      }
+    });
+  }
 
   const selectCard = (card, loc, col, idx) => {
     if (sel && sel.card === card) sel = null;
@@ -3295,6 +3473,8 @@ function initControlPanel(w) {
     <div class="menu-item cp-menu-item" data-view="defaults">Defaults</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
+
+  wm.setupMenuBar(w);
 
   body.innerHTML = `
     <div class="cp-menu-bar">
