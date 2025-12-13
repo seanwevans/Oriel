@@ -1,3 +1,21 @@
+export function getPaintRoot(options = {}) {
+  return `
+    <div class="paint-layout">
+      <div class="paint-main">
+        <div class="paint-tools">
+          <button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button>
+          <button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button>
+          <button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button>
+        </div>
+        <div class="paint-canvas-container">
+          <canvas class="paint-canvas" width="600" height="400"></canvas>
+        </div>
+      </div>
+      <div class="paint-palette" id="paint-palette"></div>
+    </div>
+  `;
+}
+
 export function initPaint(w) {
   const c = w.querySelector("canvas"),
     ctx = c.getContext("2d"),
