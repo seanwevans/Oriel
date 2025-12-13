@@ -10,6 +10,8 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
+import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
+import { clearPaint, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -37,6 +39,44 @@ import {
   updateNetworkDefaults
 } from "./networking.js";
 import { SimulatedKernel } from "./kernel.js";
+
+const APP_INITIALIZERS = {
+  mines: initMinesweeper,
+  solitaire: initSolitaire,
+  reversi: initReversi,
+  paint: initPaint,
+  photoshop: initPhotoshop,
+  artist: initArtist,
+  mplayer: initMediaPlayer,
+  simcity: initSimCity,
+  skifree: initSkiFree,
+  linerider: initLineRider,
+  database: initDatabase,
+  soundrec: initSoundRecorder,
+  radio: initRadio,
+  beatmaker: initBeatMaker,
+  charmap: initCharMap,
+  winfile: initFileManager,
+  clock: initClock,
+  control: initControlPanel,
+  reset: initReset,
+  chess: initChess,
+  console: initConsole,
+  write: initWrite,
+  cardfile: initCardfile,
+  taskman: initTaskMan,
+  pdfreader: initPdfReader,
+  imageviewer: initImageViewer,
+  markdown: initMarkdownViewer,
+  rss: initRssReader,
+  browser: initBrowser,
+  radiogarden: initRadioGarden,
+  discord: initDiscord,
+  irc: initIRC,
+  doom: initDoom,
+  papers: initPapersPlease,
+  hexedit: initHexEditor
+};
 
 
 function createFolder(btn) {
@@ -124,8 +164,8 @@ function refreshOpenFileManagers() {
   });
 }
 
-function exportFileSystem() {
-  const json = exportFileSystemAsJson();
+async function exportFileSystem() {
+  const json = await exportFileSystemAsJson();
   const stamp = new Date().toISOString().slice(0, 10);
   downloadJson(json, `oriel-fs-${stamp}.json`);
 }
@@ -135,11 +175,12 @@ function importFileSystem(event) {
   const file = input?.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const parsed = JSON.parse(e.target.result);
       const normalized = normalizeImportedFileSystem(parsed);
-      replaceFileSystem(normalized);
+      await replaceFileSystem(normalized);
+      refreshOpenFileManagers();
       alert("File system imported successfully.");
     } catch (err) {
       alert(`Failed to import file system: ${err.message}`);
@@ -223,6 +264,58 @@ class WindowManager {
         event.preventDefault();
         handler();
       }
+    });
+  }
+  setupMenuBar(win) {
+    const menuBar = win.querySelector(".menu-bar");
+    if (!menuBar) return;
+    const items = Array.from(menuBar.querySelectorAll(".menu-item"));
+    if (!items.length) return;
+
+    menuBar.setAttribute("role", "menubar");
+    let focusedIndex = 0;
+
+    const focusItem = (idx) => {
+      const safeIndex = ((idx % items.length) + items.length) % items.length;
+      focusedIndex = safeIndex;
+      items.forEach((item, i) => {
+        item.tabIndex = i === safeIndex ? 0 : -1;
+      });
+      items[safeIndex].focus();
+    };
+
+    items.forEach((item, idx) => {
+      item.setAttribute("role", "menuitem");
+      item.tabIndex = idx === 0 ? 0 : -1;
+      item.addEventListener("focus", () => {
+        focusedIndex = idx;
+      });
+      item.addEventListener("click", () => {
+        focusedIndex = idx;
+        focusItem(idx);
+      });
+      item.addEventListener("keydown", (e) => {
+        const key = e.key;
+        if (key === "ArrowRight") {
+          e.preventDefault();
+          focusItem(focusedIndex + 1);
+        } else if (key === "ArrowLeft") {
+          e.preventDefault();
+          focusItem(focusedIndex - 1);
+        } else if (key === "Home") {
+          e.preventDefault();
+          focusItem(0);
+        } else if (key === "End") {
+          e.preventDefault();
+          focusItem(items.length - 1);
+        } else if (key === "Enter" || key === " ") {
+          e.preventDefault();
+          item.click();
+        } else if (key === "Escape") {
+          e.preventDefault();
+          item.blur();
+        }
+      });
     });
   }
   createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
@@ -310,6 +403,7 @@ class WindowManager {
     maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
     maximizeBtn.tabIndex = 0;
     this.addKeyboardActivation(maximizeBtn, () => this.maximizeWindow(id));
+    this.setupMenuBar(win);
     // Resize Start
     win.querySelectorAll(".resizer").forEach((r) => {
       r.addEventListener("mousedown", (e) =>
@@ -394,41 +488,8 @@ class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
-    if (type === "mines") initMinesweeper(winEl);
-    if (type === "solitaire") initSolitaire(winEl);
-    if (type === "reversi") initReversi(winEl);
-    if (type === "paint") initPaint(winEl);
-    if (type === "photoshop") initPhotoshop(winEl);
-    if (type === "artist") initArtist(winEl);
-    if (type === "mplayer") initMediaPlayer(winEl);
-    if (type === "simcity") initSimCity(winEl);
-    if (type === "skifree") initSkiFree(winEl);
-    if (type === "linerider") initLineRider(winEl);
-    if (type === "database") initDatabase(winEl);
-    if (type === "soundrec") initSoundRecorder(winEl);
-    if (type === "radio") initRadio(winEl);
-    if (type === "beatmaker") initBeatMaker(winEl);
-    if (type === "charmap") initCharMap(winEl);
-    if (type === "winfile") initFileManager(winEl);
-    if (type === "clock") initClock(winEl);
-    if (type === "control") initControlPanel(winEl);
-    if (type === "reset") initReset(winEl);
-    if (type === "chess") initChess(winEl);
-    if (type === "console") initConsole(winEl);
-    if (type === "write") initWrite(winEl);
-    if (type === "cardfile") initCardfile(winEl);
-    if (type === "taskman") initTaskMan(winEl, this);
-    if (type === "pdfreader") initPdfReader(winEl, initData);
-    if (type === "imageviewer") initImageViewer(winEl, initData);
-    if (type === "markdown") initMarkdownViewer(winEl, initData);
-    if (type === "rss") initRssReader(winEl);
-    if (type === "browser") initBrowser(winEl);
-    if (type === "radiogarden") initRadioGarden(winEl);
-    if (type === "discord") initDiscord(winEl);
-    if (type === "irc") initIRC(winEl);
-    if (type === "doom") initDoom(winEl);
-    if (type === "papers") initPapersPlease(winEl);
-    if (type === "hexedit") initHexEditor(winEl);
+    const initializer = APP_INITIALIZERS[type];
+    if (initializer) initializer(winEl, initData, this);
     // Refresh logic
     refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
@@ -1237,7 +1298,7 @@ class WindowManager {
     return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
   }
   getPaintContent() {
-    return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><div class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')">✎</div><div class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')">E</div><div class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)">CLR</div></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
+    return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button><button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button><button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
   getArtistContent() {
     const defaultPrompt = "retro desktop art of a cozy computer lab";
@@ -2951,6 +3012,102 @@ function initSolitaire(w) {
     c: w.querySelector("#sol-f-c"),
     s: w.querySelector("#sol-f-s")
   };
+  const layout = w.querySelector(".sol-layout");
+  if (layout) {
+    layout.tabIndex = 0;
+    layout.setAttribute("role", "application");
+    layout.setAttribute("aria-label", "Solitaire game");
+  }
+  [
+    [elS, "Stock pile"],
+    [elW, "Waste pile"],
+    [elF.h, "Hearts foundation"],
+    [elF.d, "Diamonds foundation"],
+    [elF.c, "Clubs foundation"],
+    [elF.s, "Spades foundation"]
+  ].forEach(([el, label]) => {
+    if (!el) return;
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", label);
+  });
+
+  let focusIndex = 0;
+
+  const getFocusTargets = () => {
+    const tableauCols = Array.from(elT.querySelectorAll(".sol-col"));
+    return [
+      { type: "stock", el: elS },
+      { type: "waste", el: elW },
+      { type: "foundation", el: elF.h, suit: "h" },
+      { type: "foundation", el: elF.d, suit: "d" },
+      { type: "foundation", el: elF.c, suit: "c" },
+      { type: "foundation", el: elF.s, suit: "s" },
+      ...tableauCols.map((el, i) => ({ type: "tableau", el, col: i }))
+    ].filter((t) => t.el);
+  };
+
+  const updateFocusHighlight = () => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    if (focusIndex >= targets.length) focusIndex = 0;
+    const shouldFocus =
+      (layout && layout.contains(document.activeElement)) ||
+      document.activeElement === document.body;
+    targets.forEach((t, i) => {
+      t.el.classList.toggle("sol-focus", i === focusIndex);
+      t.el.tabIndex = i === focusIndex ? 0 : -1;
+    });
+    if (shouldFocus) targets[focusIndex].el.focus();
+  };
+
+  const setFocusIndex = (idx) => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    focusIndex = ((idx % targets.length) + targets.length) % targets.length;
+    updateFocusHighlight();
+  };
+
+  const moveFocus = (delta) => {
+    const targets = getFocusTargets();
+    if (!targets.length) return;
+    setFocusIndex(focusIndex + delta);
+  };
+
+  const handleTableauKeyboard = (colIdx) => {
+    const col = t[colIdx] || [];
+    if (!col.length) {
+      tryTableau(colIdx);
+      return;
+    }
+    if (sel) {
+      tryTableau(colIdx);
+      return;
+    }
+    const topCard = col[col.length - 1];
+    if (topCard.u) selectCard(topCard, "tableau", colIdx, col.length - 1);
+    else {
+      topCard.u = true;
+      render();
+    }
+  };
+
+  const activateFocusedTarget = () => {
+    const targets = getFocusTargets();
+    const target = targets[focusIndex];
+    if (!target) return;
+
+    if (target.type === "stock") {
+      elS?.onclick?.({ preventDefault: () => {} });
+    } else if (target.type === "waste") {
+      const topWaste = elW.querySelector(".card:last-child");
+      if (topWaste) topWaste.click();
+    } else if (target.type === "foundation") {
+      tryFoundation(target.suit);
+    } else if (target.type === "tableau") {
+      handleTableauKeyboard(target.col);
+    }
+  };
 
   const renderCard = (card, cb) => {
     const d = document.createElement("div");
@@ -2973,22 +3130,19 @@ function initSolitaire(w) {
 
   const render = () => {
     elS.innerHTML = "";
-    if (stock.length > 0)
-      elS.appendChild(
-        renderCard(
-          { u: false },
-          () => {
-            if (stock.length > 0) {
-              const card = stock.pop();
-              card.u = true;
-              waste.push(card);
-              sel = null;
-              render();
-            }
-          }
-        )
-      );
-    else
+    const drawFromStock = () => {
+      if (stock.length > 0) {
+        const card = stock.pop();
+        card.u = true;
+        waste.push(card);
+        sel = null;
+        render();
+      }
+    };
+    if (stock.length > 0) {
+      elS.appendChild(renderCard({ u: false }, drawFromStock));
+      elS.onclick = drawFromStock;
+    } else {
       elS.onclick = () => {
         while (waste.length > 0) {
           const card = waste.pop();
@@ -2998,6 +3152,7 @@ function initSolitaire(w) {
         sel = null;
         render();
       };
+    }
 
     elW.innerHTML = "";
     if (waste.length > 0) {
@@ -3027,6 +3182,9 @@ function initSolitaire(w) {
     t.forEach((col, ci) => {
       const cd = document.createElement("div");
       cd.className = "sol-col";
+      cd.tabIndex = 0;
+      cd.setAttribute("role", "button");
+      cd.setAttribute("aria-label", `Tableau column ${ci + 1}`);
       cd.onclick = () => tryTableau(ci);
       col.forEach((card, i) => {
         const d = renderCard(card, () => {
@@ -3051,7 +3209,35 @@ function initSolitaire(w) {
       });
       elT.appendChild(cd);
     });
+    updateFocusHighlight();
   };
+
+  if (layout) {
+    layout.addEventListener("focus", () => updateFocusHighlight());
+    layout.addEventListener("keydown", (e) => {
+      const key = e.key;
+      if (key === "ArrowRight" || key === "ArrowDown") {
+        e.preventDefault();
+        moveFocus(1);
+      } else if (key === "ArrowLeft" || key === "ArrowUp") {
+        e.preventDefault();
+        moveFocus(-1);
+      } else if (key === "Home") {
+        e.preventDefault();
+        setFocusIndex(0);
+      } else if (key === "End") {
+        e.preventDefault();
+        setFocusIndex(getFocusTargets().length - 1);
+      } else if (key === "Enter" || key === " ") {
+        e.preventDefault();
+        activateFocusedTarget();
+      } else if (key === "Escape") {
+        e.preventDefault();
+        sel = null;
+        render();
+      }
+    });
+  }
 
   const selectCard = (card, loc, col, idx) => {
     if (sel && sel.card === card) sel = null;
@@ -3320,6 +3506,8 @@ function initControlPanel(w) {
     <div class="menu-item cp-menu-item" data-view="defaults">Defaults</div>
     <div class="menu-item cp-menu-item" data-view="home">Home</div>
   `;
+
+  wm.setupMenuBar(w);
 
   body.innerHTML = `
     <div class="cp-menu-bar">
@@ -5049,87 +5237,6 @@ function psExport(btn) {
   document.body.removeChild(link);
 }
 
-function initPaint(w) {
-  const c = w.querySelector("canvas"),
-    ctx = c.getContext("2d"),
-    p = w.querySelector("#paint-palette");
-  w.pS = {
-    d: false,
-    t: "brush",
-    c: "#000",
-    lx: 0,
-    ly: 0
-  };
-  ctx.fillStyle = "#FFF";
-  ctx.fillRect(0, 0, c.width, c.height);
-  const cols = [
-    "#000",
-    "#FFF",
-    "#808080",
-    "#C0C0C0",
-    "#800000",
-    "#F00",
-    "#808000",
-    "#FF0",
-    "#008000",
-    "#0F0",
-    "#008080",
-    "#0FF",
-    "#000080",
-    "#00F",
-    "#800080",
-    "#F0F"
-  ];
-  cols.forEach((x) => {
-    const s = document.createElement("div");
-    s.className = "color-swatch";
-    s.style.background = x;
-    s.onclick = () => {
-      w.querySelectorAll(".color-swatch").forEach((z) =>
-        z.classList.remove("active")
-      );
-      s.classList.add("active");
-      w.pS.c = x;
-    };
-    p.appendChild(s);
-  });
-  c.onmousedown = (e) => {
-    w.pS.d = true;
-    const r = c.getBoundingClientRect();
-    w.pS.lx = e.clientX - r.left;
-    w.pS.ly = e.clientY - r.top;
-  };
-  c.onmousemove = (e) => {
-    if (!w.pS.d) return;
-    const r = c.getBoundingClientRect(),
-      x = e.clientX - r.left,
-      y = e.clientY - r.top;
-    ctx.beginPath();
-    ctx.moveTo(w.pS.lx, w.pS.ly);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = w.pS.t === "eraser" ? "#FFF" : w.pS.c;
-    ctx.lineWidth = w.pS.t === "eraser" ? 10 : 2;
-    ctx.stroke();
-    w.pS.lx = x;
-    w.pS.ly = y;
-  };
-  window.onmouseup = () => {
-    if (w.pS) w.pS.d = false;
-  };
-}
-
-function selectPaintTool(el, t) {
-  const w = el.closest(".window");
-  w.querySelectorAll(".tool-btn").forEach((b) => b.classList.remove("active"));
-  el.classList.add("active");
-  w.pS.t = t;
-}
-
-function clearPaint(el) {
-  const c = el.closest(".window").querySelector("canvas");
-  c.getContext("2d").fillRect(0, 0, c.width, c.height);
-}
-
 function initConsole(w) {
   w.consoleState = {
     cwd: "C:\\",
@@ -5515,7 +5622,21 @@ function calcInput(e, v) {
   if (v === "C") d.dataset.val = "0";
   else if (v === "=") {
     try {
-      d.dataset.val = eval(val).toString();
+      const sanitized = val.replace(/\s+/g, "");
+      const mathPattern = /^-?(\d+(?:\.\d+)?)([+\-*/]-?\d+(?:\.\d+)?)*$/;
+      if (!mathPattern.test(sanitized)) {
+        throw new Error("Invalid expression");
+      }
+
+      // Evaluate the sanitized expression using Function for isolation.
+      // This avoids the broad security risks of eval while still supporting
+      // basic arithmetic used by the calculator UI.
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`"use strict"; return (${sanitized});`)();
+
+      if (!Number.isFinite(result)) throw new Error("Invalid result");
+
+      d.dataset.val = result.toString();
     } catch {
       d.dataset.val = "Err";
     }
@@ -6206,216 +6327,6 @@ function initPapersPlease(win) {
   renderEntrant();
 }
 
-const MINES_ROWS = 9;
-const MINES_COLS = 9;
-const MINES_COUNT = 10;
-
-let mines = [];
-let mineState = "ready";
-let mineTimer = null;
-let mineStartTime = null;
-let mineFlags = 0;
-
-function initMinesweeper(w) {
-  resetMines(w);
-}
-
-function resetMines(w) {
-  const win = w || document.querySelector(".window.active");
-  if (!win) return;
-
-  const g = win.querySelector("#mines-grid");
-  const counter = win.querySelector("#mines-count");
-  const timer = win.querySelector("#mines-timer");
-  const face = win.querySelector("#mines-face");
-
-  stopMinesTimer();
-  mineStartTime = null;
-  mineState = "ready";
-  mineFlags = 0;
-
-  updateMinesLCD(counter, MINES_COUNT);
-  updateMinesLCD(timer, 0);
-  if (face) face.textContent = ":)";
-
-  g.innerHTML = "";
-  mines = Array.from({ length: MINES_ROWS * MINES_COLS }, () => ({
-    m: false,
-    r: false,
-    f: false,
-    n: 0
-  }));
-
-  placeMines();
-  calculateAdjacency();
-
-  for (let i = 0; i < mines.length; i++) {
-    const c = document.createElement("div");
-    c.className = "mine-cell";
-    c.onclick = () => clickMine(i, g, win);
-    c.oncontextmenu = (e) => toggleMineFlag(e, i, g, win);
-    g.appendChild(c);
-  }
-}
-
-function updateMinesLCD(el, val) {
-  if (!el) return;
-  el.textContent = String(Math.max(0, Math.min(999, val))).padStart(3, "0");
-}
-
-function placeMines() {
-  let planted = 0;
-  while (planted < MINES_COUNT) {
-    const idx = Math.floor(Math.random() * mines.length);
-    if (!mines[idx].m) {
-      mines[idx].m = true;
-      planted++;
-    }
-  }
-}
-
-function calculateAdjacency() {
-  for (let i = 0; i < mines.length; i++) {
-    mines[i].n = getMineNeighbors(i).filter((n) => mines[n].m).length;
-  }
-}
-
-function getMineNeighbors(i) {
-  const x = i % MINES_COLS;
-  const y = Math.floor(i / MINES_COLS);
-  const neighbors = [];
-
-  for (let r = -1; r <= 1; r++) {
-    for (let c = -1; c <= 1; c++) {
-      if (r === 0 && c === 0) continue;
-      const nx = x + c;
-      const ny = y + r;
-      if (nx < 0 || ny < 0 || nx >= MINES_COLS || ny >= MINES_ROWS) continue;
-      neighbors.push(ny * MINES_COLS + nx);
-    }
-  }
-
-  return neighbors;
-}
-
-function toggleMineFlag(e, i, g, win) {
-  e.preventDefault();
-  if (mineState === "lost" || mineState === "won") return;
-
-  const cell = mines[i];
-  if (cell.r) return;
-
-  cell.f = !cell.f;
-  mineFlags += cell.f ? 1 : -1;
-
-  const counter = win.querySelector("#mines-count");
-  updateMinesLCD(counter, MINES_COUNT - mineFlags);
-
-  const el = g.children[i];
-  if (cell.f) {
-    el.classList.add("flagged");
-    el.textContent = "⚑";
-  } else {
-    el.classList.remove("flagged");
-    el.textContent = "";
-  }
-}
-
-function clickMine(i, g, win) {
-  if (mineState === "lost" || mineState === "won") return;
-  const cell = mines[i];
-  if (cell.r || cell.f) return;
-
-  const timer = win.querySelector("#mines-timer");
-  const face = win.querySelector("#mines-face");
-  if (!mineStartTime) startMinesTimer(timer);
-
-  revealMineCell(i, g);
-
-  if (cell.m) {
-    mineState = "lost";
-    if (face) face.textContent = "X(";
-    revealAllMines(g, i);
-    stopMinesTimer();
-    return;
-  }
-
-  checkMinesWin(win, g);
-}
-
-function revealMineCell(i, g) {
-  const cell = mines[i];
-  if (cell.r) return;
-
-  const el = g.children[i];
-  cell.r = true;
-  el.classList.add("revealed");
-  el.classList.remove("flagged");
-  el.textContent = "";
-
-  if (cell.m) {
-    el.classList.add("bomb");
-    el.textContent = "*";
-    return;
-  }
-
-  if (cell.n > 0) {
-    el.textContent = cell.n;
-    el.classList.add(`c${Math.min(cell.n, 3)}`);
-    return;
-  }
-
-  getMineNeighbors(i).forEach((n) => {
-    if (!mines[n].r && !mines[n].m) revealMineCell(n, g);
-  });
-}
-
-function revealAllMines(g, triggeredIndex) {
-  mines.forEach((cell, idx) => {
-    const el = g.children[idx];
-    if (cell.m) {
-      el.classList.add("revealed", "bomb");
-      el.textContent = "*";
-      if (idx === triggeredIndex) el.classList.add("blown");
-    } else if (cell.f) {
-      el.classList.add("revealed");
-      el.textContent = "✕";
-    }
-  });
-}
-
-function checkMinesWin(win, g) {
-  const revealedSafe = mines.filter((c) => c.r && !c.m).length;
-  if (revealedSafe !== MINES_ROWS * MINES_COLS - MINES_COUNT) return;
-
-  mineState = "won";
-  const face = win.querySelector("#mines-face");
-  if (face) face.textContent = "B)";
-  stopMinesTimer();
-
-  // Auto-flag remaining mines
-  mines.forEach((cell, idx) => {
-    if (cell.m && !cell.f) {
-      g.children[idx].textContent = "⚑";
-      g.children[idx].classList.add("flagged");
-    }
-  });
-}
-
-function startMinesTimer(timerEl) {
-  mineStartTime = Date.now();
-  mineTimer = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - mineStartTime) / 1000);
-    updateMinesLCD(timerEl, elapsed);
-  }, 1000);
-}
-
-function stopMinesTimer() {
-  if (mineTimer) {
-    clearInterval(mineTimer);
-    mineTimer = null;
-  }
-}
 
 function initSplash() {
   const splash = document.getElementById("splash-screen");
