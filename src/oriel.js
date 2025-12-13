@@ -11,7 +11,7 @@ import {
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
-import { clearPaint, initPaint, selectPaintTool } from "./apps/paint.js";
+import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -433,7 +433,7 @@ class WindowManager {
     if (type === "console") content = this.getConsoleContent();
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
-    if (type === "paint") content = this.getPaintContent();
+    if (type === "paint") content = getPaintRoot(initData);
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = this.getSimCityContent();
     if (type === "skifree") content = this.getSkiFreeContent();
@@ -1296,9 +1296,6 @@ class WindowManager {
   }
   getTaskManContent() {
     return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
-  }
-  getPaintContent() {
-    return `<div class="paint-layout"><div class="paint-main"><div class="paint-tools"><button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button><button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button><button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button></div><div class="paint-canvas-container"><canvas class="paint-canvas" width="600" height="400"></canvas></div></div><div class="paint-palette" id="paint-palette"></div></div>`;
   }
   getArtistContent() {
     const defaultPrompt = "retro desktop art of a cozy computer lab";
