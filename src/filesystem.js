@@ -6,6 +6,7 @@ import {
 import { publish } from "./eventBus.js";
 
 export const FS_STORAGE_KEY = "oriel-fs-v1";
+export const NATIVE_DRIVE_LETTER = "D\\";
 
 export const DEFAULT_FS = {
   "C\\": {
@@ -79,6 +80,19 @@ const supportsIndexedDb = typeof indexedDB !== "undefined";
 const supportsLocalStorage = typeof localStorage !== "undefined";
 
 let dbPromise = null;
+
+function isNativeNode(node) {
+  return !!node?.nativeHandle;
+}
+
+function formatDriveLetter(letter = NATIVE_DRIVE_LETTER) {
+  const upper = (letter || "").toUpperCase();
+  return upper.endsWith("\\") ? upper : `${upper}\\`;
+}
+
+export function isNativeFsSupported() {
+  return typeof window !== "undefined" && typeof window.showDirectoryPicker === "function";
+}
 
 function openDatabase() {
   if (!supportsIndexedDb) return Promise.reject(new Error("IndexedDB is unavailable"));
@@ -172,10 +186,35 @@ export async function loadFileSystem() {
 }
 
 export async function saveFileSystem(fs = MOCK_FS) {
-  return writeStoredFileSystem(fs);
+  const serializable = getSerializableFileSystem(fs);
+  return writeStoredFileSystem(serializable);
 }
 
 export const MOCK_FS = structuredClone(DEFAULT_FS);
+
+function stripNativeNodes(node) {
+  if (!node || typeof node !== "object") return node;
+  if (isNativeNode(node)) return null;
+  if (Array.isArray(node)) return node.map((child) => stripNativeNodes(child));
+  if (node.type === "dir") {
+    const cleanedChildren = Object.fromEntries(
+      Object.entries(node.children || {})
+        .map(([key, child]) => [key, stripNativeNodes(child)])
+        .filter(([, child]) => child)
+    );
+    return { ...node, children: cleanedChildren };
+  }
+  return { ...node };
+}
+
+export function getSerializableFileSystem(fs = MOCK_FS) {
+  const cleaned = {};
+  Object.entries(fs || {}).forEach(([key, value]) => {
+    const stripped = stripNativeNodes(value);
+    if (stripped) cleaned[key] = stripped;
+  });
+  return cleaned;
+}
 
 async function serializeNode(value) {
   if (value instanceof Blob) {
@@ -202,14 +241,59 @@ async function serializeNode(value) {
 }
 
 export async function exportFileSystemAsJson(fs = MOCK_FS) {
-  const serializable = await serializeNode(fs);
+  const serializable = await serializeNode(getSerializableFileSystem(fs));
   return JSON.stringify(serializable, null, 2);
 }
 
 export async function replaceFileSystem(newFs, { persist = true } = {}) {
+  const preservedNative = Object.entries(MOCK_FS).filter(([, node]) => isNativeNode(node));
   Object.keys(MOCK_FS).forEach((key) => delete MOCK_FS[key]);
   Object.assign(MOCK_FS, newFs);
+  preservedNative.forEach(([key, node]) => {
+    MOCK_FS[key] = node;
+  });
   if (persist) await saveFileSystem(MOCK_FS);
+}
+
+export async function mountNativeFolder(driveLetter = NATIVE_DRIVE_LETTER) {
+  if (!isNativeFsSupported()) throw new Error("File System Access API is unavailable in this browser.");
+  const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+  const driveKey = formatDriveLetter(driveLetter);
+  const node = {
+    type: "dir",
+    children: {},
+    nativeHandle: handle,
+    nativeName: handle.name,
+    isNative: true
+  };
+  MOCK_FS[driveKey] = node;
+  publish("fs:change", { type: "mount", drive: driveKey });
+  return node;
+}
+
+export async function hydrateNativeDirectory(node) {
+  if (!node?.nativeHandle) return node;
+  try {
+    const children = {};
+    for await (const entry of node.nativeHandle.values()) {
+      const key = entry.name.toUpperCase();
+      const priorChild = node.children?.[key];
+      const childNode = {
+        type: entry.kind === "directory" ? "dir" : "file",
+        nativeHandle: entry,
+        nativeName: entry.name,
+        isNative: true
+      };
+      if (entry.kind === "directory") {
+        childNode.children = priorChild?.children || null;
+      }
+      children[key] = childNode;
+    }
+    node.children = children;
+  } catch (err) {
+    console.warn("Unable to read native directory", err);
+  }
+  return node;
 }
 
 async function initializeFileSystem() {
