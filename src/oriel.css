@@ -3993,3 +3993,45 @@ body {
 .minecraft-loading-hidden {
   display: none;
 }
+
+.sandspiel-embed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.sandspiel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sandspiel-status {
+  flex: 1;
+  min-width: 220px;
+  font-size: 12px;
+  padding: 6px 8px;
+  background: var(--window-bg, #f0f0f0);
+  border: 1px solid var(--border-dark, #808080);
+}
+
+.sandspiel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sandspiel-actions .task-btn {
+  min-width: 120px;
+  text-align: center;
+}
+
+.sandspiel-iframe {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--border-dark, #808080);
+  background: #0c0c0c;
+}
