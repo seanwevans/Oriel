@@ -234,8 +234,12 @@ function psExport(btn) {
   document.body.removeChild(link);
 }
 
-function initConsole(w) {
-  w.consoleState = {
-    cwd: "C:\\",
-    history: [],
-\nexport { initPhotoshop, setPsTool, psApplyFilter, psFillCanvas, psTriggerOpen, psNewDocument, psExport };
+export {
+  initPhotoshop,
+  setPsTool,
+  psApplyFilter,
+  psFillCanvas,
+  psTriggerOpen,
+  psNewDocument,
+  psExport
+};
