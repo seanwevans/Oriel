@@ -13,6 +13,7 @@ import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -81,6 +82,7 @@ const APP_INITIALIZERS = {
   discord: initDiscord,
   irc: initIRC,
   doom: initDoom,
+  minecraft: initMinecraft,
   papers: initPapersPlease,
   hexedit: initHexEditor
 };
@@ -629,6 +631,7 @@ class WindowManager {
     if (type === "discord") content = this.getDiscordContent();
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
+    if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
@@ -1247,6 +1250,10 @@ class WindowManager {
                 </div>
               </div>
             </div>`;
+  }
+
+  getMinecraftContent() {
+    return getMinecraftRoot();
   }
   getRadioContent() {
     return `<div class="radio-layout">

@@ -3934,3 +3934,23 @@ body {
         opacity: 0;
     }
 }
+.minecraft-embed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.minecraft-iframe {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--border-dark, #808080);
+  background: black;
+}
+
+.minecraft-note {
+  font-size: 12px;
+  padding: 6px 8px;
+  background: var(--window-bg, #f0f0f0);
+  border: 1px solid var(--border-dark, #808080);
+}

@@ -328,6 +328,14 @@ export const PROGRAMS = [
     label: "DOOM"
   },
   {
+    type: "minecraft",
+    title: "Minecraft Classic",
+    width: 720,
+    height: 560,
+    icon: "minecraft",
+    label: "Minecraft"
+  },
+  {
     type: "papers",
     title: "Checkpoint",
     width: 640,
