@@ -270,6 +270,8 @@ export function initRssReader(win) {
 }
 
 export function initBrowser(win, sessions = browserSessions) {
+  const sessionStore =
+    sessions && typeof sessions === "object" ? sessions : browserSessions;
   const urlInput = win.querySelector(".browser-url");
   const frame = win.querySelector(".browser-frame");
   const status = win.querySelector(".browser-status");
@@ -283,7 +285,7 @@ export function initBrowser(win, sessions = browserSessions) {
   if (!urlInput || !frame || !status) return;
 
   const resetSession = () => {
-    sessions[sessionId] = {
+    sessionStore[sessionId] = {
       history: [],
       index: -1
     };
@@ -314,7 +316,7 @@ export function initBrowser(win, sessions = browserSessions) {
   };
 
   const updateNavState = () => {
-    const session = sessions[sessionId];
+    const session = sessionStore[sessionId];
     if (!session) return;
     const hasBack = session.index > 0;
     const hasForward = session.index < session.history.length - 1;
@@ -347,7 +349,7 @@ export function initBrowser(win, sessions = browserSessions) {
 
   const loadUrl = (rawUrl, pushHistory = true) => {
     const url = normalizeUrl(rawUrl);
-    const session = sessions[sessionId];
+    const session = sessionStore[sessionId];
     if (!url || !session) return;
     if (pushHistory) {
       session.history = session.history.slice(0, session.index + 1);
@@ -361,7 +363,7 @@ export function initBrowser(win, sessions = browserSessions) {
 
   if (backBtn)
     backBtn.onclick = () => {
-      const session = sessions[sessionId];
+      const session = sessionStore[sessionId];
       if (!session || session.index <= 0) return;
       session.index -= 1;
       const target = session.history[session.index];
@@ -372,7 +374,7 @@ export function initBrowser(win, sessions = browserSessions) {
 
   if (fwdBtn)
     fwdBtn.onclick = () => {
-      const session = sessions[sessionId];
+      const session = sessionStore[sessionId];
       if (!session || session.index >= session.history.length - 1) return;
       session.index += 1;
       const target = session.history[session.index];
@@ -383,7 +385,7 @@ export function initBrowser(win, sessions = browserSessions) {
 
   if (refreshBtn)
     refreshBtn.onclick = () => {
-      const session = sessions[sessionId];
+      const session = sessionStore[sessionId];
       if (!session || session.index < 0) return;
       const target = session.history[session.index];
       renderProxiedContent(target);
@@ -397,7 +399,7 @@ export function initBrowser(win, sessions = browserSessions) {
   });
 
   frame.addEventListener("load", () => {
-    const session = sessions[sessionId];
+    const session = sessionStore[sessionId];
     if (!session) return;
     const currentUrl = session.history[session.index] || "";
     setStatus(currentUrl ? `Loaded ${currentUrl}` : "Ready");
