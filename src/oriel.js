@@ -606,6 +606,7 @@ class WindowManager {
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
     this.desktop.appendChild(winEl);
+    if (type === "progman") this.setupProgramManagerMenu(winEl);
     const rect = winEl.getBoundingClientRect();
     const initialRect = {
       left: winEl.offsetLeft,
@@ -895,6 +896,53 @@ class WindowManager {
       return currentZ >= topZ ? current : top;
     });
   }
+  cascadeWindows() {
+    const openWins = this.windows
+      .filter((w) => !w.minimized)
+      .sort(
+        (a, b) =>
+          parseInt(a.el.style.zIndex || "0", 10) -
+          parseInt(b.el.style.zIndex || "0", 10)
+      );
+    if (!openWins.length) return;
+
+    const desktopRect = this.desktop.getBoundingClientRect();
+    const width = Math.floor(desktopRect.width * 0.8);
+    const height = Math.floor(desktopRect.height * 0.8);
+
+    openWins.forEach((win, idx) => {
+      win.maximized = false;
+      win.prevRect = null;
+      win.el.style.width = `${width}px`;
+      win.el.style.height = `${height}px`;
+      win.el.style.left = `${idx * 20}px`;
+      win.el.style.top = `${idx * 20}px`;
+    });
+    this.saveDesktopState();
+  }
+  tileWindows() {
+    const openWins = this.windows.filter((w) => !w.minimized);
+    if (!openWins.length) return;
+
+    const desktopRect = this.desktop.getBoundingClientRect();
+    const count = openWins.length;
+    const cols = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / cols);
+    const width = Math.floor(desktopRect.width / cols);
+    const height = Math.floor(desktopRect.height / rows);
+
+    openWins.forEach((win, idx) => {
+      const row = Math.floor(idx / cols);
+      const col = idx % cols;
+      win.maximized = false;
+      win.prevRect = null;
+      win.el.style.width = `${width}px`;
+      win.el.style.height = `${height}px`;
+      win.el.style.left = `${col * width}px`;
+      win.el.style.top = `${row * height}px`;
+    });
+    this.saveDesktopState();
+  }
   handleWindowShortcuts(event) {
     const active = this.getTopWindowByZ();
     if (!active || event.defaultPrevented) return;
@@ -922,6 +970,25 @@ class WindowManager {
   // Helper: Icons
   getIconForType(type) {
     return ICONS[type] || ICONS["help"];
+  }
+  setupProgramManagerMenu(win) {
+    const menu = win.querySelector(".menu-bar");
+    if (!menu) return;
+
+    menu.innerHTML = `
+                    <div class="menu-item">File</div>
+                    <div class="menu-item" data-action="cascade">Cascade Windows</div>
+                    <div class="menu-item" data-action="tile">Tile Windows</div>
+                    <div class="menu-item">Help</div>
+                `;
+    this.setupMenuBar(win);
+
+    menu.querySelector('[data-action="cascade"]')?.addEventListener("click", () =>
+      this.cascadeWindows()
+    );
+    menu.querySelector('[data-action="tile"]')?.addEventListener("click", () =>
+      this.tileWindows()
+    );
   }
   // Content Generators
   getProgramManagerContent() {
