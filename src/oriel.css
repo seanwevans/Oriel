@@ -4035,3 +4035,65 @@ body {
   border: 1px solid var(--border-dark, #808080);
   background: #0c0c0c;
 }
+
+.sandspiel3d {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.sandspiel3d-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sandspiel3d-title {
+  font-weight: bold;
+}
+
+.sandspiel3d-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sandspiel3d-field {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.sandspiel3d-field input,
+.sandspiel3d-field select {
+  min-width: 120px;
+}
+
+.sandspiel3d-stage {
+  position: relative;
+  flex: 1;
+  border: 1px solid var(--border-dark, #808080);
+  background: #0c0f1c;
+}
+
+.sandspiel3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  background: transparent;
+}
+
+.sandspiel3d-overlay {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #e6ecff;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}

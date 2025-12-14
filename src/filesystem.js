@@ -21,6 +21,7 @@ export const DEFAULT_FS = {
           "DOOM.EXE": { type: "file", app: "doom" },
           "MCRAFT.EXE": { type: "file", app: "minecraft" },
           "SAND.EXE": { type: "file", app: "sandspiel" },
+          "SAND3D.EXE": { type: "file", app: "sandspiel3d" },
           "WRITE.EXE": { type: "file", app: "write" },
           "CARDFILE.EXE": { type: "file", app: "cardfile" },
           "WINMINE.EXE": { type: "file", app: "mines" },

@@ -344,6 +344,14 @@ export const PROGRAMS = [
     label: "Sandspiel"
   },
   {
+    type: "sandspiel3d",
+    title: "Sandspiel3D",
+    width: 840,
+    height: 620,
+    icon: "sandspiel3d",
+    label: "Sandspiel3D"
+  },
+  {
     type: "papers",
     title: "Checkpoint",
     width: 640,
