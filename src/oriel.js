@@ -11,6 +11,7 @@ import {
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
+import { getN64Root, initN64 } from "./apps/n64.js";
 import { initNotepad } from "./apps/notepad.js";
 import { initCardfile } from "./apps/cardfile.js";
 import { initClock } from "./apps/clock.js";
@@ -95,6 +96,7 @@ const APP_INITIALIZERS = {
   irc: initIRC,
   doom: initDoom,
   minecraft: initMinecraft,
+  n64: initN64,
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
@@ -646,6 +648,7 @@ class WindowManager {
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
+    if (type === "n64") content = this.getN64Content();
     if (type === "sandspiel") content = this.getSandspielContent();
     if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
@@ -1272,6 +1275,10 @@ class WindowManager {
 
   getMinecraftContent() {
     return getMinecraftRoot();
+  }
+
+  getN64Content() {
+    return getN64Root();
   }
   getSandspielContent() {
     return getSandspielRoot();
