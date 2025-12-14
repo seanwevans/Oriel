@@ -1933,6 +1933,13 @@ let fireflies = [];
 let bubbles = [];
 let waveBands = [];
 let wavePhase = 0;
+let toasters = [];
+const TOASTER_COLORS = [
+  "#dfe6f3",
+  "#f8fbff",
+  "#c9d7ef",
+  "#cdd8e8"
+];
 
 let castawayScene = null;
 
@@ -2048,6 +2055,9 @@ function startScreensaver(forceType) {
   } else if (saver === "castaway") {
     setupCastaway();
     sInterval = setInterval(drawCastaway, 40);
+  } else if (saver === "toasters") {
+    setupFlyingToasters();
+    sInterval = setInterval(drawFlyingToasters, 30);
   } else {
     setupStarfield();
     sInterval = setInterval(drawStars, 30);
@@ -2572,6 +2582,156 @@ function drawCastaway() {
   sCtx.beginPath();
   sCtx.ellipse(islandX + 10, islandY + 10, 220, 60, 0, 0, Math.PI * 2);
   sCtx.fill();
+function setupFlyingToasters() {
+  sCtx.fillStyle = "#020611";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  const count = Math.max(6, Math.floor((saverCanvas.width + saverCanvas.height) / 230));
+  toasters = new Array(count).fill(0).map((_, idx) => createFlyingToaster(idx));
+}
+
+function createFlyingToaster(seed) {
+  const direction = Math.random() < 0.5 ? -1 : 1;
+  const startX =
+    direction === 1
+      ? -120 - Math.random() * 160
+      : saverCanvas.width + 120 + Math.random() * 160;
+  return {
+    x: startX,
+    y: Math.random() * saverCanvas.height * 0.7 + saverCanvas.height * 0.15,
+    vx: direction * (Math.random() * 1.6 + 1.2),
+    vy: (Math.random() - 0.5) * 0.6,
+    flap: Math.random() * Math.PI * 2,
+    wobble: Math.random() * 0.8 + 0.4,
+    scale: Math.random() * 0.35 + 0.75,
+    sparkleOffset: seed + Math.random() * Math.PI,
+    tint: TOASTER_COLORS[Math.floor(Math.random() * TOASTER_COLORS.length)]
+  };
+}
+
+function drawFlyingToasters() {
+  sCtx.fillStyle = "rgba(0, 0, 10, 0.25)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  const time = Date.now() / 1000;
+  toasters.forEach((toaster, idx) => {
+    toaster.x += toaster.vx;
+    toaster.y += toaster.vy + Math.sin(time * toaster.wobble + idx) * 0.6;
+    toaster.flap += 0.22 + toaster.wobble * 0.04;
+
+    if (toaster.y < saverCanvas.height * 0.08 || toaster.y > saverCanvas.height * 0.92)
+      toaster.vy *= -1;
+
+    if (toaster.x < -200 || toaster.x > saverCanvas.width + 200) {
+      toasters[idx] = createFlyingToaster(idx);
+      return;
+    }
+
+    drawFlyingToasterShape(toaster, time);
+  });
+}
+
+function drawFlyingToasterShape(toaster, time) {
+  const baseWidth = 90;
+  const baseHeight = 52;
+  const wingLength = 38;
+  const flapAngle = Math.sin(toaster.flap) * 0.7 + 0.9;
+
+  sCtx.save();
+  sCtx.translate(toaster.x, toaster.y);
+  const facingLeft = toaster.vx < 0;
+  sCtx.scale(toaster.scale * (facingLeft ? -1 : 1), toaster.scale);
+  sCtx.rotate(Math.sin(time * 0.9 + toaster.sparkleOffset) * 0.18);
+
+  const glow = sCtx.createRadialGradient(0, 0, 10, 0, 0, 80);
+  glow.addColorStop(0, "rgba(200, 230, 255, 0.35)");
+  glow.addColorStop(1, "rgba(0, 10, 30, 0)");
+  sCtx.fillStyle = glow;
+  sCtx.beginPath();
+  sCtx.ellipse(0, baseHeight * 0.05, baseWidth * 0.9, baseHeight * 0.95, 0, 0, Math.PI * 2);
+  sCtx.fill();
+
+  const drawWing = (flip) => {
+    sCtx.save();
+    sCtx.scale(flip ? -1 : 1, 1);
+    sCtx.translate(baseWidth / 2.4, baseHeight * 0.05);
+    sCtx.rotate(-0.7 + flapAngle * 0.6);
+    sCtx.beginPath();
+    sCtx.moveTo(0, 0);
+    sCtx.quadraticCurveTo(wingLength * 0.2, -wingLength * 0.4, wingLength * 0.5, -wingLength * flapAngle);
+    sCtx.quadraticCurveTo(wingLength * 0.9, -wingLength * 0.25, wingLength, 0);
+    sCtx.quadraticCurveTo(wingLength * 0.7, wingLength * 0.12, wingLength * 0.28, wingLength * 0.06);
+    sCtx.closePath();
+    sCtx.fillStyle = "#fdfdfd";
+    sCtx.strokeStyle = "#c8d9f2";
+    sCtx.lineWidth = 2.2;
+    sCtx.fill();
+    sCtx.stroke();
+    sCtx.restore();
+  };
+
+  drawWing(false);
+  drawWing(true);
+
+  const bodyGradient = sCtx.createLinearGradient(
+    -baseWidth / 2,
+    -baseHeight / 2,
+    baseWidth / 2,
+    baseHeight / 2
+  );
+  bodyGradient.addColorStop(0, toaster.tint);
+  bodyGradient.addColorStop(1, "#9fb1cc");
+
+  sCtx.fillStyle = bodyGradient;
+  sCtx.strokeStyle = "#5f6c83";
+  sCtx.lineWidth = 2.4;
+  sCtx.beginPath();
+  if (sCtx.roundRect) {
+    sCtx.roundRect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight, 12);
+  } else {
+    sCtx.rect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+  }
+  sCtx.fill();
+  sCtx.stroke();
+
+  sCtx.fillStyle = "#8797af";
+  sCtx.fillRect(-baseWidth / 2 + 8, -baseHeight / 2 + 6, baseWidth - 16, 8);
+  sCtx.fillStyle = "#cbd5e8";
+  sCtx.fillRect(-baseWidth / 2 + 12, -baseHeight / 2 + 8, baseWidth - 24, 6);
+
+  sCtx.fillStyle = "#556076";
+  sCtx.fillRect(-baseWidth / 2 + 14, -baseHeight / 2 + 20, baseWidth - 28, 4);
+  sCtx.fillRect(-baseWidth / 2 + 14, -baseHeight / 2 + 28, baseWidth - 28, 4);
+
+  const sliceWidth = 18;
+  const sliceHeight = 18;
+  const sliceOffset = Math.sin(time * 1.4 + toaster.sparkleOffset) * 2;
+  sCtx.fillStyle = "#e1b679";
+  sCtx.strokeStyle = "#c48f47";
+  sCtx.lineWidth = 1.4;
+  [
+    [-sliceWidth - 6, -baseHeight / 2 - 4 - sliceOffset],
+    [sliceWidth + 2, -baseHeight / 2 - 8 + sliceOffset]
+  ].forEach(([sx, sy]) => {
+    sCtx.beginPath();
+    if (sCtx.roundRect) sCtx.roundRect(sx, sy, sliceWidth, sliceHeight, 4);
+    else sCtx.rect(sx, sy, sliceWidth, sliceHeight);
+    sCtx.fill();
+    sCtx.stroke();
+    sCtx.fillStyle = "#f3cf9c";
+    sCtx.fillRect(sx + 4, sy + 4, sliceWidth - 8, sliceHeight - 10);
+    sCtx.fillStyle = "#e1b679";
+  });
+
+  sCtx.fillStyle = "#2d3b4f";
+  sCtx.beginPath();
+  sCtx.arc(baseWidth / 2 - 16, baseHeight / 2 - 14, 6, 0, Math.PI * 2);
+  sCtx.fill();
+  sCtx.fillStyle = "#7ab2f7";
+  sCtx.beginPath();
+  sCtx.arc(baseWidth / 2 - 16, baseHeight / 2 - 14, 3, 0, Math.PI * 2);
+  sCtx.fill();
+
+  sCtx.restore();
 }
 
 function setupPipes() {
@@ -2739,7 +2899,8 @@ function openCPScreensaver(target, containerOverride) {
     { value: "fireflies", label: "Fireflies", desc: "Glowing neon fireflies drift gently across the screen." },
     { value: "bubbles", label: "Bubbles", desc: "Floating iridescent bubbles rise in a dark ocean." },
     { value: "waves", label: "Neon Waves", desc: "Layered synthwave ribbons flow across the canvas." },
-    { value: "castaway", label: "Desert Island", desc: "A Johnny Castaway-inspired tale with a lonely castaway and tiny surprises." }
+    { value: "castaway", label: "Desert Island", desc: "A Johnny Castaway-inspired tale with a lonely castaway and tiny surprises." },
+    { value: "toasters", label: "Flying Toasters", desc: "Chrome toasters flap through a midnight sky." },
   ];
   const saverOptions = saverOptionsData
     .map(
