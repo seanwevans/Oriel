@@ -1,6 +1,6 @@
 import { DEFAULT_WALLPAPER } from "./defaults.js";
 
-let wallpaperSettings = { url: DEFAULT_WALLPAPER, mode: "stretch" };
+let wallpaperSettings = { url: DEFAULT_WALLPAPER, mode: "cover" };
 
 export function getWallpaperSettings() {
   return wallpaperSettings;
@@ -8,7 +8,7 @@ export function getWallpaperSettings() {
 
 export function applyWallpaperSettings(
   url = DEFAULT_WALLPAPER,
-  mode = "tile",
+  mode = "cover",
   persist = false
 ) {
   wallpaperSettings = { url, mode };
