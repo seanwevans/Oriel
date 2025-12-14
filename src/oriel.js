@@ -984,7 +984,8 @@ class WindowManager {
     if (this.isRestoring) return;
     const state = {
       windows: this.getWindowStateSnapshot(),
-      wallpaper: getWallpaperSettings()
+      wallpaper: getWallpaperSettings(),
+      themeCustom: getCurrentThemeCustom()
     };
     persistDesktopState(state);
   }
@@ -1615,6 +1616,7 @@ class WindowManager {
 }
 
 const initialDesktopState = loadDesktopState();
+applySavedTheme(initialDesktopState.themeCustom);
 applyWallpaperSettings(
   initialDesktopState.wallpaper?.url ?? DEFAULT_WALLPAPER,
   initialDesktopState.wallpaper?.mode || "tile"
@@ -3993,6 +3995,119 @@ function applyFontSelection() {
   }
 }
 
+const DEFAULT_THEME = {
+  winTeal: "#008080",
+  winGray: "#C0C0C0",
+  winBlue: "#000080"
+};
+
+const THEME_PRESETS = {
+  d: DEFAULT_THEME,
+  h: { winTeal: "#ff0000", winGray: "#ffff00", winBlue: "#ff0000" },
+  p: { winTeal: "#400040", winGray: "#c0c0c0", winBlue: "#000080" }
+};
+
+function normalizeHexColor(value, fallback) {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return fallback;
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed;
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    const [r, g, b] = trimmed.slice(1).split("");
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  const rgbMatch = trimmed.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    const [r, g, b] = rgbMatch.slice(1, 4).map((n) => parseInt(n, 10));
+    const toHex = (n) => n.toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  return fallback;
+}
+
+function setThemeVariables(theme) {
+  if (!theme) return;
+  const root = document.documentElement.style;
+  root.setProperty("--win-teal", normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal));
+  root.setProperty("--win-gray", normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray));
+  root.setProperty("--win-blue", normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue));
+}
+
+function getCurrentThemeCustom() {
+  const computed = getComputedStyle(document.documentElement);
+  return {
+    winTeal: normalizeHexColor(
+      computed.getPropertyValue("--win-teal"),
+      DEFAULT_THEME.winTeal
+    ),
+    winGray: normalizeHexColor(
+      computed.getPropertyValue("--win-gray"),
+      DEFAULT_THEME.winGray
+    ),
+    winBlue: normalizeHexColor(
+      computed.getPropertyValue("--win-blue"),
+      DEFAULT_THEME.winBlue
+    )
+  };
+}
+
+function persistThemeCustom(theme) {
+  const currentState = loadDesktopState();
+  persistDesktopState({ ...currentState, themeCustom: theme });
+}
+
+function applyThemePreset(presetKey, container) {
+  const theme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
+  setThemeVariables(theme);
+  updateThemeInputs(theme, container);
+  persistThemeCustom(theme);
+  publish("theme:change", { theme: presetKey, values: theme });
+}
+
+function getThemeFromInputs(container) {
+  const root = container || document;
+  const theme = {
+    winGray: root.querySelector("#cs-win-gray")?.value || DEFAULT_THEME.winGray,
+    winBlue: root.querySelector("#cs-win-blue")?.value || DEFAULT_THEME.winBlue,
+    winTeal: root.querySelector("#cs-win-teal")?.value || DEFAULT_THEME.winTeal
+  };
+  return {
+    winGray: normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray),
+    winBlue: normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue),
+    winTeal: normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal)
+  };
+}
+
+function updateThemeInputs(theme, container) {
+  const root = container || document;
+  const mapping = [
+    ["#cs-win-gray", theme.winGray, DEFAULT_THEME.winGray],
+    ["#cs-win-blue", theme.winBlue, DEFAULT_THEME.winBlue],
+    ["#cs-win-teal", theme.winTeal, DEFAULT_THEME.winTeal]
+  ];
+  mapping.forEach(([selector, value, fallback]) => {
+    const el = root.querySelector(selector);
+    if (el) el.value = normalizeHexColor(value, fallback);
+  });
+}
+
+function applyTheme(targetPreset) {
+  const select = document.getElementById("cs-sel");
+  const preset = targetPreset || select?.value || "d";
+  applyThemePreset(preset, document);
+}
+
+function handleThemeInputChange(container) {
+  const theme = getThemeFromInputs(container);
+  setThemeVariables(theme);
+  persistThemeCustom(theme);
+  publish("theme:change", { theme: "custom", values: theme });
+}
+
+function applySavedTheme(theme) {
+  if (!theme) return;
+  setThemeVariables(theme);
+}
+
 function openCPColor(target, containerOverride) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
@@ -4015,23 +4130,44 @@ function openCPColor(target, containerOverride) {
         btn.classList.toggle("active", btn.dataset.view === "color")
       );
   }
-  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><select id="cs-sel" style="width:100%"><option value="d">Default</option><option value="h">Hot Dog</option><option value="p">Plasma</option></select><button class="task-btn" onclick="applyTheme()">Apply</button></div></div>`;
-}
+  const currentTheme = getCurrentThemeCustom();
+  body.innerHTML = `<div class="cp-settings-layout">
+    <div class="cp-section">
+      <label for="cs-sel">Theme Preset</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <select id="cs-sel" style="flex:1;">
+          <option value="d">Default</option>
+          <option value="h">Hot Dog</option>
+          <option value="p">Plasma</option>
+        </select>
+        <button class="task-btn" id="cs-apply-btn">Apply</button>
+      </div>
+    </div>
+    <div class="cp-section">
+      <label for="cs-win-gray">Window Background</label>
+      <input type="color" class="cs-color-input" id="cs-win-gray" value="${currentTheme.winGray}">
+    </div>
+    <div class="cp-section">
+      <label for="cs-win-blue">Active Title Bar</label>
+      <input type="color" class="cs-color-input" id="cs-win-blue" value="${currentTheme.winBlue}">
+    </div>
+    <div class="cp-section">
+      <label for="cs-win-teal">Desktop Background</label>
+      <input type="color" class="cs-color-input" id="cs-win-teal" value="${currentTheme.winTeal}">
+    </div>
+  </div>`;
 
-function applyTheme() {
-  const v = document.getElementById("cs-sel").value,
-    r = document.documentElement.style;
-  if (v === "h") {
-    r.setProperty("--win-teal", "red");
-    r.setProperty("--win-gray", "yellow");
-  } else if (v === "p") {
-    r.setProperty("--win-teal", "#400040");
-    r.setProperty("--win-gray", "#C0C0C0");
-  } else {
-    r.setProperty("--win-teal", "#008080");
-    r.setProperty("--win-gray", "#C0C0C0");
+  const presetSelect = body.querySelector("#cs-sel");
+  if (presetSelect) {
+    presetSelect.addEventListener("change", () => applyTheme());
   }
-  publish("theme:change", { theme: v });
+  const applyBtn = body.querySelector("#cs-apply-btn");
+  if (applyBtn) applyBtn.addEventListener("click", () => applyTheme());
+
+  updateThemeInputs(currentTheme, body);
+  body.querySelectorAll(".cs-color-input").forEach((input) => {
+    input.addEventListener("input", () => handleThemeInputChange(body));
+  });
 }
 
 let ircLibPromise = null;

@@ -7,7 +7,7 @@ export function loadDesktopState() {
   } catch (err) {
     console.error("Failed to parse desktop state", err);
   }
-  return { windows: [], wallpaper: null };
+  return { windows: [], wallpaper: null, themeCustom: null };
 }
 
 export function persistDesktopState(state) {
