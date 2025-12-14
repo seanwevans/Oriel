@@ -3941,6 +3941,30 @@ body {
   gap: 6px;
 }
 
+.minecraft-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.minecraft-progress-bar {
+  height: 10px;
+  border: 1px solid var(--border-dark, #808080);
+  background: var(--window-bg, #f0f0f0);
+  position: relative;
+  overflow: hidden;
+}
+
+.minecraft-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #6fa74f, #9b7d46);
+  transition: width 0.3s ease;
+}
+
 .minecraft-iframe {
   flex: 1;
   width: 100%;
@@ -3953,4 +3977,8 @@ body {
   padding: 6px 8px;
   background: var(--window-bg, #f0f0f0);
   border: 1px solid var(--border-dark, #808080);
+}
+
+.minecraft-loading-hidden {
+  display: none;
 }
