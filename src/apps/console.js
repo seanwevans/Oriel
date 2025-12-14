@@ -1,5 +1,7 @@
 import { MOCK_FS, saveFileSystem } from "../filesystem.js";
 
+const getKernel = () => window.kernel;
+
 function initConsole(w) {
   w.consoleState = {
     cwd: "C:\\",
@@ -233,6 +235,9 @@ function cashMv(argLine, state) {
 }
 
 function registerDefaultConsoleCommands() {
+  const kernel = getKernel();
+  if (!kernel) return;
+
   const register = (name, handler) => kernel.registerCommand(name, handler);
 
   register("ls", ({ argLine, state }) => cashLs(argLine || state.cwd, state));
@@ -257,10 +262,13 @@ function registerDefaultConsoleCommands() {
   });
 }
 
-registerDefaultConsoleCommands();
+function registerConsoleCommands() {
+  registerDefaultConsoleCommands();
+}
 
 function processCashCommand(w, cmd, argLine, rawCmd, state) {
-  const handler = kernel.getCommandHandler(cmd);
+  const kernel = getKernel();
+  const handler = kernel?.getCommandHandler(cmd);
   if (!handler)
     return { error: `'${rawCmd}' is not recognized as an internal or external command.` };
 
@@ -548,4 +556,11 @@ function calcInput(e, v) {
   d.innerText = d.dataset.val;
 }
 
-export { calcInput, handleConsoleKey, initConsole, runCompiler, runPython };
+export {
+  calcInput,
+  handleConsoleKey,
+  initConsole,
+  registerConsoleCommands,
+  runCompiler,
+  runPython
+};
