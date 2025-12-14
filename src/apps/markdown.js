@@ -21,7 +21,9 @@ function renderMarkdown(text) {
   let inCode = false;
 
   lines.forEach((line) => {
-    if (line.trim().startsWith("```") && !line.trim().startsWith("```\"")) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```") && !trimmed.startsWith("```\"")) {
       if (inCode) output.push("</code></pre>");
       else output.push("<pre><code>");
       inCode = !inCode;
@@ -42,9 +44,10 @@ function renderMarkdown(text) {
       return;
     }
 
-    if (line.trim().startsWith("#")) {
-      const level = Math.min(line.match(/^#+/)[0].length, 6);
-      const content = applyInline(line.replace(/^#+\s*/, ""));
+    if (trimmed.startsWith("#")) {
+      const headingMatch = trimmed.match(/^#+/);
+      const level = Math.min(headingMatch ? headingMatch[0].length : 1, 6);
+      const content = applyInline(trimmed.replace(/^#+\s*/, ""));
       output.push(`<h${level}>${content}</h${level}>`);
       if (inList) {
         output.push("</ul>");
@@ -53,7 +56,7 @@ function renderMarkdown(text) {
       return;
     }
 
-    if (line.trim() === "") {
+    if (trimmed === "") {
       if (inList) {
         output.push("</ul>");
         inList = false;
