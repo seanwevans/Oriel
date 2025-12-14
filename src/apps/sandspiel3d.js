@@ -7,8 +7,11 @@ const BRUSHES = {
   aurora: { color: 0x9c8cff, scatter: 1 }
 };
 
+const VOXEL_SIZE = 0.6;
 const WORLD_BOUNDS = 12;
 const FLOOR_HEIGHT = 0.3;
+const HALF_VOXEL = VOXEL_SIZE / 2;
+const STACK_CELL = VOXEL_SIZE + 0.1;
 
 export function getSandspiel3DRoot() {
   return `
@@ -189,6 +192,9 @@ export async function initSandspiel3d(win) {
   function update(delta) {
     const gravity = parseFloat(gravitySlider?.value || "12");
     const damping = 0.8;
+    const heightMap = new Map();
+
+    voxels.sort((a, b) => a.mesh.position.y - b.mesh.position.y);
 
     voxels.forEach((voxel) => {
       voxel.velocity.y -= gravity * delta;
@@ -204,17 +210,22 @@ export async function initSandspiel3d(win) {
         voxel.velocity.z *= -damping;
       }
 
-      const minY = FLOOR_HEIGHT * 0.5;
+      const cellX = Math.round(voxel.mesh.position.x / STACK_CELL);
+      const cellZ = Math.round(voxel.mesh.position.z / STACK_CELL);
+      const cellKey = `${cellX},${cellZ}`;
+      const stackBase = heightMap.get(cellKey) ?? FLOOR_HEIGHT * 0.5;
+      const minY = stackBase + HALF_VOXEL;
+
       if (voxel.mesh.position.y < minY) {
         voxel.mesh.position.y = minY;
-        voxel.velocity.y *= -0.45;
+        voxel.velocity.y = 0;
         voxel.velocity.x *= damping;
         voxel.velocity.z *= damping;
-
-        if (Math.abs(voxel.velocity.y) < 0.6) {
-          voxel.velocity.y = 0;
-        }
+      } else if (voxel.velocity.y < -0.1 && voxel.mesh.position.y - minY < VOXEL_SIZE) {
+        voxel.velocity.y *= -0.2;
       }
+
+      heightMap.set(cellKey, voxel.mesh.position.y + HALF_VOXEL);
     });
 
     const t = performance.now() * 0.0002;
