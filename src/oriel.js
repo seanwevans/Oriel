@@ -12,11 +12,14 @@ import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
 import { initNotepad } from "./apps/notepad.js";
+import { initCardfile } from "./apps/cardfile.js";
+import { initClock } from "./apps/clock.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import { initWrite } from "./apps/write.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
@@ -3315,168 +3318,6 @@ async function initMediaPlayer(w) {
   window.toggleMedia = w.toggleMedia;
 }
 
-function initCardfile(w) {
-  const key = "w31-cards";
-  const stored = localStorage.getItem(key);
-  w.cards = stored
-    ? JSON.parse(stored)
-    : [
-        {
-          id: 1,
-          header: "Welcome",
-          content: "This is Cardfile."
-        }
-      ];
-  if (w.cards.length === 0)
-    w.cards.push({
-      id: Date.now(),
-      header: "New Card",
-      content: ""
-    });
-  w.activeCardId = w.cards[0].id;
-
-  const listEl = w.querySelector("#card-index-list");
-  const headerEl = w.querySelector("#card-header-display");
-  const contentEl = w.querySelector("#card-content-edit");
-
-  const render = () => {
-    w.cards.sort((a, b) => a.header.localeCompare(b.header));
-    listEl.innerHTML = "";
-    w.cards.forEach((card) => {
-      const d = document.createElement("div");
-      d.className = "cardfile-item " + (card.id === w.activeCardId ? "sel" : "");
-      d.innerHTML =
-        ICONS.cardfile + `<span>${card.header || "(blank)"}</span>`;
-      d.onclick = () => {
-        w.activeCardId = card.id;
-        render();
-      };
-      listEl.appendChild(d);
-    });
-    const active = w.cards.find((c) => c.id === w.activeCardId);
-    if (active) {
-      headerEl.value = active.header;
-      contentEl.value = active.content;
-    }
-    localStorage.setItem(key, JSON.stringify(w.cards));
-  };
-
-  headerEl.oninput = () => {
-    const active = w.cards.find((c) => c.id === w.activeCardId);
-    if (active) {
-      active.header = headerEl.value;
-      render();
-    }
-  };
-  contentEl.oninput = () => {
-    const active = w.cards.find((c) => c.id === w.activeCardId);
-    if (active) {
-      active.content = contentEl.value;
-      localStorage.setItem(key, JSON.stringify(w.cards));
-    }
-  };
-
-  w.querySelector("#card-add").onclick = () => {
-    const nc = { id: Date.now(), header: "New Card", content: "" };
-    w.cards.push(nc);
-    w.activeCardId = nc.id;
-    render();
-  };
-  w.querySelector("#card-del").onclick = () => {
-    if (w.cards.length > 1) {
-      w.cards = w.cards.filter((c) => c.id !== w.activeCardId);
-      w.activeCardId = w.cards[0].id;
-      render();
-    }
-  };
-
-  render();
-}
-
-function initClock(w) {
-  const canvas = w.querySelector(".clock-canvas");
-  const ctx = canvas.getContext("2d");
-  const digital = w.querySelector(".clock-digital");
-  const layout = w.querySelector(".clock-layout");
-  let analogMode = true;
-
-  const formatTime = (date) => {
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
-  };
-
-  const drawAnalog = (date) => {
-    const wH = canvas.width;
-    const center = wH / 2;
-    ctx.clearRect(0, 0, wH, wH);
-    ctx.fillStyle = "#f5f5f5";
-    ctx.fillRect(0, 0, wH, wH);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(center, center, center - 10, 0, Math.PI * 2);
-    ctx.stroke();
-    for (let i = 0; i < 12; i++) {
-      const angle = (Math.PI / 6) * i;
-      const inner = center - 15;
-      const outer = center - 5;
-      ctx.beginPath();
-      ctx.moveTo(
-        center + inner * Math.sin(angle),
-        center - inner * Math.cos(angle)
-      );
-      ctx.lineTo(
-        center + outer * Math.sin(angle),
-        center - outer * Math.cos(angle)
-      );
-      ctx.stroke();
-    }
-
-    const sec = date.getSeconds();
-    const min = date.getMinutes();
-    const hr = date.getHours() % 12;
-
-    const drawHand = (value, max, length, width, color) => {
-      const angle = (Math.PI * 2 * (value / max)) - Math.PI / 2;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.lineTo(
-        center + length * Math.cos(angle),
-        center + length * Math.sin(angle)
-      );
-      ctx.stroke();
-    };
-
-    drawHand(hr + min / 60, 12, center - 55, 4, "#000");
-    drawHand(min + sec / 60, 60, center - 35, 3, "#000");
-    drawHand(sec, 60, center - 25, 2, "red");
-  };
-
-  const render = () => {
-    const now = new Date();
-    if (analogMode) {
-      canvas.style.display = "block";
-      digital.style.display = "none";
-      drawAnalog(now);
-    } else {
-      canvas.style.display = "none";
-      digital.style.display = "block";
-      digital.innerText = formatTime(now);
-    }
-  };
-
-  layout?.addEventListener("dblclick", () => {
-    analogMode = !analogMode;
-    render();
-  });
-
-  render();
-  setInterval(render, 1000);
-}
 
 function initControlPanel(w) {
   const menu = w.querySelector(".menu-bar");
@@ -4040,35 +3881,6 @@ async function initFileManager(w) {
   w.currentDirObj = w.cD;
   await rFT(w);
   await rFL(w);
-}
-
-function initWrite(win) {
-  const editor = win.querySelector(".write-editor");
-  if (!editor) return;
-
-  const fontSelect = win.querySelector(".write-font");
-  const sizeSelect = win.querySelector(".write-size");
-  const fmtButtons = win.querySelectorAll(".fmt-btn");
-
-  const applyCommand = (cmd, value = null) => {
-    editor.focus();
-    document.execCommand(cmd, false, value);
-  };
-
-  if (fontSelect) {
-    fontSelect.addEventListener("change", () => applyCommand("fontName", fontSelect.value));
-  }
-
-  if (sizeSelect) {
-    sizeSelect.addEventListener("change", () => applyCommand("fontSize", sizeSelect.value));
-  }
-
-  fmtButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const { cmd } = btn.dataset;
-      if (cmd) applyCommand(cmd);
-    });
-  });
 }
 
 function initImageViewer(win, initData) {
