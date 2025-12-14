@@ -26,6 +26,14 @@ import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
+import { copyCharMap, initCharMap } from "./apps/charmap.js";
+import {
+  addDbRecord,
+  deleteDbRecord,
+  exportDbToCsv,
+  initDatabase
+} from "./apps/database.js";
+import { initReset } from "./apps/reset.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -4326,42 +4334,6 @@ function initControlPanel(w) {
   switchView("desktop");
 }
 
-function initReset(w) {
-  const btn = w.querySelector(".reset-now-btn");
-  const status = w.querySelector(".reset-status");
-
-  const setStatus = (msg) => {
-    if (status) status.textContent = msg;
-  };
-
-  if (!btn) return;
-
-  btn.onclick = () => {
-    const confirmed = window.confirm(
-      "This will clear all saved Oriel data and reload the desktop. Continue?"
-    );
-    if (!confirmed) {
-      setStatus("Reset cancelled.");
-      return;
-    }
-
-    const keysToClear = [
-      "oriel-desktop-state",
-      "oriel-fs-v1",
-      "oriel-volume",
-      "oriel-network-defaults",
-      "oriel-radio-cache-v1",
-      "w31-cards",
-      "w31-db"
-    ];
-
-    keysToClear.forEach((key) => localStorage.removeItem(key));
-    setStatus("Saved data cleared. Reloading to apply defaults…");
-
-    setTimeout(() => window.location.reload(), 300);
-  };
-}
-
 function openCPFonts(target, containerOverride) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
@@ -5571,130 +5543,6 @@ function initSoundRecorder(w) {
   };
 }
 
-function initCharMap(w) {
-  const g = w.querySelector("#char-grid"),
-    ip = w.querySelector("#char-copy-input"),
-    preview = w.querySelector(".char-preview"),
-    codeLabel = w.querySelector("#char-code-label"),
-    fontSelect = w.querySelector("#char-font-select");
-
-  let activeCell = null;
-
-  const applyFont = (fontValue) => {
-    g.style.fontFamily = fontValue;
-    preview.style.fontFamily = fontValue;
-  };
-
-  const setSelection = (cell) => {
-    if (!cell) return;
-    if (activeCell) activeCell.classList.remove("active");
-    activeCell = cell;
-    cell.classList.add("active");
-    const chr = cell.dataset.char;
-    const code = parseInt(cell.dataset.code, 10);
-    preview.innerText = chr;
-    codeLabel.innerText = `U+${code.toString(16).toUpperCase().padStart(4, "0")} · Dec ${code}`;
-  };
-
-  for (let i = 32; i < 256; i++) {
-    const c = String.fromCharCode(i);
-    const d = document.createElement("div");
-    d.className = "char-cell";
-    d.innerText = c;
-    d.dataset.char = c;
-    d.dataset.code = i;
-    d.onclick = () => {
-      ip.value += c;
-      setSelection(d);
-    };
-    g.appendChild(d);
-  }
-
-  fontSelect?.addEventListener("change", (e) => applyFont(e.target.value));
-  setSelection(g.querySelector('[data-code="65"]') || g.querySelector(".char-cell"));
-  applyFont(fontSelect?.value || "'Times New Roman', serif");
-}
-
-function copyCharMap(b) {
-  b.closest(".window").querySelector("#char-copy-input").select();
-  document.execCommand("copy");
-}
-
-function initDatabase(w) {
-  const d = localStorage.getItem("w31-db");
-  w.dbData = d
-    ? JSON.parse(d)
-    : [
-        {
-          id: 1,
-          name: "Bill",
-          phone: "555-0199",
-          email: "b@ms.com"
-        }
-      ];
-  renderDbTable(w);
-}
-
-function renderDbTable(w) {
-  const t = w.querySelector("#db-tbody");
-  t.innerHTML = "";
-  w.dbData.forEach((r, i) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.name}</td><td>${r.phone}</td><td>${r.email}</td><td><button onclick="deleteDbRecord(this,${i})">X</button></td>`;
-    t.appendChild(tr);
-  });
-}
-
-function addDbRecord(b) {
-  const w = b.closest(".window"),
-    n = w.querySelector("#db-name"),
-    p = w.querySelector("#db-phone"),
-    e = w.querySelector("#db-email");
-  if (!n.value) return;
-  w.dbData.push({
-    name: n.value,
-    phone: p.value,
-    email: e.value
-  });
-  localStorage.setItem("w31-db", JSON.stringify(w.dbData));
-  n.value = "";
-  p.value = "";
-  e.value = "";
-  renderDbTable(w);
-}
-
-function deleteDbRecord(b, i) {
-  const w = b.closest(".window");
-  w.dbData.splice(i, 1);
-  localStorage.setItem("w31-db", JSON.stringify(w.dbData));
-  renderDbTable(w);
-}
-
-function exportDbToCsv(b) {
-  const w = b.closest(".window");
-  const headers = ["Name", "Phone", "Email"];
-  const rows = w.dbData || [];
-  const csvLines = [
-    headers,
-    ...rows.map((r) => [r.name || "", r.phone || "", r.email || ""])
-  ].map((line) =>
-    line
-      .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
-      .join(",")
-  );
-
-  const blob = new Blob([csvLines.join("\r\n")], {
-    type: "text/csv;charset=utf-8;"
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "data_manager_export.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 function initPhotoshop(w) {
   const canvas = w.querySelector(".ps-canvas");
