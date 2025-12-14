@@ -105,7 +105,9 @@ export function initMinecraft(win) {
     startLoading();
   });
 
-  if (!iframe.src) {
+  const iframeSrcAttr = iframe.getAttribute("src");
+
+  if (!iframeSrcAttr) {
     startLoading();
   }
 }
