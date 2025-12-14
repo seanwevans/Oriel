@@ -84,6 +84,7 @@ import {
   calcInput,
   handleConsoleKey,
   initConsole,
+  registerConsoleCommands,
   runCompiler,
   runPython
 } from "./apps/console.js";
@@ -4284,6 +4285,8 @@ window.createFolder = createFolder;
 window.switchTask = switchTask;
 window.endTask = endTask;
 window.kernel = kernel;
+
+registerConsoleCommands();
 
 // Apps
 window.handleConsoleKey = handleConsoleKey; // Fixes the Console App
