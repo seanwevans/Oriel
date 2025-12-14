@@ -83,6 +83,7 @@ const APP_INITIALIZERS = {
 };
 
 
+
 function getUniqueFolderName(targetDir, baseName = "New Folder") {
   if (!targetDir?.children) return baseName;
   let candidate = baseName;
@@ -1613,6 +1614,115 @@ class WindowManager {
   getDatabaseContent() {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
+}
+
+
+const DEFAULT_THEME = {
+  winTeal: "#008080",
+  winGray: "#C0C0C0",
+  winBlue: "#000080"
+};
+
+const THEME_PRESETS = {
+  d: DEFAULT_THEME,
+  h: { winTeal: "#ff0000", winGray: "#ffff00", winBlue: "#ff0000" },
+  p: { winTeal: "#400040", winGray: "#c0c0c0", winBlue: "#000080" }
+};
+
+function normalizeHexColor(value, fallback) {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return fallback;
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed;
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    const [r, g, b] = trimmed.slice(1).split("");
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  const rgbMatch = trimmed.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    const [r, g, b] = rgbMatch.slice(1, 4).map((n) => parseInt(n, 10));
+    const toHex = (n) => n.toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  return fallback;
+}
+
+function setThemeVariables(theme) {
+  if (!theme) return;
+  const root = document.documentElement.style;
+  root.setProperty("--win-teal", normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal));
+  root.setProperty("--win-gray", normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray));
+  root.setProperty("--win-blue", normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue));
+}
+
+function getCurrentThemeCustom() {
+  const computed = getComputedStyle(document.documentElement);
+  return {
+    winTeal: normalizeHexColor(
+      computed.getPropertyValue("--win-teal"),
+      DEFAULT_THEME.winTeal
+    ),
+    winGray: normalizeHexColor(
+      computed.getPropertyValue("--win-gray"),
+      DEFAULT_THEME.winGray
+    ),
+    winBlue: normalizeHexColor(
+      computed.getPropertyValue("--win-blue"),
+      DEFAULT_THEME.winBlue
+    )
+  };
+}
+
+function persistThemeCustom(theme) {
+  const currentState = loadDesktopState();
+  persistDesktopState({ ...currentState, themeCustom: theme });
+}
+
+function applyThemePreset(presetKey, container) {
+  const theme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
+  setThemeVariables(theme);
+  updateThemeInputs(theme, container);
+  persistThemeCustom(theme);
+  publish("theme:change", { theme: presetKey, values: theme });
+}
+
+function getThemeFromInputs(container) {
+  const root = container || document;
+  const theme = {
+    winGray: root.querySelector("#cs-win-gray")?.value || DEFAULT_THEME.winGray,
+    winBlue: root.querySelector("#cs-win-blue")?.value || DEFAULT_THEME.winBlue,
+    winTeal: root.querySelector("#cs-win-teal")?.value || DEFAULT_THEME.winTeal
+  };
+  return {
+    winGray: normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray),
+    winBlue: normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue),
+    winTeal: normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal)
+  };
+}
+
+function updateThemeInputs(theme, container) {
+  const root = container || document;
+  const mapping = [
+    ["#cs-win-gray", theme.winGray, DEFAULT_THEME.winGray],
+    ["#cs-win-blue", theme.winBlue, DEFAULT_THEME.winBlue],
+    ["#cs-win-teal", theme.winTeal, DEFAULT_THEME.winTeal]
+  ];
+  mapping.forEach(([selector, value, fallback]) => {
+    const el = root.querySelector(selector);
+    if (el) el.value = normalizeHexColor(value, fallback);
+  });
+}
+
+function applyTheme(targetPreset) {
+  const select = document.getElementById("cs-sel");
+  const preset = targetPreset || select?.value || "d";
+  applyThemePreset(preset, document);
+}
+
+function handleThemeInputChange(container) {
+  const theme = getThemeFromInputs(container);
+  setThemeVariables(theme);
+  persistThemeCustom(theme);
+  publish("theme:change", { theme: "custom", values: theme });
 }
 
 const initialDesktopState = loadDesktopState();
@@ -3993,114 +4103,6 @@ function applyFontSelection() {
     preview.style.fontFamily = family;
     preview.textContent = `The quick brown fox jumps over the lazy dog. (${chosen})`;
   }
-}
-
-const DEFAULT_THEME = {
-  winTeal: "#008080",
-  winGray: "#C0C0C0",
-  winBlue: "#000080"
-};
-
-const THEME_PRESETS = {
-  d: DEFAULT_THEME,
-  h: { winTeal: "#ff0000", winGray: "#ffff00", winBlue: "#ff0000" },
-  p: { winTeal: "#400040", winGray: "#c0c0c0", winBlue: "#000080" }
-};
-
-function normalizeHexColor(value, fallback) {
-  const trimmed = (value || "").trim();
-  if (!trimmed) return fallback;
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed;
-  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const [r, g, b] = trimmed.slice(1).split("");
-    return `#${r}${r}${g}${g}${b}${b}`;
-  }
-  const rgbMatch = trimmed.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (rgbMatch) {
-    const [r, g, b] = rgbMatch.slice(1, 4).map((n) => parseInt(n, 10));
-    const toHex = (n) => n.toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-  return fallback;
-}
-
-function setThemeVariables(theme) {
-  if (!theme) return;
-  const root = document.documentElement.style;
-  root.setProperty("--win-teal", normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal));
-  root.setProperty("--win-gray", normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray));
-  root.setProperty("--win-blue", normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue));
-}
-
-function getCurrentThemeCustom() {
-  const computed = getComputedStyle(document.documentElement);
-  return {
-    winTeal: normalizeHexColor(
-      computed.getPropertyValue("--win-teal"),
-      DEFAULT_THEME.winTeal
-    ),
-    winGray: normalizeHexColor(
-      computed.getPropertyValue("--win-gray"),
-      DEFAULT_THEME.winGray
-    ),
-    winBlue: normalizeHexColor(
-      computed.getPropertyValue("--win-blue"),
-      DEFAULT_THEME.winBlue
-    )
-  };
-}
-
-function persistThemeCustom(theme) {
-  const currentState = loadDesktopState();
-  persistDesktopState({ ...currentState, themeCustom: theme });
-}
-
-function applyThemePreset(presetKey, container) {
-  const theme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
-  setThemeVariables(theme);
-  updateThemeInputs(theme, container);
-  persistThemeCustom(theme);
-  publish("theme:change", { theme: presetKey, values: theme });
-}
-
-function getThemeFromInputs(container) {
-  const root = container || document;
-  const theme = {
-    winGray: root.querySelector("#cs-win-gray")?.value || DEFAULT_THEME.winGray,
-    winBlue: root.querySelector("#cs-win-blue")?.value || DEFAULT_THEME.winBlue,
-    winTeal: root.querySelector("#cs-win-teal")?.value || DEFAULT_THEME.winTeal
-  };
-  return {
-    winGray: normalizeHexColor(theme.winGray, DEFAULT_THEME.winGray),
-    winBlue: normalizeHexColor(theme.winBlue, DEFAULT_THEME.winBlue),
-    winTeal: normalizeHexColor(theme.winTeal, DEFAULT_THEME.winTeal)
-  };
-}
-
-function updateThemeInputs(theme, container) {
-  const root = container || document;
-  const mapping = [
-    ["#cs-win-gray", theme.winGray, DEFAULT_THEME.winGray],
-    ["#cs-win-blue", theme.winBlue, DEFAULT_THEME.winBlue],
-    ["#cs-win-teal", theme.winTeal, DEFAULT_THEME.winTeal]
-  ];
-  mapping.forEach(([selector, value, fallback]) => {
-    const el = root.querySelector(selector);
-    if (el) el.value = normalizeHexColor(value, fallback);
-  });
-}
-
-function applyTheme(targetPreset) {
-  const select = document.getElementById("cs-sel");
-  const preset = targetPreset || select?.value || "d";
-  applyThemePreset(preset, document);
-}
-
-function handleThemeInputChange(container) {
-  const theme = getThemeFromInputs(container);
-  setThemeVariables(theme);
-  persistThemeCustom(theme);
-  publish("theme:change", { theme: "custom", values: theme });
 }
 
 function applySavedTheme(theme) {
