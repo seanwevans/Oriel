@@ -720,6 +720,7 @@ export {
   handleThemeInputChange,
   initControlPanel,
   normalizeHexColor,
+  getCurrentThemeCustom,
   openCPColor,
   openCPDefaults,
   openCPDesktop,
