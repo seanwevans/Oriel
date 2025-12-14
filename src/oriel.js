@@ -23,6 +23,7 @@ import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import { initWrite } from "./apps/write.js";
+import { initArtist } from "./apps/artist.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
 import { initImageViewer } from "./apps/imageViewer.js";
@@ -30,6 +31,7 @@ import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
 import { copyCharMap, initCharMap } from "./apps/charmap.js";
+import { initBeatMaker } from "./apps/beatMaker.js";
 import {
   addDbRecord,
   deleteDbRecord,
@@ -75,6 +77,7 @@ import {
 } from "./networking.js";
 import { initHexEditor } from "./apps/hexEditor.js";
 import { initSoundRecorder } from "./apps/soundRecorder.js";
+import { initDoom } from "./apps/doom.js";
 import { SimulatedKernel } from "./kernel.js";
 import { loadThree } from "./threeLoader.js";
 
@@ -4304,79 +4307,6 @@ async function initFileManager(w) {
   await rFL(w);
 }
 
-function initArtist(win) {
-  const promptInput = win.querySelector(".artist-prompt");
-  const generateBtn = win.querySelector(".artist-generate");
-  const status = win.querySelector(".artist-status");
-  const preview = win.querySelector(".artist-preview");
-  const placeholder = win.querySelector(".artist-placeholder");
-  const link = win.querySelector(".artist-link");
-
-  if (!promptInput || !generateBtn || !status || !preview || !placeholder || !link)
-    return;
-
-  const setStatus = (msg, isError = false) => {
-    status.textContent = msg;
-    status.classList.toggle("artist-status-error", isError);
-  };
-
-  const setLoading = (loading) => {
-    generateBtn.disabled = loading;
-    generateBtn.textContent = loading ? "Generating..." : "Generate";
-  };
-
-  const showPlaceholder = (msg) => {
-    placeholder.style.display = "flex";
-    placeholder.textContent = msg;
-    preview.style.display = "none";
-  };
-
-  const displayImage = (url) => {
-    preview.onload = () => {
-      placeholder.style.display = "none";
-      preview.style.display = "block";
-      setStatus("Image ready. Right-click to save.");
-      setLoading(false);
-    };
-    preview.onerror = () => {
-      showPlaceholder("Failed to load image. Try again.");
-      setStatus("Image request failed.", true);
-      setLoading(false);
-    };
-    preview.src = url;
-    link.href = url;
-  };
-
-  const requestImage = () => {
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-      setStatus("Enter a description first.", true);
-      return;
-    }
-    setLoading(true);
-    setStatus("Requesting image from Pollinations...");
-    showPlaceholder("Generating image...");
-
-    const apiUrl =
-      "https://image.pollinations.ai/prompt/" +
-      encodeURIComponent(prompt) +
-      `?width=1024&height=1024&seed=${Date.now()}`;
-
-    displayImage(apiUrl);
-  };
-
-  generateBtn.addEventListener("click", requestImage);
-  promptInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      requestImage();
-    }
-  });
-
-  // Kick off an initial render using the default prompt
-  requestImage();
-}
-
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -4514,271 +4444,6 @@ async function rFL(w) {
       });
 }
 
-let jsDosLoadPromise = null;
-
-function loadJsDos() {
-  if (window.Dos) return Promise.resolve();       // already loaded
-
-  if (jsDosLoadPromise) return jsDosLoadPromise;  // already loading
-
-  jsDosLoadPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://js-dos.com/6.22/current/js-dos.js";
-    script.onload = () => resolve();
-    script.onerror = (e) => reject(e);
-    document.head.appendChild(script);
-  });
-
-  return jsDosLoadPromise;
-}
-
-function initDoom(win) {
-  const container = win.querySelector("#doom-container");
-  if (!container) return;
-
-  const savedTitle = document.title;
-  const restoreTitle = () => { document.title = savedTitle; };
-  
-  loadJsDos()
-    .then(() => {
-      return window.Dos(container, {
-        style: "none",
-        wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
-      }).ready((fs, main) => {
-        restoreTitle();
-        fs.extract("https://js-dos.com/cdn/upload/DOOM-@evilution.zip").then(() => {
-          restoreTitle();
-          main(["-c", "cd doom", "-c", "doom"]).then((ci) => {
-            win.doomCI = ci;
-            restoreTitle();
-            setTimeout(restoreTitle, 100);
-          });
-        });
-      });
-    })
-    .catch((err) => {
-      console.error("Failed to load js-dos:", err);
-      container.innerHTML =
-        '<div style="color:#f44;font-family:var(--font-main);padding:8px;">Failed to load DOOM (js-dos load error).</div>';
-    });
-}
-
-function initBeatMaker(win) {
-  const tempo = win.querySelector("#daw-tempo");
-  const tempoVal = win.querySelector("#daw-tempo-val");
-  const status = win.querySelector("#daw-status");
-  const playBtn = win.querySelector("#daw-play");
-  const stopBtn = win.querySelector("#daw-stop");
-  const randomBtn = win.querySelector("#daw-random");
-  const clearBtn = win.querySelector("#daw-clear");
-
-  const tracks = [
-    { id: "kick", name: "Kick" },
-    { id: "snare", name: "Snare" },
-    { id: "hihat", name: "Hi-Hat" },
-    { id: "clap", name: "Clap" }
-  ];
-  const stepsCount = 16;
-  const pattern = Object.fromEntries(
-    tracks.map((t) => [t.id, Array(stepsCount).fill(false)])
-  );
-
-  // Starter groove
-  [0, 4, 8, 12].forEach((i) => (pattern.kick[i] = true));
-  [4, 12].forEach((i) => (pattern.snare[i] = true));
-  [2, 6, 10, 14].forEach((i) => (pattern.hihat[i] = true));
-  pattern.clap[14] = true;
-
-  let audioCtx = null;
-  let timer = null;
-  let currentStep = 0;
-
-  const stepNodes = Array.from(win.querySelectorAll(".daw-step"));
-
-  function ensureContext() {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    return audioCtx;
-  }
-
-  function renderPattern() {
-    stepNodes.forEach((node) => {
-      const track = node.closest(".daw-row").dataset.track;
-      const stepIndex = parseInt(node.dataset.step);
-      node.classList.toggle("active", pattern[track][stepIndex]);
-    });
-  }
-
-  function highlightStep(stepIndex) {
-    stepNodes.forEach((node) => {
-      const isCurrent = parseInt(node.dataset.step) === stepIndex;
-      node.classList.toggle("playhead", isCurrent);
-    });
-  }
-
-  function connectWithVolume(node) {
-    const gain = ensureContext().createGain();
-    gain.gain.value = getSystemVolume();
-    node.connect(gain);
-    gain.connect(ensureContext().destination);
-    return { node, gain };
-  }
-
-  function triggerKick(time) {
-    const ctx = ensureContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(140, time);
-    osc.frequency.exponentialRampToValueAtTime(55, time + 0.25);
-    const volume = getSystemVolume();
-    gain.gain.setValueAtTime(volume, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.4);
-  }
-
-  function triggerNoise(duration, tone, cutoff) {
-    const ctx = ensureContext();
-    const bufferSize = Math.floor(ctx.sampleRate * duration);
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * tone;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.value = cutoff;
-    const { gain } = connectWithVolume(noise);
-    const volume = getSystemVolume();
-    gain.gain.setValueAtTime(volume * 0.8, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    noise.connect(filter);
-    filter.connect(gain);
-    noise.start();
-    noise.stop(ctx.currentTime + duration);
-  }
-
-  function triggerSnare(time) {
-    const ctx = ensureContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(180, time);
-    const volume = getSystemVolume();
-    gain.gain.setValueAtTime(volume * 0.25, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.2);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.25);
-    triggerNoise(0.18, 0.7, 1000);
-  }
-
-  function triggerHat(time) {
-    triggerNoise(0.1, 0.4, 6000);
-  }
-
-  function triggerClap(time) {
-    const ctx = ensureContext();
-    const bursts = [0, 0.03, 0.06];
-    bursts.forEach((offset) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(400, time + offset);
-      const volume = getSystemVolume();
-      gain.gain.setValueAtTime(volume * 0.2, time + offset);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + offset + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(time + offset);
-      osc.stop(time + offset + 0.16);
-    });
-  }
-
-  const triggerMap = {
-    kick: triggerKick,
-    snare: triggerSnare,
-    hihat: triggerHat,
-    clap: triggerClap
-  };
-
-  stepNodes.forEach((node) => {
-    node.addEventListener("click", () => {
-      const track = node.closest(".daw-row").dataset.track;
-      const stepIndex = parseInt(node.dataset.step);
-      pattern[track][stepIndex] = !pattern[track][stepIndex];
-      node.classList.toggle("active", pattern[track][stepIndex]);
-      status.textContent = pattern[track][stepIndex]
-        ? `${tracks.find((t) => t.id === track).name} enabled on step ${stepIndex + 1}.`
-        : `${tracks.find((t) => t.id === track).name} muted on step ${stepIndex + 1}.`;
-    });
-  });
-
-  function stepDurationMs() {
-    return (60000 / parseInt(tempo.value, 10)) / 4;
-  }
-
-  function playCurrentStep() {
-    const ctx = ensureContext();
-    const time = ctx.currentTime;
-    tracks.forEach((t) => {
-      if (pattern[t.id][currentStep]) triggerMap[t.id](time);
-    });
-    highlightStep(currentStep);
-    currentStep = (currentStep + 1) % stepsCount;
-  }
-
-  function startPlayback() {
-    if (timer) return;
-    ensureContext();
-    currentStep = 0;
-    playCurrentStep();
-    timer = setInterval(playCurrentStep, stepDurationMs());
-    status.textContent = "Playing pattern. Click steps to toggle sounds.";
-  }
-
-  function stopPlayback() {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
-    highlightStep(-1);
-    status.textContent = "Stopped. Adjust tempo or toggle steps.";
-  }
-
-  tempo.addEventListener("input", () => {
-    tempoVal.textContent = tempo.value;
-    if (timer) {
-      clearInterval(timer);
-      timer = setInterval(playCurrentStep, stepDurationMs());
-    }
-  });
-
-  playBtn.onclick = startPlayback;
-  stopBtn.onclick = stopPlayback;
-
-  randomBtn.onclick = () => {
-    tracks.forEach((t) => {
-      pattern[t.id] = pattern[t.id].map(() => Math.random() < 0.25);
-    });
-    renderPattern();
-    status.textContent = "Humanized the beat with some random hits.";
-  };
-
-  clearBtn.onclick = () => {
-    tracks.forEach((t) => pattern[t.id].fill(false));
-    renderPattern();
-    status.textContent = "Cleared all steps.";
-  };
-
-  renderPattern();
-}
 
 function initPhotoshop(w) {
   const canvas = w.querySelector(".ps-canvas");
