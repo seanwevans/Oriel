@@ -1,3 +1,22 @@
+export function getDiscordContent() {
+  return `
+        <div class="discord">
+          <div class="discord-toolbar">
+            <input type="text" class="discord-token" placeholder="Token (Bot or User)" />
+            <input type="text" class="discord-channel" placeholder="Channel ID" />
+            <button class="task-btn discord-fetch">Fetch Messages</button>
+            <button class="task-btn discord-clear">Clear</button>
+          </div>
+          <div class="discord-log"></div>
+          <div class="discord-compose">
+            <input type="text" class="discord-message" placeholder="Type a message to send... (Ctrl/Cmd + Enter to send)" />
+            <button class="task-btn discord-send">Send</button>
+          </div>
+          <div class="discord-status" data-tone="info">Enter a token and channel ID, then fetch messages.</div>
+        </div>
+      `;
+}
+
 export function initDiscord(win) {
   const tokenInput = win.querySelector(".discord-token");
   const channelInput = win.querySelector(".discord-channel");

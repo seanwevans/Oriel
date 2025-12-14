@@ -1,5 +1,38 @@
 import { getSystemVolume } from "../audio.js";
 
+export function getBeatMakerContent() {
+  const steps = Array.from({ length: 16 }, (_, i) =>
+    `<div class="daw-step" data-step="${i}" title="Step ${i + 1}"></div>`
+  ).join("");
+  const row = (id, label) =>
+    `<div class="daw-row" data-track="${id}"><div class="daw-row-label">${label}</div><div class="daw-step-row">${steps}</div></div>`;
+
+  return `<div class="daw-layout">
+                <div class="daw-toolbar">
+                  <div class="daw-transport">
+                    <button class="task-btn" id="daw-play">Play</button>
+                    <button class="task-btn" id="daw-stop">Stop</button>
+                  </div>
+                  <div class="daw-tempo">
+                    <label for="daw-tempo">Tempo</label>
+                    <input type="range" id="daw-tempo" min="60" max="180" value="110">
+                    <span id="daw-tempo-val">110</span> BPM
+                  </div>
+                  <div class="daw-tools">
+                    <button class="task-btn" id="daw-random">Humanize</button>
+                    <button class="task-btn" id="daw-clear">Clear</button>
+                  </div>
+                </div>
+                <div class="daw-grid">
+                  ${row("kick", "Kick")}
+                  ${row("snare", "Snare")}
+                  ${row("hihat", "Hi-Hat")}
+                  ${row("clap", "Clap")}
+                </div>
+                <div class="daw-status" id="daw-status">Ready to lay down a beat.</div>
+              </div>`;
+}
+
 export function initBeatMaker(win) {
   const tempo = win.querySelector("#daw-tempo");
   const tempoVal = win.querySelector("#daw-tempo-val");

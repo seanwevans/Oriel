@@ -14,8 +14,8 @@ import { getN64Root, initN64 } from "./apps/n64.js";
 import { initNotepad } from "./apps/notepad.js";
 import { initCardfile } from "./apps/cardfile.js";
 import { initClock } from "./apps/clock.js";
-import { initDiscord } from "./apps/discord.js";
-import { initIRC } from "./apps/irc.js";
+import { getDiscordContent, initDiscord } from "./apps/discord.js";
+import { getIRCContent, initIRC } from "./apps/irc.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
@@ -30,7 +30,7 @@ import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
 import { copyCharMap, initCharMap } from "./apps/charmap.js";
-import { initBeatMaker } from "./apps/beatMaker.js";
+import { getBeatMakerContent, initBeatMaker } from "./apps/beatMaker.js";
 import {
   addDbRecord,
   deleteDbRecord,
@@ -78,7 +78,7 @@ import {
 import { initHexEditor } from "./apps/hexEditor.js";
 import { initSoundRecorder } from "./apps/soundRecorder.js";
 import { initDoom } from "./apps/doom.js";
-import { initFileManager, rFL, rFT } from "./apps/fileManager.js";
+import { getWinFileContent, initFileManager, rFL, rFT } from "./apps/fileManager.js";
 import {
   calcInput,
   handleConsoleKey,
@@ -88,6 +88,7 @@ import {
   runPython
 } from "./apps/console.js";
 import {
+  getPhotoshopContent,
   initPhotoshop,
   psApplyFilter,
   psExport,
@@ -686,7 +687,7 @@ class WindowManager {
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
     if (type === "sudoku") content = this.getSudokuContent();
-    if (type === "photoshop") content = this.getPhotoshopContent();
+    if (type === "photoshop") content = getPhotoshopContent();
     if (type === "artist") content = this.getArtistContent();
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
@@ -701,9 +702,9 @@ class WindowManager {
     if (type === "database") content = this.getDatabaseContent();
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "radio") content = this.getRadioContent();
-    if (type === "beatmaker") content = this.getBeatMakerContent();
+    if (type === "beatmaker") content = getBeatMakerContent();
     if (type === "charmap") content = this.getCharMapContent();
-    if (type === "winfile") content = this.getWinFileContent();
+    if (type === "winfile") content = getWinFileContent();
     if (type === "clock") content = this.getClockContent();
     if (type === "control") content = this.getControlPanelContent();
     if (type === "clipbrd") content = getClipboardContent();
@@ -715,8 +716,8 @@ class WindowManager {
     if (type === "rss") content = getRssReaderContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
-    if (type === "discord") content = this.getDiscordContent();
-    if (type === "irc") content = this.getIRCContent();
+    if (type === "discord") content = getDiscordContent();
+    if (type === "irc") content = getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "n64") content = this.getN64Content();
@@ -1201,68 +1202,6 @@ class WindowManager {
               <div class="radio-results" role="list"></div>
             </div>`;
   }
-  getIRCContent() {
-    return `<div class="irc-layout">
-              <div class="irc-header">
-                <div class="irc-field">
-                  <label>Server</label>
-                  <input type="text" class="irc-server" value="irc.oriel.local" spellcheck="false">
-                </div>
-                <div class="irc-field">
-                  <label>Nick</label>
-                  <input type="text" class="irc-nick" value="guest" spellcheck="false">
-                </div>
-                <div class="irc-field">
-                  <label>Channel</label>
-                  <input type="text" class="irc-channel" value="#oriel" spellcheck="false">
-                </div>
-                <div class="irc-actions">
-                  <button class="task-btn irc-connect">Connect</button>
-                  <button class="task-btn irc-join" disabled>Join</button>
-                </div>
-              </div>
-              <div class="irc-body">
-                <div class="irc-log" aria-live="polite"></div>
-                <div class="irc-sidebar">
-                  <div class="irc-sidebar-header">Users</div>
-                  <div class="irc-users"></div>
-                </div>
-              </div>
-              <div class="irc-input-row">
-                <input type="text" class="irc-input" placeholder="Type a message and hit Enter" spellcheck="false" disabled>
-                <button class="task-btn irc-send" disabled>Send</button>
-              </div>
-            </div>`;
-  }
-  getDiscordContent() {
-    return `<div class="discord-layout">
-              <div class="discord-header">
-                <div class="discord-field">
-                  <label>Bot/User Token</label>
-                  <input type="password" class="discord-token" placeholder="Bot or user token" spellcheck="false">
-                </div>
-                <div class="discord-field">
-                  <label>Channel ID</label>
-                  <input type="text" class="discord-channel" placeholder="000000000000000000" spellcheck="false">
-                </div>
-                <div class="discord-actions">
-                  <button class="task-btn discord-fetch">Fetch Messages</button>
-                  <button class="task-btn discord-clear">Clear</button>
-                </div>
-              </div>
-              <div class="discord-status" aria-live="polite">Provide a token with access to the channel and fetch messages.</div>
-              <div class="discord-body">
-                <div class="discord-log" aria-label="Message log"></div>
-                <div class="discord-compose">
-                  <textarea class="discord-message" placeholder="Write a message" spellcheck="false"></textarea>
-                  <div class="discord-compose-actions">
-                    <button class="task-btn discord-send">Send</button>
-                    <span class="discord-help">Uses Discord's REST API. Tokens are only stored in-memory.</span>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-  }
 
   getMinecraftContent() {
     return getMinecraftRoot();
@@ -1367,80 +1306,8 @@ class WindowManager {
   getCardfileContent() {
     return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add-btn">Add</button><button class="task-btn" id="card-del-btn">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
   }
-  getWinFileContent() {
-    return `
-      <div class="winfile-layout">
-        <div class="drive-bar">
-          <div class="drive-icon active">a:</div>
-          <div class="drive-icon active">c:</div>
-          <div class="drive-icon active">d:</div>
-          <div
-            style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"
-          >
-            <input
-              type="text"
-              id="new-folder-name"
-              style="width:80px;height:18px;font-size:11px;"
-              placeholder="Folder Name"
-            >
-            <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
-            <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
-            <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
-              Import
-              <input type="file" accept="application/json" onchange="importFileSystem(event)">
-            </label>
-            <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">Mount Local</button>
-            <span>C\</span>
-          </div>
-        </div>
-        <div class="winfile-main">
-          <div class="winfile-pane winfile-tree">
-            <div class="winfile-pane-header">C\</div>
-            <div id="file-tree-root"></div>
-          </div>
-          <div class="winfile-pane winfile-list">
-            <div class="winfile-pane-header" id="file-list-header">C\*.*</div>
-            <div class="file-list-view" id="file-list-view"></div>
-          </div>
-        </div>
-        <div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div>
-      </div>
-    `;
-  }
   getSoundRecContent() {
     return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
-  }
-  getBeatMakerContent() {
-    const steps = Array.from({ length: 16 }, (_, i) =>
-      `<div class="daw-step" data-step="${i}" title="Step ${i + 1}"></div>`
-    ).join("");
-    const row = (id, label) =>
-      `<div class="daw-row" data-track="${id}"><div class="daw-row-label">${label}</div><div class="daw-step-row">${steps}</div></div>`;
-
-    return `<div class="daw-layout">
-              <div class="daw-toolbar">
-                <div class="daw-transport">
-                  <button class="task-btn" id="daw-play">Play</button>
-                  <button class="task-btn" id="daw-stop">Stop</button>
-                </div>
-                <div class="daw-tempo">
-                  <label for="daw-tempo">Tempo</label>
-                  <input type="range" id="daw-tempo" min="60" max="180" value="110">
-                  <span id="daw-tempo-val">110</span> BPM
-                </div>
-                <div class="daw-tools">
-                  <button class="task-btn" id="daw-random">Humanize</button>
-                  <button class="task-btn" id="daw-clear">Clear</button>
-                </div>
-              </div>
-              <div class="daw-grid">
-                ${row("kick", "Kick")}
-                ${row("snare", "Snare")}
-                ${row("hihat", "Hi-Hat")}
-                ${row("clap", "Clap")}
-              </div>
-              <div class="daw-status" id="daw-status">Ready to lay down a beat.</div>
-            </div>`;
   }
   getCharMapContent() {
     return `<div class="char-map-layout">
@@ -1624,55 +1491,6 @@ class WindowManager {
                         <a class="artist-link" href="#" target="_blank" rel="noreferrer noopener">Open image directly</a>
                     </div>
                 </div>`;
-  }
-  getPhotoshopContent() {
-    return `
-                <div class="ps-layout">
-                    <div class="ps-topbar">
-                        <button class="task-btn" onclick="psTriggerOpen(this)">Open...</button>
-                        <button class="task-btn" onclick="psNewDocument(this)">New Canvas</button>
-                        <button class="task-btn" onclick="psExport(this)">Export PNG</button>
-                        <div class="ps-status">Tool: <span class="ps-tool-label">Brush</span> · Size: <span class="ps-size-label">6px</span></div>
-                        <input type="file" class="ps-file-input" accept="image/*" hidden />
-                    </div>
-                    <div class="ps-body">
-                        <div class="ps-toolbar">
-                            <button class="ps-tool active" data-tool="brush" onclick="setPsTool(this, 'brush')">Brush</button>
-                            <button class="ps-tool" data-tool="eraser" onclick="setPsTool(this, 'eraser')">Eraser</button>
-                            <button class="ps-tool" data-tool="fill" onclick="setPsTool(this, 'fill')">Fill</button>
-                            <button class="ps-tool" data-tool="rect" onclick="setPsTool(this, 'rect')">Rectangle</button>
-                            <button class="ps-tool" data-tool="picker" onclick="setPsTool(this, 'picker')">Eyedropper</button>
-                        </div>
-                        <div class="ps-canvas-wrap">
-                            <canvas class="ps-canvas" width="640" height="420"></canvas>
-                        </div>
-                        <div class="ps-panel">
-                            <div class="ps-panel-group">
-                                <label>Primary Color <input type="color" class="ps-color-primary" value="#1d7be3"></label>
-                                <label>Secondary <input type="color" class="ps-color-secondary" value="#ffffff"></label>
-                                <div class="ps-swatches"></div>
-                            </div>
-                            <div class="ps-panel-group">
-                                <label>Brush Size <input type="range" min="1" max="32" value="6" class="ps-size-slider" /></label>
-                                <div class="ps-filter-buttons">
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'grayscale')">Grayscale</button>
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'invert')">Invert</button>
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'contrast')">+ Contrast</button>
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'bright')">Brighten</button>
-                                </div>
-                                <div class="ps-filter-buttons">
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'sharpen')">Sharpen</button>
-                                    <button class="task-btn" onclick="psApplyFilter(this, 'fade')">Vintage Fade</button>
-                                </div>
-                            </div>
-                            <div class="ps-panel-group">
-                                <button class="task-btn" onclick="psFillCanvas(this)">Flood Fill Canvas</button>
-                                <div class="ps-hint">Tip: Click the canvas with the Eyedropper to sample colors like Photoshop 1.0.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
   }
   getDatabaseContent() {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
