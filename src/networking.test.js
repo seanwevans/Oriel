@@ -43,3 +43,23 @@ test("explicit overrides are stored and merged", () => {
     radioBrowserBase: baseUrl
   });
 });
+
+test("overrides can be cleared without resetting defaults", () => {
+  resetNetworkDefaults();
+  const proxyPrefix = "https://example-proxy.test/";
+
+  updateNetworkDefaults({ browserProxyPrefix: proxyPrefix });
+
+  let stored = storage.get(storageKey);
+  assert.deepEqual(JSON.parse(stored), {
+    browserProxyPrefix: proxyPrefix
+  });
+
+  updateNetworkDefaults({ browserProxyPrefix: null });
+
+  const merged = getNetworkDefaults();
+  assert.equal(merged.browserProxyPrefix, NETWORK_CONFIG.browserProxyPrefix);
+
+  stored = storage.get(storageKey);
+  assert.deepEqual(JSON.parse(stored), {});
+});

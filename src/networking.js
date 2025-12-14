@@ -6,12 +6,17 @@ import { publish } from "./eventBus.js";
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
 
 function sanitizeNetworkOverrides(raw = {}) {
-  return Object.entries(raw).reduce((acc, [key, value]) => {
-    if (value === undefined || value === null) return acc;
-    if (typeof value === "string" && value.trim() === "") return acc;
-    acc[key] = value;
-    return acc;
-  }, {});
+  return Object.entries(raw).reduce(
+    (acc, [key, value]) => {
+      if (value === undefined || value === null || (typeof value === "string" && value.trim() === "")) {
+        acc.clearedKeys.add(key);
+        return acc;
+      }
+      acc.sanitized[key] = value;
+      return acc;
+    },
+    { sanitized: {}, clearedKeys: new Set() }
+  );
 }
 
 function loadStoredNetworkConfig() {
@@ -19,7 +24,7 @@ function loadStoredNetworkConfig() {
     const raw = localStorage.getItem(NETWORK_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") return sanitizeNetworkOverrides(parsed);
+    if (parsed && typeof parsed === "object") return sanitizeNetworkOverrides(parsed).sanitized;
   } catch (err) {
     console.warn("Failed to parse stored network config", err);
   }
@@ -27,7 +32,7 @@ function loadStoredNetworkConfig() {
 }
 
 function persistNetworkConfig(cfg) {
-  const sanitized = sanitizeNetworkOverrides(cfg);
+  const { sanitized } = sanitizeNetworkOverrides(cfg);
   const explicitOverrides = Object.entries(sanitized).reduce((acc, [key, value]) => {
     if (value !== baseNetworkConfig[key]) acc[key] = value;
     return acc;
@@ -47,8 +52,10 @@ let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
 
 function syncNetworkConfig(overrides = null) {
   if (overrides) {
-    const sanitizedOverrides = sanitizeNetworkOverrides(overrides);
-    mergedNetworkConfig = { ...mergedNetworkConfig, ...sanitizedOverrides };
+    const { sanitized, clearedKeys } = sanitizeNetworkOverrides(overrides);
+    const withoutCleared = { ...mergedNetworkConfig };
+    clearedKeys.forEach((key) => delete withoutCleared[key]);
+    mergedNetworkConfig = { ...baseNetworkConfig, ...withoutCleared, ...sanitized };
     persistNetworkConfig(mergedNetworkConfig);
   }
   BROWSER_HOME = mergedNetworkConfig.browserHome;
