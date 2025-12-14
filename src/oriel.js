@@ -107,6 +107,7 @@ import {
   applySavedTheme,
   applyScreensaver,
   applyTheme,
+  getCurrentThemeCustom,
   handleThemeInputChange,
   initControlPanel,
   openCPColor,
