@@ -10,10 +10,13 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
-import { initKakuro } from "./apps/kakuro.js";
-import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
-import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
+import { initNotepad } from "./apps/notepad.js";
+import { initKakuro } from "./apps/kakuro.js";
+import { initMarkdownViewer } from "./apps/markdown.js";
+import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
+import { initPdfReader } from "./apps/pdfReader.js";
+import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
@@ -4033,39 +4036,6 @@ async function initFileManager(w) {
   await rFL(w);
 }
 
-function initNotepad(win, initData = {}) {
-  const saveBtn = win.querySelector(".notepad-save");
-  const status = win.querySelector(".notepad-status");
-  const textarea = win.querySelector(".notepad-area");
-  const handle = initData?.nativeFileHandle;
-
-  if (!saveBtn) return;
-
-  const setStatus = (msg, isError = false) => {
-    if (!status) return;
-    status.textContent = msg;
-    status.classList.toggle("error", isError);
-    if (msg) setTimeout(() => (status.textContent = ""), 2000);
-  };
-
-  if (!handle) {
-    saveBtn.disabled = true;
-    saveBtn.title = "Open a mounted file to enable saving.";
-    return;
-  }
-
-  saveBtn.addEventListener("click", async () => {
-    try {
-      const writable = await handle.createWritable();
-      await writable.write(textarea?.value || "");
-      await writable.close();
-      setStatus("Saved");
-    } catch (err) {
-      setStatus(`Save failed: ${err.message}`, true);
-    }
-  });
-}
-
 function initWrite(win) {
   const editor = win.querySelector(".write-editor");
   if (!editor) return;
@@ -4093,83 +4063,6 @@ function initWrite(win) {
       if (cmd) applyCommand(cmd);
     });
   });
-}
-
-function renderMarkdown(text) {
-  const escapeHtml = (str) =>
-    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const applyInline = (str) => {
-    let html = escapeHtml(str);
-    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    html = html.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
-    return html;
-  };
-
-  const lines = text.split(/\r?\n/);
-  const output = [];
-  let inList = false;
-  let inCode = false;
-
-  lines.forEach((line) => {
-    if (line.trim().startsWith("```")) {
-      if (inCode) output.push("</code></pre>");
-      else output.push("<pre><code>");
-      inCode = !inCode;
-      return;
-    }
-
-    if (inCode) {
-      output.push(escapeHtml(line));
-      return;
-    }
-
-    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
-    if (headingMatch) {
-      if (inList) {
-        output.push("</ul>");
-        inList = false;
-      }
-      const level = headingMatch[1].length;
-      const content = applyInline(headingMatch[2].trim());
-      output.push(`<h${level}>${content}</h${level}>`);
-      return;
-    }
-
-    const listMatch = line.match(/^\s*[-*+]\s+(.*)$/);
-    if (listMatch) {
-      if (!inList) {
-        output.push("<ul>");
-        inList = true;
-      }
-      output.push(`<li>${applyInline(listMatch[1].trim())}</li>`);
-      return;
-    }
-
-    if (inList && line.trim() === "") {
-      output.push("</ul>");
-      inList = false;
-      return;
-    }
-
-    if (inList) {
-      output.push("</ul>");
-      inList = false;
-    }
-
-    if (line.trim() !== "") {
-      output.push(`<p>${applyInline(line.trim())}</p>`);
-    }
-  });
-
-  if (inList) output.push("</ul>");
-  if (inCode) output.push("</code></pre>");
-
-  return output.join("\n");
 }
 
 function initImageViewer(win, initData) {
@@ -4307,89 +4200,6 @@ function initArtist(win) {
 
   // Kick off an initial render using the default prompt
   requestImage();
-}
-
-function initPdfReader(win, initData) {
-  const fileInput = win.querySelector(".pdf-file-input");
-  const urlInput = win.querySelector(".pdf-url-input");
-  const loadBtn = win.querySelector(".pdf-load-btn");
-  const frame = win.querySelector(".pdf-frame");
-  const status = win.querySelector(".pdf-status");
-
-  const loadDocument = (src, label) => {
-    if (!src) {
-      frame.src = "";
-      status.textContent = "No document loaded";
-      return;
-    }
-    frame.src = src;
-    status.textContent = `Loaded ${label}`;
-  };
-
-  const initialSrc = initData?.src || DEFAULT_PDF_DATA_URI;
-  loadDocument(initialSrc, initData?.name || "Sample.pdf");
-
-  fileInput?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => loadDocument(ev.target.result, file.name);
-    reader.readAsDataURL(file);
-  });
-
-  loadBtn?.addEventListener("click", () => {
-    const url = urlInput?.value.trim();
-    if (url) loadDocument(url, url);
-  });
-
-  urlInput?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      loadBtn?.click();
-    }
-  });
-}
-
-function initMarkdownViewer(win, initData) {
-  const textarea = win.querySelector(".md-input");
-  const preview = win.querySelector(".md-preview");
-  const status = win.querySelector(".md-status");
-  const fileInput = win.querySelector(".md-file-input");
-  const sampleBtn = win.querySelector(".md-sample-btn");
-
-  const updatePreview = (label) => {
-    if (!textarea || !preview) return;
-    const html = renderMarkdown(textarea.value);
-    preview.innerHTML = html || '<p class="md-empty">Nothing to preview.</p>';
-    if (status) status.textContent = label ? `Loaded ${label}` : "Preview ready";
-  };
-
-  const initialLabel =
-    typeof initData === "object" && initData?.name
-      ? initData.name
-      : initData
-      ? "Markdown"
-      : "Sample";
-  updatePreview(initialLabel);
-
-  textarea?.addEventListener("input", () => updatePreview());
-
-  fileInput?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !textarea) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      textarea.value = ev.target.result;
-      updatePreview(file.name);
-    };
-    reader.readAsText(file);
-  });
-
-  sampleBtn?.addEventListener("click", () => {
-    if (!textarea) return;
-    textarea.value = DEFAULT_MD_SAMPLE;
-    updatePreview("Sample");
-  });
 }
 
 function formatHexDump(bytes) {
