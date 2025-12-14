@@ -19,7 +19,7 @@ export const DEFAULT_FS = {
           "CALC.EXE": { type: "file", app: "calc" },
           "NOTEPAD.EXE": { type: "file", app: "notepad" },
           "DOOM.EXE": { type: "file", app: "doom" },
-          "MINECRFT.EXE": { type: "file", app: "minecraft" },
+          "MCRAFT.EXE": { type: "file", app: "minecraft" },
           "WRITE.EXE": { type: "file", app: "write" },
           "CARDFILE.EXE": { type: "file", app: "cardfile" },
           "WINMINE.EXE": { type: "file", app: "mines" },

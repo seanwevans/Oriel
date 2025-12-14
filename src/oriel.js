@@ -12,7 +12,7 @@ import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
-import { initMinecraft } from "./apps/minecraft.js";
+import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -60,7 +60,6 @@ const APP_INITIALIZERS = {
   soundrec: initSoundRecorder,
   radio: initRadio,
   beatmaker: initBeatMaker,
-  minecraft: initMinecraft,
   charmap: initCharMap,
   winfile: initFileManager,
   clock: initClock,
@@ -80,6 +79,7 @@ const APP_INITIALIZERS = {
   discord: initDiscord,
   irc: initIRC,
   doom: initDoom,
+  minecraft: initMinecraft,
   papers: initPapersPlease,
   hexedit: initHexEditor
 };
@@ -1246,6 +1246,10 @@ class WindowManager {
               </div>
             </div>`;
   }
+
+  getMinecraftContent() {
+    return getMinecraftRoot();
+  }
   getRadioContent() {
     return `<div class="radio-layout">
               <div class="radio-toolbar">
@@ -1268,19 +1272,6 @@ class WindowManager {
                   <div class="radio-meta">Use search or Top to load stations.</div>
                 </div>
               </div>
-            </div>`;
-  }
-  getMinecraftContent() {
-    return `<div class="minecraft-layout">
-              <div class="minecraft-toolbar">
-                <label class="minecraft-select">Block:
-                  <select class="minecraft-block"></select>
-                </label>
-                <button class="task-btn minecraft-fill">Generate Terrain</button>
-                <button class="task-btn minecraft-clear">Clear World</button>
-                <span class="minecraft-status">Left click to place, right click to remove.</span>
-              </div>
-              <div class="minecraft-grid" role="grid" aria-label="Minecraft builder grid"></div>
             </div>`;
   }
   getDoomContent() {

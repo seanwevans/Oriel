@@ -313,9 +313,9 @@ export const PROGRAMS = [
   },
   {
     type: "minecraft",
-    title: "Minecraft",
+    title: "Minecraft Classic",
     width: 720,
-    height: 520,
+    height: 560,
     icon: "minecraft",
     label: "Minecraft"
   },
