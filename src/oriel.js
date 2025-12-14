@@ -25,6 +25,7 @@ import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
+import * as THREE from "three";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -1896,6 +1897,7 @@ let idleTime = 0;
 const saverCanvas = document.getElementById("saver-canvas");
 const sCtx = saverCanvas.getContext("2d");
 const screensaverDiv = document.getElementById("screensaver");
+const mazeCanvas = document.getElementById("saver-maze-canvas");
 const bsodOverlay = document.getElementById("bsod-overlay");
 const bsodCodeText = bsodOverlay?.querySelector(".bsod-code");
 let screensaverType = "starfield";
@@ -1933,6 +1935,20 @@ let fireflies = [];
 let bubbles = [];
 let waveBands = [];
 let wavePhase = 0;
+let activeCanvasMode = "2d";
+
+let mazeRenderer = null;
+let mazeScene = null;
+let mazeCamera = null;
+let mazeFrameId = null;
+let mazeClock = null;
+let mazePath = [];
+let mazeSegmentIndex = 0;
+let mazeCurrentAngle = 0;
+let mazeTargetAngle = 0;
+let mazeLight = null;
+let mazeGroup = null;
+const MAZE_CELL_SIZE = 10;
 
 function isLockEnabled() {
   return requirePassphrase && lockPassphrase.trim().length > 0;
@@ -1981,13 +1997,13 @@ function submitLockPassphrase() {
 }
 
 function initScreensaver() {
-  saverCanvas.width = window.innerWidth;
-  saverCanvas.height = window.innerHeight;
+  resizeScreensaverCanvases();
   setupStarfield();
   // Global Listeners
   document.body.addEventListener("mousemove", resetTimer);
   document.body.addEventListener("keydown", resetTimer);
   document.body.addEventListener("mousedown", resetTimer);
+  window.addEventListener("resize", resizeScreensaverCanvases);
   saverPassInput?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") submitLockPassphrase();
   });
@@ -2013,9 +2029,11 @@ function startScreensaver(forceType) {
   const saver = forceType || screensaverType;
   saverActive = true;
   screensaverDiv.style.display = "block";
-  saverCanvas.width = window.innerWidth;
-  saverCanvas.height = window.innerHeight;
+  activeCanvasMode = saver === "maze" ? "3d" : "2d";
+  setScreensaverCanvas(activeCanvasMode);
+  resizeScreensaverCanvases();
   clearInterval(sInterval);
+  stopMaze();
   hideUnlockPrompt();
 
   const shouldPrank = !forceType && Math.random() < 0.001;
@@ -2025,7 +2043,9 @@ function startScreensaver(forceType) {
   }
 
   hideFakeBsod();
-  if (saver === "pipes") {
+  if (saver === "maze") {
+    setupMazeScreensaver();
+  } else if (saver === "pipes") {
     setupPipes();
     sInterval = setInterval(drawPipes, 50);
   } else if (saver === "matrix") {
@@ -2044,6 +2064,7 @@ function startScreensaver(forceType) {
     setupNeonWaves();
     sInterval = setInterval(drawNeonWaves, 30);
   } else {
+    setScreensaverCanvas("2d");
     setupStarfield();
     sInterval = setInterval(drawStars, 30);
   }
@@ -2054,6 +2075,9 @@ function stopScreensaver() {
   screensaverDiv.style.display = "none";
   clearInterval(sInterval);
   hideFakeBsod();
+  stopMaze();
+  activeCanvasMode = "2d";
+  setScreensaverCanvas("2d");
   hideUnlockPrompt();
 }
 
@@ -2062,13 +2086,337 @@ function showFakeBsod() {
   const randomCode = Math.random().toString(16).slice(2, 8).toUpperCase();
   if (bsodCodeText) bsodCodeText.textContent = `STOP CODE: ${randomCode}`;
   bsodOverlay.classList.add("visible");
-  saverCanvas.style.display = "none";
+  if (saverCanvas) saverCanvas.style.display = "none";
+  if (mazeCanvas) mazeCanvas.style.display = "none";
 }
 
 function hideFakeBsod() {
   if (!bsodOverlay) return;
   bsodOverlay.classList.remove("visible");
-  saverCanvas.style.display = "block";
+  setScreensaverCanvas(activeCanvasMode);
+}
+
+function setScreensaverCanvas(mode) {
+  if (saverCanvas)
+    saverCanvas.style.display = mode === "2d" || mode === undefined ? "block" : "none";
+  if (mazeCanvas) mazeCanvas.style.display = mode === "3d" ? "block" : "none";
+}
+
+function resizeScreensaverCanvases() {
+  if (saverCanvas) {
+    saverCanvas.width = window.innerWidth;
+    saverCanvas.height = window.innerHeight;
+  }
+  if (mazeCanvas) {
+    mazeCanvas.width = window.innerWidth;
+    mazeCanvas.height = window.innerHeight;
+  }
+  if (mazeRenderer) {
+    mazeRenderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  if (mazeCamera) {
+    mazeCamera.aspect = window.innerWidth / window.innerHeight;
+    mazeCamera.updateProjectionMatrix();
+  }
+}
+
+function generateMaze(width, height) {
+  const grid = Array.from({ length: height }, (_, y) =>
+    Array.from({ length: width }, (_, x) => ({
+      x,
+      y,
+      visited: false,
+      walls: { top: true, right: true, bottom: true, left: true }
+    }))
+  );
+
+  const stack = [];
+  const start = grid[0][0];
+  start.visited = true;
+  stack.push(start);
+
+  const getUnvisitedNeighbors = (cell) => {
+    const neighbors = [];
+    if (cell.y > 0 && !grid[cell.y - 1][cell.x].visited)
+      neighbors.push({ dir: "top", cell: grid[cell.y - 1][cell.x] });
+    if (cell.x < width - 1 && !grid[cell.y][cell.x + 1].visited)
+      neighbors.push({ dir: "right", cell: grid[cell.y][cell.x + 1] });
+    if (cell.y < height - 1 && !grid[cell.y + 1][cell.x].visited)
+      neighbors.push({ dir: "bottom", cell: grid[cell.y + 1][cell.x] });
+    if (cell.x > 0 && !grid[cell.y][cell.x - 1].visited)
+      neighbors.push({ dir: "left", cell: grid[cell.y][cell.x - 1] });
+    return neighbors;
+  };
+
+  const removeWall = (cell, next, direction) => {
+    cell.walls[direction] = false;
+    if (direction === "top") next.walls.bottom = false;
+    if (direction === "right") next.walls.left = false;
+    if (direction === "bottom") next.walls.top = false;
+    if (direction === "left") next.walls.right = false;
+  };
+
+  while (stack.length) {
+    const current = stack[stack.length - 1];
+    const neighbors = getUnvisitedNeighbors(current);
+    if (neighbors.length === 0) {
+      stack.pop();
+      continue;
+    }
+    const { dir, cell: nextCell } =
+      neighbors[Math.floor(Math.random() * neighbors.length)];
+    removeWall(current, nextCell, dir);
+    nextCell.visited = true;
+    stack.push(nextCell);
+  }
+
+  return grid;
+}
+
+function buildMazePath(grid) {
+  const height = grid.length;
+  const width = grid[0].length;
+  const visited = Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => false)
+  );
+  const path = [];
+  const stack = [{ x: 0, y: 0 }];
+  visited[0][0] = true;
+  path.push({ x: 0, y: 0 });
+
+  const getOpenNeighbors = (x, y) => {
+    const cell = grid[y][x];
+    const options = [];
+    if (!cell.walls.top) options.push({ x, y: y - 1 });
+    if (!cell.walls.right) options.push({ x: x + 1, y });
+    if (!cell.walls.bottom) options.push({ x, y: y + 1 });
+    if (!cell.walls.left) options.push({ x: x - 1, y });
+    return options.filter(
+      (pos) => pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height
+    );
+  };
+
+  while (stack.length) {
+    const current = stack[stack.length - 1];
+    const neighbors = getOpenNeighbors(current.x, current.y).filter(
+      (n) => !visited[n.y][n.x]
+    );
+    if (neighbors.length) {
+      const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+      visited[next.y][next.x] = true;
+      stack.push(next);
+      path.push(next);
+    } else {
+      stack.pop();
+      if (stack.length) path.push(stack[stack.length - 1]);
+    }
+  }
+
+  return path;
+}
+
+function disposeMazeScene() {
+  if (!mazeScene) return;
+  mazeScene.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose?.());
+    else obj.material?.dispose?.();
+  });
+  mazeScene.clear();
+}
+
+function buildMazeWorld() {
+  if (!mazeScene || !mazeCamera) return;
+  disposeMazeScene();
+  mazeGroup = new THREE.Group();
+
+  const width = 12 + Math.floor(Math.random() * 5);
+  const height = 10 + Math.floor(Math.random() * 5);
+  const grid = generateMaze(width, height);
+  const rawPath = buildMazePath(grid);
+  mazePath = rawPath.map((p) => ({
+    x: p.x * MAZE_CELL_SIZE - (width * MAZE_CELL_SIZE) / 2 + MAZE_CELL_SIZE / 2,
+    z:
+      p.y * MAZE_CELL_SIZE - (height * MAZE_CELL_SIZE) / 2 + MAZE_CELL_SIZE / 2
+  }));
+  mazeSegmentIndex = 0;
+  mazeTargetAngle = 0;
+  mazeCurrentAngle = 0;
+
+  const start = mazePath[0] || { x: 0, z: 0 };
+  mazeCamera.position.set(start.x, 1.6, start.z);
+
+  const fogDensity = 0.03 + Math.random() * 0.01;
+  mazeScene.fog = new THREE.FogExp2(0x02060f, fogDensity);
+
+  const floorGeo = new THREE.PlaneGeometry(
+    width * MAZE_CELL_SIZE,
+    height * MAZE_CELL_SIZE
+  );
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: 0x0b1426,
+    metalness: 0.25,
+    roughness: 0.78,
+    emissive: 0x0a365a
+  });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  mazeGroup.add(floor);
+
+  const ceilingMat = new THREE.MeshStandardMaterial({
+    color: 0x0d0f1a,
+    roughness: 0.45,
+    metalness: 0.15,
+    emissive: 0x081426
+  });
+  const ceiling = new THREE.Mesh(floorGeo, ceilingMat);
+  ceiling.rotation.x = Math.PI / 2;
+  ceiling.position.y = 6;
+  mazeGroup.add(ceiling);
+
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x70f3ff,
+    emissive: 0x0c2f49,
+    metalness: 0.48,
+    roughness: 0.32
+  });
+
+  const wallHeight = 6;
+  const wallThickness = 0.65;
+  const horizWall = new THREE.BoxGeometry(
+    MAZE_CELL_SIZE,
+    wallHeight,
+    wallThickness
+  );
+  const vertWall = new THREE.BoxGeometry(
+    wallThickness,
+    wallHeight,
+    MAZE_CELL_SIZE
+  );
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const cell = grid[y][x];
+      const baseX =
+        x * MAZE_CELL_SIZE - (width * MAZE_CELL_SIZE) / 2 + MAZE_CELL_SIZE / 2;
+      const baseZ =
+        y * MAZE_CELL_SIZE - (height * MAZE_CELL_SIZE) / 2 + MAZE_CELL_SIZE / 2;
+
+      if (cell.walls.top) {
+        const wall = new THREE.Mesh(horizWall, wallMaterial);
+        wall.position.set(baseX, wallHeight / 2, baseZ - MAZE_CELL_SIZE / 2);
+        mazeGroup.add(wall);
+      }
+      if (cell.walls.left) {
+        const wall = new THREE.Mesh(vertWall, wallMaterial);
+        wall.position.set(baseX - MAZE_CELL_SIZE / 2, wallHeight / 2, baseZ);
+        mazeGroup.add(wall);
+      }
+      if (x === width - 1 && cell.walls.right) {
+        const wall = new THREE.Mesh(vertWall, wallMaterial);
+        wall.position.set(baseX + MAZE_CELL_SIZE / 2, wallHeight / 2, baseZ);
+        mazeGroup.add(wall);
+      }
+      if (y === height - 1 && cell.walls.bottom) {
+        const wall = new THREE.Mesh(horizWall, wallMaterial);
+        wall.position.set(baseX, wallHeight / 2, baseZ + MAZE_CELL_SIZE / 2);
+        mazeGroup.add(wall);
+      }
+    }
+  }
+
+  const ambient = new THREE.AmbientLight(0x78c8ff, 0.3);
+  mazeGroup.add(ambient);
+  mazeLight = new THREE.PointLight(0x6df1ff, 1.1, 90, 2.2);
+  mazeLight.position.set(start.x, 2.2, start.z);
+  mazeGroup.add(mazeLight);
+
+  mazeScene.add(mazeGroup);
+}
+
+function moveThroughMaze(delta) {
+  if (!mazeCamera || !mazePath.length) return;
+  const next = mazePath[mazeSegmentIndex + 1];
+  if (!next) {
+    buildMazeWorld();
+    return;
+  }
+
+  const currentPos = new THREE.Vector3(
+    mazeCamera.position.x,
+    0,
+    mazeCamera.position.z
+  );
+  const targetPos = new THREE.Vector3(next.x, 0, next.z);
+  const direction = targetPos.clone().sub(currentPos);
+  const distance = direction.length();
+
+  if (distance < 0.1) {
+    mazeSegmentIndex++;
+    return;
+  }
+
+  direction.normalize();
+  const speed = 6;
+  mazeCamera.position.x += direction.x * speed * delta;
+  mazeCamera.position.z += direction.z * speed * delta;
+
+  mazeTargetAngle = Math.atan2(direction.x, direction.z);
+  mazeCurrentAngle = THREE.MathUtils.lerp(
+    mazeCurrentAngle,
+    mazeTargetAngle,
+    0.08
+  );
+  mazeCamera.rotation.y = mazeCurrentAngle;
+
+  const time = mazeClock ? mazeClock.elapsedTime : 0;
+  mazeCamera.position.y = 1.6 + Math.sin(time * 3) * 0.05;
+  if (mazeLight) {
+    mazeLight.position.copy(mazeCamera.position);
+    mazeLight.position.y = 2.4;
+  }
+}
+
+function animateMaze() {
+  if (!mazeRenderer || !mazeScene || !mazeCamera) return;
+  mazeFrameId = requestAnimationFrame(animateMaze);
+  const delta = mazeClock ? mazeClock.getDelta() : 0.016;
+  moveThroughMaze(delta);
+  mazeRenderer.render(mazeScene, mazeCamera);
+}
+
+function setupMazeScreensaver() {
+  if (!mazeCanvas) return;
+  setScreensaverCanvas("3d");
+  resizeScreensaverCanvases();
+  if (!mazeRenderer) {
+    mazeRenderer = new THREE.WebGLRenderer({
+      canvas: mazeCanvas,
+      antialias: true
+    });
+    mazeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  }
+  mazeRenderer.setSize(window.innerWidth, window.innerHeight);
+  mazeRenderer.setClearColor(0x000000, 1);
+
+  mazeScene = new THREE.Scene();
+  mazeCamera = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  mazeClock = new THREE.Clock();
+  buildMazeWorld();
+  animateMaze();
+}
+
+function stopMaze() {
+  if (mazeFrameId) cancelAnimationFrame(mazeFrameId);
+  mazeFrameId = null;
+  mazePath = [];
+  mazeSegmentIndex = 0;
+  if (mazeRenderer?.setAnimationLoop) mazeRenderer.setAnimationLoop(null);
 }
 
 function setupStarfield() {
@@ -2490,6 +2838,11 @@ function openCPScreensaver(target, containerOverride) {
 
   const saverOptionsData = [
     { value: "starfield", label: "Starfield", desc: "Classic warp-speed stars." },
+    {
+      value: "maze",
+      label: "3D Maze",
+      desc: "Navigate endless neon hallways like the Windows 95 classic."
+    },
     { value: "pipes", label: "3D Pipes", desc: "Colorful shaded pipes crawl in 3D." },
     { value: "matrix", label: "Matrix", desc: "Green cascading code falls from the top of the screen." },
     { value: "dvd", label: "Bouncing Logo", desc: "A retro DVD logo that changes color when it hits a wall." },
