@@ -6893,9 +6893,12 @@ function initLineRider(win) {
     lastTs = ts;
     if (!sled) resetSled();
 
-    if (dt > 0) {
-      sled.vy += 900 * dt;
-      const next = { x: sled.x + sled.vx * dt, y: sled.y + sled.vy * dt };
+    let remaining = dt;
+    const maxStep = 0.01;
+    while (remaining > 0) {
+      const stepDt = Math.min(maxStep, remaining);
+      sled.vy += 900 * stepDt;
+      const next = { x: sled.x + sled.vx * stepDt, y: sled.y + sled.vy * stepDt };
       const hit = findCollision({ x: sled.x, y: sled.y }, next);
       if (hit) {
         sled.x = hit.x;
@@ -6904,12 +6907,15 @@ function initLineRider(win) {
         const dy = hit.seg.y2 - hit.seg.y1;
         const len = Math.hypot(dx, dy) || 1;
         const speed = Math.max(40, Math.hypot(sled.vx, sled.vy) * 0.98);
-        sled.vx = (dx / len) * speed;
-        sled.vy = (dy / len) * speed + 10 * dt;
+        const dirX = dx / len;
+        const dirY = dy / len;
+        sled.vx = dirX * speed;
+        sled.vy = dirY * speed + 10 * stepDt;
       } else {
         sled.x = next.x;
         sled.y = next.y;
       }
+      remaining -= stepDt;
     }
 
     drawScene();
