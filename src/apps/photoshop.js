@@ -1,4 +1,4 @@
-export function getPhotoshopContent() {
+function getPhotoshopContent() {
   return `
         <div class="ps-app">
           <div class="ps-toolbar">

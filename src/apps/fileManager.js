@@ -1,7 +1,7 @@
 import { ICONS } from "../icons.js";
 import { MOCK_FS, hydrateNativeDirectory } from "../filesystem.js";
 
-export function getWinFileContent() {
+function getWinFileContent() {
   return `
         <div class="winfile-layout">
           <div class="drive-bar">
