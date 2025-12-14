@@ -1840,7 +1840,7 @@ const initialDesktopState = loadDesktopState();
 applySavedTheme(initialDesktopState.themeCustom);
 applyWallpaperSettings(
   initialDesktopState.wallpaper?.url ?? DEFAULT_WALLPAPER,
-  initialDesktopState.wallpaper?.mode || "tile"
+  initialDesktopState.wallpaper?.mode || "cover"
 );
 let wm = null;
 function bootDesktop() {
@@ -3252,7 +3252,7 @@ function openCPDesktop(el, containerOverride) {
   const modeSelect = body.querySelector("#bg-mode");
   const currentWallpaper = getWallpaperSettings();
   if (urlInput) urlInput.value = currentWallpaper.url || "";
-  if (modeSelect) modeSelect.value = currentWallpaper.mode || "tile";
+  if (modeSelect) modeSelect.value = currentWallpaper.mode || "cover";
 }
 
 function openCPScreensaver(target, containerOverride) {
@@ -3512,11 +3512,11 @@ function openCPDefaults(target, containerOverride) {
     </div>`;
 
   const modeSelect = body.querySelector("#cp-default-wallpaper-mode");
-  if (modeSelect) modeSelect.value = wallpaper.mode || "tile";
+  if (modeSelect) modeSelect.value = wallpaper.mode || "cover";
 
   const applyWallpaper = () => {
     const url = body.querySelector("#cp-default-wallpaper-url")?.value || "";
-    const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "tile";
+    const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "cover";
     applyWallpaperSettings(url, mode, true);
   };
 
@@ -3590,7 +3590,7 @@ function openCPDefaults(target, containerOverride) {
 
 function setWallpaper() {
   const url = document.getElementById("bg-url")?.value || "";
-  const mode = document.getElementById("bg-mode")?.value || "tile";
+  const mode = document.getElementById("bg-mode")?.value || "cover";
   applyWallpaperSettings(url, mode, true);
 }
 
