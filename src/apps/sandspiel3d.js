@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { loadThree } from "../threeLoader.js";
 
 const BRUSHES = {
   sand: { color: 0xf5d48f, scatter: 0.8 },
@@ -41,7 +41,7 @@ export function getSandspiel3DRoot() {
   `;
 }
 
-function createVoxel(color) {
+function createVoxel(THREE, color) {
   const geometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
   const material = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0 });
   const mesh = new THREE.Mesh(geometry, material);
@@ -50,7 +50,8 @@ function createVoxel(color) {
   return mesh;
 }
 
-export function initSandspiel3d(win) {
+export async function initSandspiel3d(win) {
+  const THREE = await loadThree();
   const canvas = win.querySelector(".sandspiel3d-canvas");
   if (!canvas) return;
 
@@ -117,7 +118,7 @@ export function initSandspiel3d(win) {
   function spawnVoxel(targetPoint) {
     const brush = BRUSHES[brushSelect?.value] || BRUSHES.sand;
     const scatterScale = parseFloat(scatterSlider?.value || "1");
-    const mesh = createVoxel(brush.color);
+    const mesh = createVoxel(THREE, brush.color);
     const jitter = (Math.random() - 0.5) * brush.scatter * scatterScale;
     const position = targetPoint.clone();
     position.y = WORLD_BOUNDS * 0.9;

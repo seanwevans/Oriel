@@ -26,7 +26,6 @@ import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
-import * as THREE from "three";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -57,6 +56,9 @@ import {
   updateNetworkDefaults
 } from "./networking.js";
 import { SimulatedKernel } from "./kernel.js";
+import { loadThree } from "./threeLoader.js";
+
+let THREE = null;
 
 const APP_INITIALIZERS = {
   mines: initMinesweeper,
@@ -102,6 +104,11 @@ const APP_INITIALIZERS = {
   papers: initPapersPlease,
   hexedit: initHexEditor
 };
+
+async function ensureThree() {
+  if (!THREE) THREE = await loadThree();
+  return THREE;
+}
 
 
 
@@ -2041,7 +2048,7 @@ function resetTimer() {
   }
 }
 
-function startScreensaver(forceType) {
+async function startScreensaver(forceType) {
   const saver = forceType || screensaverType;
   saverActive = true;
   screensaverDiv.style.display = "block";
@@ -2060,7 +2067,7 @@ function startScreensaver(forceType) {
 
   hideFakeBsod();
   if (saver === "maze") {
-    setupMazeScreensaver();
+    await setupMazeScreensaver();
   } else if (saver === "pipes") {
     setupPipes();
     sInterval = setInterval(drawPipes, 50);
@@ -2407,7 +2414,8 @@ function animateMaze() {
   mazeRenderer.render(mazeScene, mazeCamera);
 }
 
-function setupMazeScreensaver() {
+async function setupMazeScreensaver() {
+  await ensureThree();
   if (!mazeCanvas) return;
   setScreensaverCanvas("3d");
   resizeScreensaverCanvases();
