@@ -328,6 +328,14 @@ export const PROGRAMS = [
     label: "DOOM"
   },
   {
+    type: "n64",
+    title: "Nintendo 64",
+    width: 640,
+    height: 520,
+    icon: "n64",
+    label: "N64"
+  },
+  {
     type: "minecraft",
     title: "Minecraft Classic",
     width: 720,
