@@ -83,29 +83,50 @@ const APP_INITIALIZERS = {
 };
 
 
+function getUniqueFolderName(targetDir, baseName = "New Folder") {
+  if (!targetDir?.children) return baseName;
+  let candidate = baseName;
+  let counter = 1;
+  while (targetDir.children[candidate]) {
+    candidate = `${baseName} (${counter})`;
+    counter++;
+  }
+  return candidate;
+}
+
+async function createNamedFolder(targetDir, name) {
+  if (!targetDir || !name) {
+    return { success: false, message: "Invalid folder target." };
+  }
+  if (targetDir.children?.[name]) {
+    return { success: false, message: "Folder already exists!" };
+  }
+  if (targetDir.nativeHandle) {
+    try {
+      await targetDir.nativeHandle.getDirectoryHandle(name, { create: true });
+      await hydrateNativeDirectory(targetDir);
+    } catch (err) {
+      return { success: false, message: `Failed to create directory: ${err.message}` };
+    }
+  } else {
+    targetDir.children[name] = {
+      type: "dir",
+      children: {}
+    };
+    saveFileSystem(); // Save changes
+  }
+  return { success: true };
+}
+
 async function createFolder(btn) {
   const win = btn.closest(".window");
   const input = win.querySelector("#new-folder-name");
   const name = input.value.trim();
   if (name && win.currentDirObj) {
-    if (win.currentDirObj.children?.[name]) {
-      alert("Folder already exists!");
+    const result = await createNamedFolder(win.currentDirObj, name);
+    if (!result.success) {
+      alert(result.message);
       return;
-    }
-    if (win.currentDirObj.nativeHandle) {
-      try {
-        await win.currentDirObj.nativeHandle.getDirectoryHandle(name, { create: true });
-        await hydrateNativeDirectory(win.currentDirObj);
-      } catch (err) {
-        alert(`Failed to create directory: ${err.message}`);
-        return;
-      }
-    } else {
-      win.currentDirObj.children[name] = {
-        type: "dir",
-        children: {}
-      };
-      saveFileSystem(); // Save changes
     }
     input.value = "";
     await rFT(win);
@@ -1604,6 +1625,86 @@ function bootDesktop() {
   wm = new WindowManager(initialDesktopState);
   window.wm = wm;
   return wm;
+}
+
+function resolveDesktopDirectory() {
+  const preferredPaths = ["C\\DESKTOP", "C\\DOCUMENTS\\DESKTOP", "C\\DOCUMENTS"];
+  for (const path of preferredPaths) {
+    const resolved = resolveFileManagerPath(path);
+    if (resolved?.node?.type === "dir") return resolved;
+  }
+  return null;
+}
+
+async function createDesktopFolder() {
+  const resolved = resolveDesktopDirectory();
+  if (!resolved?.node) {
+    alert("Desktop folder is unavailable.");
+    return;
+  }
+  const folderName = getUniqueFolderName(resolved.node);
+  const result = await createNamedFolder(resolved.node, folderName);
+  if (!result.success) {
+    alert(result.message || "Unable to create folder.");
+    return;
+  }
+  refreshOpenFileManagers();
+}
+
+function openDesktopProperties() {
+  if (!wm) return;
+  const existing = wm.windows.find((win) => win.type === "control");
+  const controlWin = existing || wm.openWindow("control", "Control Panel", 400, 300);
+  if (!controlWin?.el) return;
+  wm.focusWindow(controlWin.id);
+  const viewArea = controlWin.el.querySelector(".cp-view-area");
+  if (viewArea) openCPDesktop(viewArea);
+}
+
+function initDesktopContextMenu() {
+  const desktop = document.getElementById("desktop");
+  const menu = document.getElementById("context-menu");
+  if (!desktop || !menu) return;
+
+  const hideMenu = () => {
+    menu.style.display = "none";
+  };
+
+  const positionMenu = (x, y) => {
+    menu.style.display = "block";
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    const rect = menu.getBoundingClientRect();
+    const adjustedLeft = Math.min(x, window.innerWidth - rect.width - 4);
+    const adjustedTop = Math.min(y, window.innerHeight - rect.height - 4);
+    menu.style.left = `${Math.max(0, adjustedLeft)}px`;
+    menu.style.top = `${Math.max(0, adjustedTop)}px`;
+  };
+
+  desktop.addEventListener("contextmenu", (e) => {
+    if (e.target.closest(".window")) return;
+    e.preventDefault();
+    positionMenu(e.clientX, e.clientY);
+  });
+
+  window.addEventListener("click", (e) => {
+    if (!menu.contains(e.target)) hideMenu();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideMenu();
+  });
+
+  window.addEventListener("resize", hideMenu);
+
+  menu.addEventListener("click", (e) => {
+    const item = e.target.closest(".context-menu-item");
+    if (!item) return;
+    hideMenu();
+    const action = item.dataset.action;
+    if (action === "new-folder") createDesktopFolder();
+    if (action === "properties") openDesktopProperties();
+  });
 }
 let saverActive = false;
 let idleTime = 0;
@@ -6858,6 +6959,7 @@ window.hideUnlockPrompt = hideUnlockPrompt;
 
 window.onload = () => {
   bootDesktop();
+  initDesktopContextMenu();
   initSplash();
   initScreensaver();
   initDragAndDropImport();
