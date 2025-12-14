@@ -1929,6 +1929,11 @@ let matrixFontSize = 16;
 let dvdLogo = null;
 const DVD_COLORS = ["#ff3864", "#3ae374", "#00b3ff", "#ffc600", "#bd93f9", "#ffffff"];
 
+let fireflies = [];
+let bubbles = [];
+let waveBands = [];
+let wavePhase = 0;
+
 function isLockEnabled() {
   return requirePassphrase && lockPassphrase.trim().length > 0;
 }
@@ -2029,6 +2034,15 @@ function startScreensaver(forceType) {
   } else if (saver === "dvd") {
     setupDvd();
     sInterval = setInterval(drawDvd, 30);
+  } else if (saver === "fireflies") {
+    setupFireflies();
+    sInterval = setInterval(drawFireflies, 30);
+  } else if (saver === "bubbles") {
+    setupBubbles();
+    sInterval = setInterval(drawBubbles, 40);
+  } else if (saver === "waves") {
+    setupNeonWaves();
+    sInterval = setInterval(drawNeonWaves, 30);
   } else {
     setupStarfield();
     sInterval = setInterval(drawStars, 30);
@@ -2175,6 +2189,146 @@ function drawDvd() {
   sCtx.textAlign = "center";
   sCtx.textBaseline = "middle";
   sCtx.fillText("DVD", dvdLogo.x + dvdLogo.w / 2, dvdLogo.y + dvdLogo.h / 2 + 2);
+}
+
+function setupFireflies() {
+  const count = Math.max(50, Math.floor((saverCanvas.width + saverCanvas.height) / 16));
+  fireflies = new Array(count).fill(0).map(() => ({
+    x: Math.random() * saverCanvas.width,
+    y: Math.random() * saverCanvas.height,
+    vx: (Math.random() - 0.5) * 1.2,
+    vy: (Math.random() - 0.5) * 1.2,
+    hue: Math.floor(Math.random() * 120) + 40,
+    size: Math.random() * 1.8 + 2.2
+  }));
+  sCtx.fillStyle = "black";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+}
+
+function drawFireflies() {
+  sCtx.fillStyle = "rgba(0, 0, 0, 0.12)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  fireflies.forEach((fly) => {
+    fly.vx += (Math.random() - 0.5) * 0.18;
+    fly.vy += (Math.random() - 0.5) * 0.18;
+    const speed = Math.hypot(fly.vx, fly.vy);
+    const maxSpeed = 1.8;
+    if (speed > maxSpeed) {
+      fly.vx = (fly.vx / speed) * maxSpeed;
+      fly.vy = (fly.vy / speed) * maxSpeed;
+    }
+
+    fly.x = (fly.x + fly.vx + saverCanvas.width) % saverCanvas.width;
+    fly.y = (fly.y + fly.vy + saverCanvas.height) % saverCanvas.height;
+
+    const radius = fly.size + Math.sin(Date.now() / 600 + fly.x * 0.02) * 0.8;
+    const glow = sCtx.createRadialGradient(
+      fly.x,
+      fly.y,
+      0,
+      fly.x,
+      fly.y,
+      radius * 4
+    );
+    glow.addColorStop(0, `hsla(${fly.hue}, 100%, 75%, 1)`);
+    glow.addColorStop(0.35, `hsla(${fly.hue + 30}, 100%, 65%, 0.7)`);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    sCtx.fillStyle = glow;
+    sCtx.beginPath();
+    sCtx.arc(fly.x, fly.y, radius * 4, 0, Math.PI * 2);
+    sCtx.fill();
+  });
+}
+
+function setupBubbles() {
+  const count = Math.max(35, Math.floor(saverCanvas.width / 24));
+  bubbles = new Array(count).fill(0).map(() => ({
+    x: Math.random() * saverCanvas.width,
+    y: Math.random() * saverCanvas.height,
+    r: Math.random() * 30 + 12,
+    speed: Math.random() * 1.4 + 0.4,
+    hue: Math.random() * 360,
+    sway: Math.random() * 0.4 + 0.2,
+    wobble: Math.random() * 1.2 + 0.4
+  }));
+  sCtx.fillStyle = "#00111f";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+}
+
+function drawBubbles() {
+  sCtx.fillStyle = "rgba(0, 10, 25, 0.22)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  const time = Date.now() / 1000;
+  bubbles.forEach((bubble, idx) => {
+    const drift = Math.sin(time * bubble.wobble + idx * 0.6) * bubble.sway;
+    bubble.x += drift;
+    bubble.y -= bubble.speed;
+
+    if (bubble.y + bubble.r < 0) {
+      bubble.y = saverCanvas.height + bubble.r + Math.random() * saverCanvas.height * 0.1;
+      bubble.x = Math.random() * saverCanvas.width;
+      bubble.hue = Math.random() * 360;
+      bubble.r = Math.random() * 30 + 12;
+    }
+
+    if (bubble.x < -bubble.r) bubble.x = saverCanvas.width + bubble.r;
+    if (bubble.x > saverCanvas.width + bubble.r) bubble.x = -bubble.r;
+
+    const gradient = sCtx.createRadialGradient(
+      bubble.x - bubble.r * 0.35,
+      bubble.y - bubble.r * 0.35,
+      bubble.r * 0.1,
+      bubble.x,
+      bubble.y,
+      bubble.r * 1.4
+    );
+    gradient.addColorStop(0, `hsla(${bubble.hue}, 100%, 85%, 0.9)`);
+    gradient.addColorStop(0.6, `hsla(${bubble.hue}, 80%, 65%, 0.5)`);
+    gradient.addColorStop(1, "rgba(0, 20, 40, 0)");
+
+    sCtx.fillStyle = gradient;
+    sCtx.beginPath();
+    sCtx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);
+    sCtx.fill();
+  });
+}
+
+function setupNeonWaves() {
+  wavePhase = 0;
+  const baseAmp = Math.max(30, Math.min(140, saverCanvas.height / 2.5));
+  waveBands = new Array(5).fill(0).map((_, i) => ({
+    hue: (i * 70 + Math.random() * 40) % 360,
+    speed: 0.5 + Math.random() * 0.9,
+    amplitude: baseAmp * (0.35 + Math.random() * 0.9),
+    offset: Math.random() * Math.PI * 2
+  }));
+  sCtx.fillStyle = "#000";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+}
+
+function drawNeonWaves() {
+  wavePhase += 0.02;
+  sCtx.fillStyle = "rgba(0, 0, 0, 0.25)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  const mid = saverCanvas.height / 2;
+  waveBands.forEach((band, idx) => {
+    const hue = (band.hue + wavePhase * 120) % 360;
+    sCtx.strokeStyle = `hsla(${hue}, 90%, 60%, 0.85)`;
+    sCtx.lineWidth = 1.5 + (idx % 2);
+    sCtx.beginPath();
+    for (let x = -20; x <= saverCanvas.width + 20; x += 12) {
+      const y =
+        mid +
+        Math.sin(wavePhase * band.speed + x * 0.022 + band.offset) * band.amplitude +
+        Math.cos(wavePhase * 0.7 + x * 0.015 + idx) * 10;
+      if (x === -20) sCtx.moveTo(x, y);
+      else sCtx.lineTo(x, y);
+    }
+    sCtx.stroke();
+  });
 }
 
 function setupPipes() {
@@ -2338,7 +2492,10 @@ function openCPScreensaver(target, containerOverride) {
     { value: "starfield", label: "Starfield", desc: "Classic warp-speed stars." },
     { value: "pipes", label: "3D Pipes", desc: "Colorful shaded pipes crawl in 3D." },
     { value: "matrix", label: "Matrix", desc: "Green cascading code falls from the top of the screen." },
-    { value: "dvd", label: "Bouncing Logo", desc: "A retro DVD logo that changes color when it hits a wall." }
+    { value: "dvd", label: "Bouncing Logo", desc: "A retro DVD logo that changes color when it hits a wall." },
+    { value: "fireflies", label: "Fireflies", desc: "Glowing neon fireflies drift gently across the screen." },
+    { value: "bubbles", label: "Bubbles", desc: "Floating iridescent bubbles rise in a dark ocean." },
+    { value: "waves", label: "Neon Waves", desc: "Layered synthwave ribbons flow across the canvas." }
   ];
   const saverOptions = saverOptionsData
     .map(
