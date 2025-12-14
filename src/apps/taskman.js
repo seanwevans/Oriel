@@ -21,7 +21,8 @@ function refreshTaskList(listEl, winId, manager) {
 function refreshProcessView(viewEl) {
   const kernelRef = getKernel();
   if (!viewEl || !kernelRef) return;
-  viewEl.innerHTML = '<div class="queue-header">PID  | PRI | STATE   | CPU TIME</div>';
+  viewEl.innerHTML =
+    '<div class="queue-header">PID  | PRI | STATE   | CPU TIME | TASK</div>';
   kernelRef.processes.forEach((p) => {
     const row = document.createElement("div");
     row.className = "queue-row";
@@ -32,7 +33,7 @@ function refreshProcessView(viewEl) {
     const shortId = p.pid.split("-")[1].substring(9);
     row.innerText = `${shortId} | ${p.priority
       .toString()
-      .padEnd(3)} | ${p.state.padEnd(7)} | ${cpuBar}`;
+      .padEnd(3)} | ${p.state.padEnd(7)} | ${cpuBar} | ${p.name ?? "Unknown"}`;
     if (p.state === "RUNNING") row.style.color = "lime";
     else if (p.state === "WAITING") row.style.color = "yellow";
     else row.style.color = "gray";
