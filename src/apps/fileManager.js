@@ -1,6 +1,47 @@
 import { ICONS } from "../icons.js";
 import { MOCK_FS, hydrateNativeDirectory } from "../filesystem.js";
 
+export function getWinFileContent() {
+  return `
+        <div class="winfile-layout">
+          <div class="drive-bar">
+            <div class="drive-icon active">a:</div>
+            <div class="drive-icon active">c:</div>
+            <div class="drive-icon active">d:</div>
+            <div
+              style="flex-grow:1; text-align:right; font-size:12px;display:flex;align-items:center;justify-content:flex-end;gap:5px;"
+            >
+              <input
+                type="text"
+                id="new-folder-name"
+                style="width:80px;height:18px;font-size:11px;"
+                placeholder="Folder Name"
+              >
+              <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
+              <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
+              <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
+                Import
+                <input type="file" accept="application/json" onchange="importFileSystem(event)">
+              </label>
+              <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
+              <span>C\\</span>
+            </div>
+          </div>
+          <div class="winfile-main">
+            <div class="winfile-pane winfile-tree">
+              <div class="winfile-pane-header">C\\</div>
+              <div id="file-tree-root"></div>
+            </div>
+            <div class="winfile-pane winfile-list">
+              <div class="winfile-pane-header" id="file-list-header">C\\*.*</div>
+              <div class="file-list-view" id="file-list-view"></div>
+            </div>
+          </div>
+          <div class="status-bar" style="border-top:1px solid gray; padding:2px; font-size:12px;">Selected 1 file(s) (0 bytes)</div>
+        </div>
+      `;
+}
+
 async function initFileManager(w) {
   const defaultDrive = Object.keys(MOCK_FS)[0] || "C\\";
   w.cP = defaultDrive;
@@ -147,4 +188,4 @@ async function rFL(w) {
       });
 }
 
-export { initFileManager, rFT, rFL };
+export { initFileManager, rFT, rFL, getWinFileContent };

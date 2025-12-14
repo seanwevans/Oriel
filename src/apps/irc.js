@@ -23,6 +23,25 @@ function loadIrcLibrary() {
   return ircLibPromise;
 }
 
+export function getIRCContent() {
+  return `
+        <div class="irc">
+          <div class="irc-status">Disconnected. Set nick/channel and click connect.</div>
+          <div class="irc-log"></div>
+          <div class="irc-controls">
+            <input type="text" class="irc-nick" placeholder="Nick" />
+            <input type="text" class="irc-channel" placeholder="#channel" />
+            <button class="task-btn irc-connect">Connect</button>
+            <button class="task-btn irc-disconnect">Disconnect</button>
+          </div>
+          <div class="irc-input">
+            <input type="text" class="irc-message" placeholder="Type message and press enter..." />
+            <button class="task-btn irc-send">Send</button>
+          </div>
+        </div>
+      `;
+}
+
 export function initIRC(win) {
   const serverInput = win.querySelector(".irc-server");
   const nickInput = win.querySelector(".irc-nick");

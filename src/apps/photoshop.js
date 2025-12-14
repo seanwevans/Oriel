@@ -1,3 +1,56 @@
+export function getPhotoshopContent() {
+  return `
+        <div class="ps-app">
+          <div class="ps-toolbar">
+            <div class="ps-tool" data-tool="brush">🖌️ Brush</div>
+            <div class="ps-tool" data-tool="line">📏 Line</div>
+            <div class="ps-tool" data-tool="rect">⬛ Rect</div>
+            <div class="ps-tool" data-tool="circle">⚪ Circle</div>
+            <div class="ps-tool" data-tool="fill">🌊 Fill</div>
+            <div class="ps-tool" data-tool="erase">🧽 Erase</div>
+          </div>
+          <div class="ps-main">
+            <div class="ps-sidebar">
+              <div class="ps-section">
+                <label>Primary</label>
+                <input type="color" class="ps-color-primary" value="#1d7be3" />
+              </div>
+              <div class="ps-section">
+                <label>Secondary</label>
+                <input type="color" class="ps-color-secondary" value="#ffffff" />
+              </div>
+              <div class="ps-section">
+                <label>Brush Size</label>
+                <input type="range" min="1" max="50" value="8" class="ps-size-slider" />
+              </div>
+              <div class="ps-section">
+                <label>Filters</label>
+                <button class="task-btn" id="ps-invert">Invert</button>
+                <button class="task-btn" id="ps-grayscale">Grayscale</button>
+                <button class="task-btn" id="ps-scanlines">Scanlines</button>
+              </div>
+              <div class="ps-section">
+                <label>Document</label>
+                <button class="task-btn" id="ps-new">New</button>
+                <button class="task-btn" id="ps-open">Open</button>
+                <button class="task-btn" id="ps-save">Save</button>
+                <button class="task-btn" id="ps-export">Export PNG</button>
+                <input type="file" accept="image/*" class="ps-file-input" style="display:none" />
+              </div>
+              <div class="ps-section">
+                <label>Swatches</label>
+                <div class="ps-swatches"></div>
+              </div>
+            </div>
+            <div class="ps-canvas-area">
+              <canvas class="ps-canvas" width="960" height="540"></canvas>
+              <div class="ps-status">Ready. Brush (B) | Size: 8px | Primary: #1d7be3 | Secondary: #ffffff</div>
+            </div>
+          </div>
+        </div>
+      `;
+}
+
 function initPhotoshop(w) {
   const canvas = w.querySelector(".ps-canvas");
   const ctx = canvas.getContext("2d");
@@ -241,5 +294,6 @@ export {
   psFillCanvas,
   psTriggerOpen,
   psNewDocument,
-  psExport
+  psExport,
+  getPhotoshopContent
 };
