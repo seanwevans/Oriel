@@ -2930,6 +2930,8 @@ function drawCastaway() {
   sCtx.beginPath();
   sCtx.ellipse(islandX + 10, islandY + 10, 220, 60, 0, 0, Math.PI * 2);
   sCtx.fill();
+}
+
 function setupFlyingToasters() {
   sCtx.fillStyle = "#020611";
   sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
