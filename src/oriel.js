@@ -10,6 +10,7 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
+import { initKakuro } from "./apps/kakuro.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
@@ -45,6 +46,7 @@ import { SimulatedKernel } from "./kernel.js";
 
 const APP_INITIALIZERS = {
   mines: initMinesweeper,
+  kakuro: initKakuro,
   solitaire: initSolitaire,
   reversi: initReversi,
   paint: initPaint,
@@ -590,6 +592,7 @@ class WindowManager {
     if (type === "cardfile") content = this.getCardfileContent();
     if (type === "calc") content = this.getCalcContent();
     if (type === "mines") content = this.getMinesContent();
+    if (type === "kakuro") content = this.getKakuroContent();
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
     if (type === "photoshop") content = this.getPhotoshopContent();
@@ -1465,6 +1468,24 @@ class WindowManager {
   }
   getConsoleContent() {
     return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
+  }
+  getKakuroContent() {
+    const keypadButtons = Array.from({ length: 9 }, (_, i) =>
+      `<button class="task-btn kakuro-key" data-num="${i + 1}">${i + 1}</button>`
+    ).join("");
+
+    return `<div class="kakuro-root">
+                <div class="kakuro-toolbar">
+                    <div class="kakuro-keypad" role="group" aria-label="Number pad">${keypadButtons}<button class="task-btn kakuro-clear" aria-label="Clear cell">Clear</button></div>
+                    <div class="kakuro-actions">
+                        <button class="task-btn kakuro-check">Check</button>
+                        <button class="task-btn kakuro-reset">Reset</button>
+                    </div>
+                </div>
+                <div class="kakuro-board" role="grid" aria-label="Kakuro board"></div>
+                <div class="kakuro-status" aria-live="polite">Fill every run without repeating numbers.</div>
+                <div class="kakuro-help">Each clue shows the sum for the across or down run starting beside it.</div>
+            </div>`;
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;

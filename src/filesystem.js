@@ -25,6 +25,7 @@ export const DEFAULT_FS = {
           "CHESS.EXE": { type: "file", app: "chess" },
           "SOL.EXE": { type: "file", app: "solitaire" },
           "REVERSI.EXE": { type: "file", app: "reversi" },
+          "KAKURO.EXE": { type: "file", app: "kakuro" },
           "PBRUSH.EXE": { type: "file", app: "paint" },
           "ARTIST.EXE": { type: "file", app: "artist" },
           "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
