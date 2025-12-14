@@ -12,6 +12,7 @@ import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import { initMinecraft } from "./apps/minecraft.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -59,6 +60,7 @@ const APP_INITIALIZERS = {
   soundrec: initSoundRecorder,
   radio: initRadio,
   beatmaker: initBeatMaker,
+  minecraft: initMinecraft,
   charmap: initCharMap,
   winfile: initFileManager,
   clock: initClock,
@@ -624,6 +626,7 @@ class WindowManager {
     if (type === "discord") content = this.getDiscordContent();
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
+    if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
@@ -1265,6 +1268,19 @@ class WindowManager {
                   <div class="radio-meta">Use search or Top to load stations.</div>
                 </div>
               </div>
+            </div>`;
+  }
+  getMinecraftContent() {
+    return `<div class="minecraft-layout">
+              <div class="minecraft-toolbar">
+                <label class="minecraft-select">Block:
+                  <select class="minecraft-block"></select>
+                </label>
+                <button class="task-btn minecraft-fill">Generate Terrain</button>
+                <button class="task-btn minecraft-clear">Clear World</button>
+                <span class="minecraft-status">Left click to place, right click to remove.</span>
+              </div>
+              <div class="minecraft-grid" role="grid" aria-label="Minecraft builder grid"></div>
             </div>`;
   }
   getDoomContent() {
