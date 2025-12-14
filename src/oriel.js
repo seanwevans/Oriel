@@ -49,6 +49,7 @@ const APP_INITIALIZERS = {
   kakuro: initKakuro,
   solitaire: initSolitaire,
   reversi: initReversi,
+  sudoku: initSudoku,
   paint: initPaint,
   notepad: initNotepad,
   photoshop: initPhotoshop,
@@ -595,6 +596,7 @@ class WindowManager {
     if (type === "kakuro") content = this.getKakuroContent();
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
+    if (type === "sudoku") content = this.getSudokuContent();
     if (type === "photoshop") content = this.getPhotoshopContent();
     if (type === "artist") content = this.getArtistContent();
     if (type === "compiler") content = this.getCompilerContent();
@@ -1307,6 +1309,26 @@ class WindowManager {
   }
   getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
+  }
+  getSudokuContent() {
+    return `
+      <div class="sudoku-layout">
+        <div class="sudoku-toolbar">
+          <label class="sudoku-field">Difficulty
+            <select class="sudoku-difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+          <button class="task-btn sudoku-new">New Puzzle</button>
+          <button class="task-btn sudoku-check">Check</button>
+          <button class="task-btn sudoku-reset">Reset</button>
+        </div>
+        <div class="sudoku-status">Choose a difficulty to start.</div>
+        <div class="sudoku-grid" aria-label="Sudoku board" role="grid"></div>
+      </div>
+    `;
   }
   getClipboardContent() {
     return `<textarea class="clip-area" readonly placeholder="(Clipboard is empty)"></textarea>`;
@@ -3754,6 +3776,184 @@ function initSolitaire(w) {
   };
 
   deal();
+}
+
+function initSudoku(w) {
+  const puzzles = {
+    easy: [
+      {
+        name: "Classic Starter",
+        puzzle: "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+        solution: "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
+      }
+    ],
+    medium: [
+      {
+        name: "Midday Mix",
+        puzzle: "000260701680070090190004500820100040004602900050003028009300074040050036703018000",
+        solution: "435269781682571493197834562826195347374682915951743628519326874248957136763418259"
+      }
+    ],
+    hard: [
+      {
+        name: "Tough Cookie",
+        puzzle: "000000907000420180000705026100904000050000040000507009920108000034059000507000000",
+        solution: "483612957795423186216785326172934865659871243348567219924178635834259671567346892"
+      }
+    ]
+  };
+
+  const grid = w.querySelector(".sudoku-grid");
+  const status = w.querySelector(".sudoku-status");
+  const diffSelect = w.querySelector(".sudoku-difficulty");
+  const newBtn = w.querySelector(".sudoku-new");
+  const checkBtn = w.querySelector(".sudoku-check");
+  const resetBtn = w.querySelector(".sudoku-reset");
+
+  let baseValues = [];
+  let solutionValues = [];
+  let cells = [];
+
+  const parseGrid = (str = "") =>
+    str
+      .replace(/[^0-9.]/g, "")
+      .padEnd(81, "0")
+      .slice(0, 81)
+      .split("")
+      .map((n) => parseInt(n, 10) || 0);
+
+  const buildGrid = () => {
+    grid.innerHTML = "";
+    cells = [];
+    for (let r = 0; r < 9; r++) {
+      const row = [];
+      for (let c = 0; c < 9; c++) {
+        const cell = document.createElement("input");
+        cell.type = "text";
+        cell.inputMode = "numeric";
+        cell.maxLength = 1;
+        cell.className = "sudoku-cell";
+        if (c % 3 === 0) cell.classList.add("sudoku-bold-left");
+        if (c === 8) cell.classList.add("sudoku-bold-right");
+        if (r % 3 === 0) cell.classList.add("sudoku-bold-top");
+        if (r === 8) cell.classList.add("sudoku-bold-bottom");
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        cell.setAttribute("role", "gridcell");
+        cell.addEventListener("input", () => {
+          const cleaned = cell.value.replace(/[^1-9]/g, "").slice(0, 1);
+          cell.value = cleaned;
+          cell.classList.remove("sudoku-error");
+        });
+        cell.addEventListener("focus", () => cell.select());
+        grid.appendChild(cell);
+        row.push(cell);
+      }
+      cells.push(row);
+    }
+  };
+
+  const applyBaseState = () => {
+    cells.flat().forEach((cell) => {
+      cell.readOnly = false;
+      cell.value = "";
+      cell.classList.remove("sudoku-given", "sudoku-error");
+    });
+
+    baseValues.forEach((val, idx) => {
+      const r = Math.floor(idx / 9);
+      const c = idx % 9;
+      const cell = cells[r][c];
+      if (val) {
+        cell.value = `${val}`;
+        cell.readOnly = true;
+        cell.classList.add("sudoku-given");
+      }
+    });
+  };
+
+  const loadPuzzle = (difficulty) => {
+    const pool = puzzles[difficulty] || puzzles.easy;
+    const entry = pool[Math.floor(Math.random() * pool.length)];
+    baseValues = parseGrid(entry.puzzle);
+    solutionValues = parseGrid(entry.solution);
+    applyBaseState();
+    status.textContent = `${entry.name} (${difficulty[0].toUpperCase() + difficulty.slice(1)}) loaded. Fill in the blanks.`;
+  };
+
+  const clearErrors = () => cells.flat().forEach((c) => c.classList.remove("sudoku-error"));
+
+  const currentValues = () => cells.flat().map((cell) => parseInt(cell.value, 10) || 0);
+
+  const markDuplicates = (positions) => {
+    positions.forEach(([r, c]) => cells[r][c].classList.add("sudoku-error"));
+  };
+
+  const validateGroup = (coords) => {
+    const seen = {};
+    coords.forEach(([r, c]) => {
+      const val = parseInt(cells[r][c].value, 10);
+      if (!val) return;
+      if (seen[val]) {
+        markDuplicates([[r, c], seen[val]]);
+      } else {
+        seen[val] = [r, c];
+      }
+    });
+  };
+
+  const checkBoard = () => {
+    clearErrors();
+    for (let i = 0; i < 9; i++) {
+      validateGroup(
+        Array.from({ length: 9 }, (_, c) => [i, c]) // rows
+      );
+      validateGroup(
+        Array.from({ length: 9 }, (_, r) => [r, i]) // columns
+      );
+    }
+
+    for (let br = 0; br < 3; br++) {
+      for (let bc = 0; bc < 3; bc++) {
+        const coords = [];
+        for (let r = br * 3; r < br * 3 + 3; r++) {
+          for (let c = bc * 3; c < bc * 3 + 3; c++) coords.push([r, c]);
+        }
+        validateGroup(coords);
+      }
+    }
+
+    const hasErrors = cells.flat().some((c) => c.classList.contains("sudoku-error"));
+    const filled = cells.flat().every((c) => /^[1-9]$/.test(c.value));
+
+    if (hasErrors) {
+      status.textContent = "There are conflicts. Highlighted cells need attention.";
+      return;
+    }
+
+    if (filled && solutionValues.length === 81) {
+      const solved = solutionValues.every((val, idx) => val === currentValues()[idx]);
+      status.textContent = solved
+        ? "Puzzle solved! Great job."
+        : "The board is full but not correct yet.";
+    } else if (filled) {
+      status.textContent = "All cells filled. If no highlights, your solution is valid.";
+    } else {
+      status.textContent = "No conflicts so far. Keep going!";
+    }
+  };
+
+  buildGrid();
+  loadPuzzle(diffSelect.value);
+
+  newBtn.addEventListener("click", () => loadPuzzle(diffSelect.value));
+  diffSelect.addEventListener("change", () => loadPuzzle(diffSelect.value));
+  resetBtn.addEventListener("click", () => {
+    clearErrors();
+    applyBaseState();
+    status.textContent = "Puzzle reset to its starting state.";
+  });
+  checkBtn.addEventListener("click", checkBoard);
 }
 
 function initWrite(w) {

@@ -80,6 +80,14 @@ export const PROGRAMS = [
     label: "Reversi"
   },
   {
+    type: "sudoku",
+    title: "Sudoku",
+    width: 520,
+    height: 620,
+    icon: "sudoku",
+    label: "Sudoku"
+  },
+  {
     type: "paint",
     title: "Paintbrush",
     width: 500,
