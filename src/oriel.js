@@ -14,6 +14,7 @@ import { initKakuro } from "./apps/kakuro.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
+import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
@@ -86,6 +87,7 @@ const APP_INITIALIZERS = {
   irc: initIRC,
   doom: initDoom,
   minecraft: initMinecraft,
+  sandspiel: initSandspiel,
   papers: initPapersPlease,
   hexedit: initHexEditor
 };
@@ -635,6 +637,7 @@ class WindowManager {
     if (type === "irc") content = this.getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
+    if (type === "sandspiel") content = this.getSandspielContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
@@ -1257,6 +1260,9 @@ class WindowManager {
 
   getMinecraftContent() {
     return getMinecraftRoot();
+  }
+  getSandspielContent() {
+    return getSandspielRoot();
   }
   getRadioContent() {
     return `<div class="radio-layout">

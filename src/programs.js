@@ -336,6 +336,14 @@ export const PROGRAMS = [
     label: "Minecraft"
   },
   {
+    type: "sandspiel",
+    title: "Sandspiel",
+    width: 720,
+    height: 560,
+    icon: "sandspiel",
+    label: "Sandspiel"
+  },
+  {
     type: "papers",
     title: "Checkpoint",
     width: 640,
