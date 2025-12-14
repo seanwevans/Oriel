@@ -48,6 +48,14 @@ export const PROGRAMS = [
     label: "Minesweeper"
   },
   {
+    type: "kakuro",
+    title: "Kakuro",
+    width: 320,
+    height: 380,
+    icon: "kakuro",
+    label: "Kakuro"
+  },
+  {
     type: "solitaire",
     title: "Solitaire",
     width: 600,
