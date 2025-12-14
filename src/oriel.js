@@ -1949,6 +1949,15 @@ let mazeTargetAngle = 0;
 let mazeLight = null;
 let mazeGroup = null;
 const MAZE_CELL_SIZE = 10;
+let toasters = [];
+const TOASTER_COLORS = [
+  "#dfe6f3",
+  "#f8fbff",
+  "#c9d7ef",
+  "#cdd8e8"
+];
+
+let castawayScene = null;
 
 function isLockEnabled() {
   return requirePassphrase && lockPassphrase.trim().length > 0;
@@ -2063,6 +2072,12 @@ function startScreensaver(forceType) {
   } else if (saver === "waves") {
     setupNeonWaves();
     sInterval = setInterval(drawNeonWaves, 30);
+  } else if (saver === "castaway") {
+    setupCastaway();
+    sInterval = setInterval(drawCastaway, 40);
+  } else if (saver === "toasters") {
+    setupFlyingToasters();
+    sInterval = setInterval(drawFlyingToasters, 30);
   } else {
     setScreensaverCanvas("2d");
     setupStarfield();
@@ -2679,6 +2694,394 @@ function drawNeonWaves() {
   });
 }
 
+function setupCastaway() {
+  const w = saverCanvas.width;
+  const h = saverCanvas.height;
+  const actionPool = ["nap", "fish", "signal", "stare", "tinker", "campfire"];
+  castawayScene = {
+    time: 0,
+    wave: 0,
+    action: actionPool[Math.floor(Math.random() * actionPool.length)],
+    actionTimer: 0,
+    clouds: new Array(4).fill(0).map(() => ({
+      x: Math.random() * w,
+      y: h * 0.15 + Math.random() * h * 0.12,
+      speed: 0.15 + Math.random() * 0.2,
+      size: 50 + Math.random() * 80
+    })),
+    birds: new Array(6).fill(0).map(() => ({
+      x: Math.random() * w,
+      y: h * 0.2 + Math.random() * h * 0.15,
+      speed: 1 + Math.random() * 0.8,
+      flap: Math.random() * Math.PI * 2
+    })),
+    bottle: {
+      x: Math.random() * w,
+      y: h * 0.6 + Math.random() * h * 0.1,
+      bob: Math.random() * Math.PI * 2
+    }
+  };
+  castawayScene.actionTimer = 200 + Math.floor(Math.random() * 220);
+  sCtx.fillStyle = "#000";
+  sCtx.fillRect(0, 0, w, h);
+}
+
+function drawCastaway() {
+  if (!castawayScene) return;
+  const w = saverCanvas.width;
+  const h = saverCanvas.height;
+  castawayScene.time += 1;
+  castawayScene.wave += 0.02;
+  castawayScene.actionTimer -= 1;
+
+  if (castawayScene.actionTimer <= 0) {
+    const actions = ["nap", "fish", "signal", "stare", "tinker", "campfire"];
+    const next = actions[Math.floor(Math.random() * actions.length)];
+    castawayScene.action = next;
+    castawayScene.actionTimer = 180 + Math.floor(Math.random() * 240);
+  }
+
+  const dayCycle = (Math.sin(castawayScene.time * 0.00035) + 1) / 2;
+  const skyTop = `hsl(${200 - dayCycle * 80}, 80%, ${40 + dayCycle * 20}%)`;
+  const skyBottom = `hsl(${210 - dayCycle * 40}, 70%, ${60 + dayCycle * 10}%)`;
+  const skyGrad = sCtx.createLinearGradient(0, 0, 0, h);
+  skyGrad.addColorStop(0, skyTop);
+  skyGrad.addColorStop(1, skyBottom);
+  sCtx.fillStyle = skyGrad;
+  sCtx.fillRect(0, 0, w, h);
+
+  const sunX = (w * (dayCycle * 0.7 + 0.15)) % (w + 80);
+  const sunY = h * (0.25 - 0.15 * Math.cos(dayCycle * Math.PI));
+  sCtx.fillStyle = `rgba(255, 230, 150, ${0.4 + dayCycle * 0.3})`;
+  sCtx.beginPath();
+  sCtx.arc(sunX, sunY, 50, 0, Math.PI * 2);
+  sCtx.fill();
+  sCtx.fillStyle = `rgba(255, 210, 120, ${0.8})`;
+  sCtx.beginPath();
+  sCtx.arc(sunX, sunY, 24, 0, Math.PI * 2);
+  sCtx.fill();
+
+  const oceanTop = `rgba(0, 70, 130, 0.9)`;
+  const oceanBottom = `rgba(0, 30, 70, 0.95)`;
+  const seaGrad = sCtx.createLinearGradient(0, h * 0.45, 0, h);
+  seaGrad.addColorStop(0, oceanTop);
+  seaGrad.addColorStop(1, oceanBottom);
+  sCtx.fillStyle = seaGrad;
+  sCtx.fillRect(0, h * 0.45, w, h * 0.65);
+
+  sCtx.strokeStyle = "rgba(255,255,255,0.6)";
+  sCtx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const waveY = h * 0.5 + i * 30;
+    sCtx.beginPath();
+    for (let x = 0; x <= w; x += 12) {
+      const y =
+        waveY +
+        Math.sin(castawayScene.wave * (0.8 + i * 0.1) + x * 0.02) * (6 + i);
+      if (x === 0) sCtx.moveTo(x, y);
+      else sCtx.lineTo(x, y);
+    }
+    sCtx.stroke();
+  }
+
+  const islandX = w * 0.58;
+  const islandY = h * 0.72;
+  sCtx.fillStyle = "#d0a85b";
+  sCtx.beginPath();
+  sCtx.ellipse(islandX, islandY, 220, 70, 0, 0, Math.PI * 2);
+  sCtx.fill();
+  sCtx.fillStyle = "#c28c3b";
+  sCtx.beginPath();
+  sCtx.ellipse(islandX + 10, islandY + 6, 200, 52, 0, 0, Math.PI * 2);
+  sCtx.fill();
+
+  sCtx.save();
+  sCtx.translate(islandX - 60, islandY - 120);
+  sCtx.fillStyle = "#8b5a2b";
+  sCtx.beginPath();
+  sCtx.moveTo(0, 120);
+  sCtx.lineTo(20, 10);
+  sCtx.lineTo(40, 120);
+  sCtx.closePath();
+  sCtx.fill();
+  sCtx.fillStyle = "#1d8c45";
+  for (let i = 0; i < 5; i++) {
+    sCtx.beginPath();
+    sCtx.ellipse(20 + i * 4, 16 + i * 4, 60, 14, (Math.PI / 6) * (i - 2), 0, Math.PI * 2);
+    sCtx.fill();
+  }
+  sCtx.restore();
+
+  castawayScene.clouds.forEach((cloud) => {
+    cloud.x += cloud.speed;
+    if (cloud.x - cloud.size > w) cloud.x = -cloud.size;
+    sCtx.fillStyle = "rgba(255,255,255,0.9)";
+    sCtx.beginPath();
+    sCtx.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.55, 0, 0, Math.PI * 2);
+    sCtx.ellipse(cloud.x - cloud.size * 0.5, cloud.y + 6, cloud.size * 0.6, cloud.size * 0.35, 0, 0, Math.PI * 2);
+    sCtx.ellipse(cloud.x + cloud.size * 0.5, cloud.y + 8, cloud.size * 0.7, cloud.size * 0.4, 0, 0, Math.PI * 2);
+    sCtx.fill();
+  });
+
+  castawayScene.birds.forEach((bird) => {
+    bird.x += bird.speed;
+    bird.flap += 0.2;
+    if (bird.x > w + 30) {
+      bird.x = -20;
+      bird.y = h * 0.2 + Math.random() * h * 0.15;
+    }
+    const wing = Math.sin(bird.flap) * 8;
+    sCtx.strokeStyle = "rgba(0,0,0,0.6)";
+    sCtx.lineWidth = 2;
+    sCtx.beginPath();
+    sCtx.moveTo(bird.x - 8, bird.y + wing);
+    sCtx.quadraticCurveTo(bird.x, bird.y - 6, bird.x + 8, bird.y + wing);
+    sCtx.stroke();
+  });
+
+  castawayScene.bottle.bob += 0.04;
+  castawayScene.bottle.x += 0.4;
+  if (castawayScene.bottle.x > w + 20) castawayScene.bottle.x = -20;
+  const bottleY =
+    castawayScene.bottle.y + Math.sin(castawayScene.bottle.bob) * 6 + Math.sin(castawayScene.wave * 1.4) * 4;
+  sCtx.fillStyle = "rgba(220, 255, 255, 0.7)";
+  sCtx.beginPath();
+  sCtx.ellipse(castawayScene.bottle.x, bottleY, 8, 16, 0.2, 0, Math.PI * 2);
+  sCtx.fill();
+  sCtx.fillStyle = "rgba(80,120,160,0.9)";
+  sCtx.fillRect(castawayScene.bottle.x - 3, bottleY - 16, 6, 6);
+
+  const manX = islandX + 20;
+  const manY = islandY - 18;
+  const action = castawayScene.action;
+  const bob = Math.sin(castawayScene.wave * 3) * 2;
+  sCtx.strokeStyle = "#2d2415";
+  sCtx.lineWidth = 6;
+  sCtx.lineCap = "round";
+  sCtx.beginPath();
+  sCtx.moveTo(manX, manY - 18 + bob);
+  sCtx.lineTo(manX, manY + 12 + bob);
+  sCtx.stroke();
+
+  sCtx.fillStyle = "#f4d7b2";
+  sCtx.beginPath();
+  sCtx.arc(manX, manY - 30 + bob, 10, 0, Math.PI * 2);
+  sCtx.fill();
+
+  const leftArm = action === "signal" ? -24 : -14;
+  const rightArm = action === "fish" ? 28 : 14;
+  sCtx.lineWidth = 4;
+  sCtx.strokeStyle = "#3b2f1d";
+  sCtx.beginPath();
+  sCtx.moveTo(manX, manY - 4 + bob);
+  sCtx.lineTo(manX + leftArm, manY + (action === "nap" ? 4 : -2) + bob);
+  sCtx.stroke();
+  sCtx.beginPath();
+  sCtx.moveTo(manX, manY - 4 + bob);
+  sCtx.lineTo(manX + rightArm, manY + (action === "fish" ? 16 : 2) + bob);
+  sCtx.stroke();
+
+  sCtx.lineWidth = 5;
+  sCtx.beginPath();
+  sCtx.moveTo(manX, manY + 12 + bob);
+  sCtx.lineTo(manX - 10, manY + 32 + bob);
+  sCtx.stroke();
+  sCtx.beginPath();
+  sCtx.moveTo(manX, manY + 12 + bob);
+  sCtx.lineTo(manX + 12, manY + 32 + bob);
+  sCtx.stroke();
+
+  if (action === "fish") {
+    sCtx.strokeStyle = "rgba(40,60,80,0.8)";
+    sCtx.lineWidth = 2;
+    sCtx.beginPath();
+    sCtx.moveTo(manX + 28, manY + 14 + bob);
+    sCtx.lineTo(manX + 32, manY - 18);
+    sCtx.lineTo(manX + 34, manY - 60);
+    sCtx.stroke();
+    sCtx.beginPath();
+    sCtx.moveTo(manX + 34, manY - 60);
+    sCtx.lineTo(manX + 34, manY + 160 + Math.sin(castawayScene.wave * 3) * 18);
+    sCtx.stroke();
+  } else if (action === "signal") {
+    sCtx.fillStyle = "#ffef4a";
+    sCtx.beginPath();
+    sCtx.ellipse(manX - 30, manY - 18, 12, 28, -0.3, 0, Math.PI * 2);
+    sCtx.fill();
+  } else if (action === "campfire") {
+    const flicker = 6 + Math.sin(castawayScene.time * 0.25) * 3;
+    sCtx.fillStyle = "#5b3a1a";
+    sCtx.fillRect(manX - 70, manY + 32, 12, 8);
+    sCtx.fillRect(manX - 56, manY + 32, 12, 8);
+    const grad = sCtx.createRadialGradient(manX - 60, manY + 20, 2, manX - 60, manY + 20, 26);
+    grad.addColorStop(0, "rgba(255,200,60,0.9)");
+    grad.addColorStop(1, "rgba(255,100,40,0.1)");
+    sCtx.fillStyle = grad;
+    sCtx.beginPath();
+    sCtx.ellipse(manX - 60, manY + 18, 14, flicker, 0, 0, Math.PI * 2);
+    sCtx.fill();
+  } else if (action === "tinker") {
+    sCtx.fillStyle = "#7c7c7c";
+    sCtx.fillRect(manX + 16, manY + 4 + bob, 18, 10);
+    sCtx.fillRect(manX + 12, manY + 12 + bob, 6, 6);
+  }
+
+  sCtx.fillStyle = "rgba(0,0,0,0.2)";
+  sCtx.beginPath();
+  sCtx.ellipse(islandX + 10, islandY + 10, 220, 60, 0, 0, Math.PI * 2);
+  sCtx.fill();
+function setupFlyingToasters() {
+  sCtx.fillStyle = "#020611";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+  const count = Math.max(6, Math.floor((saverCanvas.width + saverCanvas.height) / 230));
+  toasters = new Array(count).fill(0).map((_, idx) => createFlyingToaster(idx));
+}
+
+function createFlyingToaster(seed) {
+  const direction = Math.random() < 0.5 ? -1 : 1;
+  const startX =
+    direction === 1
+      ? -120 - Math.random() * 160
+      : saverCanvas.width + 120 + Math.random() * 160;
+  return {
+    x: startX,
+    y: Math.random() * saverCanvas.height * 0.7 + saverCanvas.height * 0.15,
+    vx: direction * (Math.random() * 1.6 + 1.2),
+    vy: (Math.random() - 0.5) * 0.6,
+    flap: Math.random() * Math.PI * 2,
+    wobble: Math.random() * 0.8 + 0.4,
+    scale: Math.random() * 0.35 + 0.75,
+    sparkleOffset: seed + Math.random() * Math.PI,
+    tint: TOASTER_COLORS[Math.floor(Math.random() * TOASTER_COLORS.length)]
+  };
+}
+
+function drawFlyingToasters() {
+  sCtx.fillStyle = "rgba(0, 0, 10, 0.25)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  const time = Date.now() / 1000;
+  toasters.forEach((toaster, idx) => {
+    toaster.x += toaster.vx;
+    toaster.y += toaster.vy + Math.sin(time * toaster.wobble + idx) * 0.6;
+    toaster.flap += 0.22 + toaster.wobble * 0.04;
+
+    if (toaster.y < saverCanvas.height * 0.08 || toaster.y > saverCanvas.height * 0.92)
+      toaster.vy *= -1;
+
+    if (toaster.x < -200 || toaster.x > saverCanvas.width + 200) {
+      toasters[idx] = createFlyingToaster(idx);
+      return;
+    }
+
+    drawFlyingToasterShape(toaster, time);
+  });
+}
+
+function drawFlyingToasterShape(toaster, time) {
+  const baseWidth = 90;
+  const baseHeight = 52;
+  const wingLength = 38;
+  const flapAngle = Math.sin(toaster.flap) * 0.7 + 0.9;
+
+  sCtx.save();
+  sCtx.translate(toaster.x, toaster.y);
+  const facingLeft = toaster.vx < 0;
+  sCtx.scale(toaster.scale * (facingLeft ? -1 : 1), toaster.scale);
+  sCtx.rotate(Math.sin(time * 0.9 + toaster.sparkleOffset) * 0.18);
+
+  const glow = sCtx.createRadialGradient(0, 0, 10, 0, 0, 80);
+  glow.addColorStop(0, "rgba(200, 230, 255, 0.35)");
+  glow.addColorStop(1, "rgba(0, 10, 30, 0)");
+  sCtx.fillStyle = glow;
+  sCtx.beginPath();
+  sCtx.ellipse(0, baseHeight * 0.05, baseWidth * 0.9, baseHeight * 0.95, 0, 0, Math.PI * 2);
+  sCtx.fill();
+
+  const drawWing = (flip) => {
+    sCtx.save();
+    sCtx.scale(flip ? -1 : 1, 1);
+    sCtx.translate(baseWidth / 2.4, baseHeight * 0.05);
+    sCtx.rotate(-0.7 + flapAngle * 0.6);
+    sCtx.beginPath();
+    sCtx.moveTo(0, 0);
+    sCtx.quadraticCurveTo(wingLength * 0.2, -wingLength * 0.4, wingLength * 0.5, -wingLength * flapAngle);
+    sCtx.quadraticCurveTo(wingLength * 0.9, -wingLength * 0.25, wingLength, 0);
+    sCtx.quadraticCurveTo(wingLength * 0.7, wingLength * 0.12, wingLength * 0.28, wingLength * 0.06);
+    sCtx.closePath();
+    sCtx.fillStyle = "#fdfdfd";
+    sCtx.strokeStyle = "#c8d9f2";
+    sCtx.lineWidth = 2.2;
+    sCtx.fill();
+    sCtx.stroke();
+    sCtx.restore();
+  };
+
+  drawWing(false);
+  drawWing(true);
+
+  const bodyGradient = sCtx.createLinearGradient(
+    -baseWidth / 2,
+    -baseHeight / 2,
+    baseWidth / 2,
+    baseHeight / 2
+  );
+  bodyGradient.addColorStop(0, toaster.tint);
+  bodyGradient.addColorStop(1, "#9fb1cc");
+
+  sCtx.fillStyle = bodyGradient;
+  sCtx.strokeStyle = "#5f6c83";
+  sCtx.lineWidth = 2.4;
+  sCtx.beginPath();
+  if (sCtx.roundRect) {
+    sCtx.roundRect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight, 12);
+  } else {
+    sCtx.rect(-baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+  }
+  sCtx.fill();
+  sCtx.stroke();
+
+  sCtx.fillStyle = "#8797af";
+  sCtx.fillRect(-baseWidth / 2 + 8, -baseHeight / 2 + 6, baseWidth - 16, 8);
+  sCtx.fillStyle = "#cbd5e8";
+  sCtx.fillRect(-baseWidth / 2 + 12, -baseHeight / 2 + 8, baseWidth - 24, 6);
+
+  sCtx.fillStyle = "#556076";
+  sCtx.fillRect(-baseWidth / 2 + 14, -baseHeight / 2 + 20, baseWidth - 28, 4);
+  sCtx.fillRect(-baseWidth / 2 + 14, -baseHeight / 2 + 28, baseWidth - 28, 4);
+
+  const sliceWidth = 18;
+  const sliceHeight = 18;
+  const sliceOffset = Math.sin(time * 1.4 + toaster.sparkleOffset) * 2;
+  sCtx.fillStyle = "#e1b679";
+  sCtx.strokeStyle = "#c48f47";
+  sCtx.lineWidth = 1.4;
+  [
+    [-sliceWidth - 6, -baseHeight / 2 - 4 - sliceOffset],
+    [sliceWidth + 2, -baseHeight / 2 - 8 + sliceOffset]
+  ].forEach(([sx, sy]) => {
+    sCtx.beginPath();
+    if (sCtx.roundRect) sCtx.roundRect(sx, sy, sliceWidth, sliceHeight, 4);
+    else sCtx.rect(sx, sy, sliceWidth, sliceHeight);
+    sCtx.fill();
+    sCtx.stroke();
+    sCtx.fillStyle = "#f3cf9c";
+    sCtx.fillRect(sx + 4, sy + 4, sliceWidth - 8, sliceHeight - 10);
+    sCtx.fillStyle = "#e1b679";
+  });
+
+  sCtx.fillStyle = "#2d3b4f";
+  sCtx.beginPath();
+  sCtx.arc(baseWidth / 2 - 16, baseHeight / 2 - 14, 6, 0, Math.PI * 2);
+  sCtx.fill();
+  sCtx.fillStyle = "#7ab2f7";
+  sCtx.beginPath();
+  sCtx.arc(baseWidth / 2 - 16, baseHeight / 2 - 14, 3, 0, Math.PI * 2);
+  sCtx.fill();
+
+  sCtx.restore();
+}
+
 function setupPipes() {
   pipes = [];
   sCtx.fillStyle = "black";
@@ -2848,7 +3251,9 @@ function openCPScreensaver(target, containerOverride) {
     { value: "dvd", label: "Bouncing Logo", desc: "A retro DVD logo that changes color when it hits a wall." },
     { value: "fireflies", label: "Fireflies", desc: "Glowing neon fireflies drift gently across the screen." },
     { value: "bubbles", label: "Bubbles", desc: "Floating iridescent bubbles rise in a dark ocean." },
-    { value: "waves", label: "Neon Waves", desc: "Layered synthwave ribbons flow across the canvas." }
+    { value: "waves", label: "Neon Waves", desc: "Layered synthwave ribbons flow across the canvas." },
+    { value: "castaway", label: "Desert Island", desc: "A Johnny Castaway-inspired tale with a lonely castaway and tiny surprises." },
+    { value: "toasters", label: "Flying Toasters", desc: "Chrome toasters flap through a midnight sky." },
   ];
   const saverOptions = saverOptionsData
     .map(
