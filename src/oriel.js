@@ -102,6 +102,8 @@ import { loadThree } from "./threeLoader.js";
 import { getLineRiderContent, initLineRider } from "./apps/linerider.js";
 import { getSimCityContent, initSimCity } from "./apps/simcity.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
+import { getCalcContent } from "./apps/calc.js";
+import { getReadmeContent } from "./apps/readme.js";
 import {
   applyFontSelection,
   applySavedTheme,
@@ -682,7 +684,7 @@ class WindowManager {
     if (type === "notepad") content = this.getNotepadContent(initData);
     if (type === "write") content = this.getWriteContent(initData);
     if (type === "cardfile") content = this.getCardfileContent();
-    if (type === "calc") content = this.getCalcContent();
+    if (type === "calc") content = getCalcContent();
     if (type === "mines") content = this.getMinesContent();
     if (type === "kakuro") content = this.getKakuroContent();
     if (type === "solitaire") content = this.getSolitaireContent();
@@ -709,7 +711,7 @@ class WindowManager {
     if (type === "clock") content = this.getClockContent();
     if (type === "control") content = this.getControlPanelContent();
     if (type === "clipbrd") content = this.getClipboardContent();
-    if (type === "readme") content = this.getReadmeContent();
+    if (type === "readme") content = getReadmeContent();
     if (type === "pdfreader") content = this.getPdfReaderContent(initData);
     if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
@@ -1568,9 +1570,6 @@ class WindowManager {
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
   }
-  getReadmeContent() {
-    return `<div style="padding:15px; font-family:'Times New Roman', serif;"><h2>Welcome to Web 3.1</h2><p>Features: Solitaire, Reversi, Media Player, Clock, etc.</p></div>`;
-  }
   getPdfReaderContent(initData) {
     const src = initData?.src || DEFAULT_PDF_DATA_URI;
     const name = initData?.name || "Sample.pdf";
@@ -1635,9 +1634,6 @@ class WindowManager {
                     <div class="hex-hint">Edit hex pairs, then click Parse Hex to refresh the ASCII view.</div>
                 </div>
             </div>`;
-  }
-  getCalcContent() {
-    return `<div class="calc-grid"><div class="calc-display" id="calc-disp" data-val="0">0</div><div class="calc-btn" onclick="calcInput(event, 'C')">C</div><div class="calc-btn" onclick="calcInput(event, '/')">/</div><div class="calc-btn" onclick="calcInput(event, '*')">*</div><div class="calc-btn" onclick="calcInput(event, '-')">-</div><div class="calc-btn" onclick="calcInput(event, '7')">7</div><div class="calc-btn" onclick="calcInput(event, '8')">8</div><div class="calc-btn" onclick="calcInput(event, '9')">9</div><div class="calc-btn op" onclick="calcInput(event, '+')">+</div><div class="calc-btn" onclick="calcInput(event, '4')">4</div><div class="calc-btn" onclick="calcInput(event, '5')">5</div><div class="calc-btn" onclick="calcInput(event, '6')">6</div><div class="calc-btn op" style="grid-row:span 2" onclick="calcInput(event, '=')">=</div><div class="calc-btn" onclick="calcInput(event, '1')">1</div><div class="calc-btn" onclick="calcInput(event, '2')">2</div><div class="calc-btn" onclick="calcInput(event, '3')">3</div><div class="calc-btn" style="grid-column: span 2" onclick="calcInput(event, '0')">0</div><div class="calc-btn" onclick="calcInput(event, '.')">.</div></div>`;
   }
   getTaskManContent() {
     return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
