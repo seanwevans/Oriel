@@ -3979,6 +3979,17 @@ body {
   border: 1px solid var(--border-dark, #808080);
 }
 
+.minecraft-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.minecraft-actions .task-btn {
+  min-width: 120px;
+  text-align: center;
+}
+
 .minecraft-loading-hidden {
   display: none;
 }
