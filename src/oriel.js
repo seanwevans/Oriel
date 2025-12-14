@@ -21,6 +21,7 @@ import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import { initWrite } from "./apps/write.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
+import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
@@ -94,6 +95,7 @@ const APP_INITIALIZERS = {
   doom: initDoom,
   minecraft: initMinecraft,
   sandspiel: initSandspiel,
+  sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
   hexedit: initHexEditor
 };
@@ -644,6 +646,7 @@ class WindowManager {
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "sandspiel") content = this.getSandspielContent();
+    if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
     const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
@@ -694,6 +697,8 @@ class WindowManager {
         closingWin.el.skifreeCleanup();
       if (typeof closingWin.el.lineRiderCleanup === "function")
         closingWin.el.lineRiderCleanup();
+      if (typeof closingWin.el.sandspiel3dCleanup === "function")
+        closingWin.el.sandspiel3dCleanup();
       if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
@@ -1269,6 +1274,9 @@ class WindowManager {
   }
   getSandspielContent() {
     return getSandspielRoot();
+  }
+  getSandspiel3DContent() {
+    return getSandspiel3DRoot();
   }
   getRadioContent() {
     return `<div class="radio-layout">
