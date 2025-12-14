@@ -231,6 +231,110 @@ function importFileSystem(event) {
   reader.readAsText(file);
 }
 
+function getImportTargetDirectory() {
+  const cDrive = MOCK_FS["C\\"];
+  if (!cDrive?.children) return null;
+
+  if (!cDrive.children.DOCUMENTS) {
+    cDrive.children.DOCUMENTS = { type: "dir", children: {} };
+  }
+
+  const documents = cDrive.children.DOCUMENTS;
+  return documents?.type === "dir" ? documents : null;
+}
+
+function getAppForExtension(name = "") {
+  const ext = name.toLowerCase().split(".").pop();
+  if (!ext || ext === name.toLowerCase()) return "notepad";
+
+  if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) return "imageviewer";
+  if (ext === "pdf") return "pdfreader";
+  if (ext === "md" || ext === "markdown") return "markdown";
+
+  return "notepad";
+}
+
+function getUniqueFileName(dir, desiredName) {
+  if (!dir?.children || !desiredName) return desiredName;
+  if (!dir.children[desiredName]) return desiredName;
+
+  const lastDot = desiredName.lastIndexOf(".");
+  const base = lastDot > 0 ? desiredName.slice(0, lastDot) : desiredName;
+  const ext = lastDot > 0 ? desiredName.slice(lastDot) : "";
+  let counter = 1;
+  let candidate = `${base} (${counter})${ext}`;
+
+  while (dir.children[candidate]) {
+    counter += 1;
+    candidate = `${base} (${counter})${ext}`;
+  }
+
+  return candidate;
+}
+
+function readFileForImport(file, app) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+      if (app === "imageviewer" || app === "pdfreader") {
+        resolve({ name: file.name, src: result });
+      } else {
+        resolve(result);
+      }
+    };
+
+    reader.onerror = () => reject(reader.error);
+
+    if (app === "imageviewer" || app === "pdfreader") {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
+  });
+}
+
+async function importDroppedFiles(files) {
+  const targetDir = getImportTargetDirectory();
+  if (!targetDir) return;
+
+  for (const file of files) {
+    const app = getAppForExtension(file.name);
+    try {
+      const content = await readFileForImport(file, app);
+      const filename = getUniqueFileName(targetDir, file.name || "Untitled");
+      targetDir.children[filename] = {
+        type: "file",
+        app,
+        content
+      };
+    } catch (err) {
+      console.error(`Failed to import file ${file.name}:`, err);
+    }
+  }
+
+  await saveFileSystem();
+  publish("fs:change");
+}
+
+function initDragAndDropImport() {
+  const target = document.getElementById("desktop") || document.body;
+  if (!target) return;
+
+  target.addEventListener("dragover", (e) => {
+    e.preventDefault();
+  });
+
+  target.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (!files.length) return;
+
+    await importDroppedFiles(files);
+  });
+}
+
 subscribe("fs:change", refreshOpenFileManagers);
 subscribe("network:config-update", refreshNetworkedWindows);
 
@@ -6689,4 +6793,5 @@ window.onload = () => {
   bootDesktop();
   initSplash();
   initScreensaver();
+  initDragAndDropImport();
 };
