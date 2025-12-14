@@ -17,7 +17,6 @@ import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
-import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
