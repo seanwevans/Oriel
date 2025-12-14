@@ -23,6 +23,7 @@ import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/pai
 import { initWrite } from "./apps/write.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
+import { initImageViewer } from "./apps/imageViewer.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
@@ -63,6 +64,8 @@ import {
   resetNetworkDefaults,
   updateNetworkDefaults
 } from "./networking.js";
+import { initHexEditor } from "./apps/hexEditor.js";
+import { initSoundRecorder } from "./apps/soundRecorder.js";
 import { SimulatedKernel } from "./kernel.js";
 import { loadThree } from "./threeLoader.js";
 
@@ -4795,70 +4798,6 @@ async function initFileManager(w) {
   await rFL(w);
 }
 
-function initImageViewer(win, initData) {
-  const fileInput = win.querySelector(".img-file-input");
-  const urlInput = win.querySelector(".img-url-input");
-  const loadBtn = win.querySelector(".img-load-btn");
-  const preview = win.querySelector(".img-preview");
-  const placeholder = win.querySelector(".img-placeholder");
-  const status = win.querySelector(".img-status");
-
-  const setStatus = (text) => {
-    if (status) status.textContent = text;
-  };
-
-  const showPlaceholder = (message) => {
-    if (placeholder) {
-      placeholder.style.display = "flex";
-      placeholder.textContent = message || "Drop an image or click Open";
-    }
-    if (preview) preview.style.display = "none";
-  };
-
-  const setImage = (src, label) => {
-    if (!preview || !placeholder) return;
-    if (!src) {
-      showPlaceholder("No image loaded");
-      setStatus("No image loaded");
-      return;
-    }
-    preview.onload = () => {
-      placeholder.style.display = "none";
-      preview.style.display = "block";
-      setStatus(`Loaded ${label || "image"}`);
-    };
-    preview.onerror = () => {
-      showPlaceholder("Failed to load image");
-      setStatus("Failed to load image");
-    };
-    preview.src = src;
-    preview.alt = label || "Image preview";
-  };
-
-  if (initData?.src) setImage(initData.src, initData.name);
-
-  fileInput?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setImage(ev.target.result, file.name);
-    reader.readAsDataURL(file);
-  });
-
-  const loadUrl = () => {
-    const url = urlInput?.value.trim();
-    if (url) setImage(url, url);
-  };
-
-  loadBtn?.addEventListener("click", loadUrl);
-  urlInput?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      loadUrl();
-    }
-  });
-}
-
 function initArtist(win) {
   const promptInput = win.querySelector(".artist-prompt");
   const generateBtn = win.querySelector(".artist-generate");
@@ -4932,118 +4871,6 @@ function initArtist(win) {
   requestImage();
 }
 
-function formatHexDump(bytes) {
-  const offsets = [];
-  const hexLines = [];
-  const asciiLines = [];
-
-  if (!bytes || !bytes.length)
-    return { offsetText: "000000", hexText: "", asciiText: "" };
-
-  for (let i = 0; i < bytes.length; i += 16) {
-    offsets.push(i.toString(16).padStart(6, "0"));
-    const hexPart = [];
-    const asciiPart = [];
-    for (let j = 0; j < 16; j++) {
-      const idx = i + j;
-      if (idx < bytes.length) {
-        const b = bytes[idx];
-        hexPart.push(b.toString(16).padStart(2, "0").toUpperCase());
-        asciiPart.push(b >= 32 && b <= 126 ? String.fromCharCode(b) : ".");
-      } else {
-        hexPart.push("  ");
-        asciiPart.push(" ");
-      }
-    }
-    hexLines.push(hexPart.join(" "));
-    asciiLines.push(asciiPart.join(""));
-  }
-
-  return {
-    offsetText: offsets.join("\n"),
-    hexText: hexLines.join("\n"),
-    asciiText: asciiLines.join("\n")
-  };
-}
-
-function parseHexString(str) {
-  const cleaned = (str || "").replace(/[^0-9a-fA-F]/g, "");
-  if (!cleaned) return new Uint8Array();
-  if (cleaned.length % 2 !== 0) return null;
-  const bytes = new Uint8Array(cleaned.length / 2);
-  for (let i = 0; i < cleaned.length; i += 2) {
-    bytes[i / 2] = parseInt(cleaned.substr(i, 2), 16);
-  }
-  return bytes;
-}
-
-function initHexEditor(win) {
-  const hexArea = win.querySelector(".hex-area");
-  const asciiArea = win.querySelector(".hex-ascii");
-  const offsetArea = win.querySelector(".hex-offsets");
-  const status = win.querySelector(".hex-status");
-  const summary = win.querySelector(".hex-summary");
-  const fileInput = win.querySelector(".hex-file");
-  const parseBtn = win.querySelector(".hex-parse");
-  const asciiBtn = win.querySelector(".hex-from-ascii");
-  const newBtn = win.querySelector(".hex-new");
-
-  const setStatus = (msg, isError = false) => {
-    if (!status) return;
-    status.textContent = msg;
-    status.classList.toggle("error", isError);
-  };
-
-  const renderBytes = (bytes, label) => {
-    const data = bytes || new Uint8Array();
-    const dump = formatHexDump(data);
-    if (offsetArea) offsetArea.value = dump.offsetText;
-    if (hexArea) hexArea.value = dump.hexText;
-    if (asciiArea) asciiArea.value = dump.asciiText;
-    if (summary)
-      summary.textContent = `${data.length} byte${data.length === 1 ? "" : "s"}`;
-    setStatus(label || "Ready");
-  };
-
-  const loadSample = () => {
-    const sample = new TextEncoder().encode(
-      "Hello, Hex Editor!\nUse Parse Hex after editing."
-    );
-    renderBytes(sample, "Sample buffer loaded.");
-  };
-
-  loadSample();
-
-  fileInput?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const arr = new Uint8Array(ev.target.result);
-      renderBytes(arr, `Loaded ${file.name}`);
-    };
-    reader.readAsArrayBuffer(file);
-  });
-
-  parseBtn?.addEventListener("click", () => {
-    const bytes = parseHexString(hexArea?.value || "");
-    if (bytes === null) {
-      setStatus("Hex input contains an incomplete byte.", true);
-      return;
-    }
-    renderBytes(bytes, "Parsed hex input.");
-  });
-
-  asciiBtn?.addEventListener("click", () => {
-    const txt = asciiArea?.value || "";
-    const bytes = new TextEncoder().encode(txt);
-    renderBytes(bytes, "Encoded ASCII view.");
-  });
-
-  newBtn?.addEventListener("click", () =>
-    renderBytes(new Uint8Array(), "New empty buffer.")
-  );
-}
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -5446,103 +5273,6 @@ function initBeatMaker(win) {
 
   renderPattern();
 }
-
-function initSoundRecorder(w) {
-  const canvas = w.querySelector(".sound-wave-canvas");
-  const ctx = canvas.getContext("2d");
-  const status = w.querySelector("#sound-status");
-  
-  let mediaRecorder;
-  let audioChunks = [];
-  let audioBlob = null;
-  let audioUrl = null;
-  let audioCtx;
-  let analyser;
-  let dataArray;
-  let source;
-  let streamRef;
-  let animationId;
-
-  // Visualization Loop
-  function draw() {
-    if (!analyser) return;
-    animationId = requestAnimationFrame(draw);
-    analyser.getByteTimeDomainData(dataArray);
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#0f0"; // Green wave
-    ctx.beginPath();
-    const sliceWidth = canvas.width / dataArray.length;
-    let x = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      const v = dataArray[i] / 128.0;
-      const y = (v * canvas.height) / 2;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-      x += sliceWidth;
-    }
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-  }
-
-  // RECORD
-  w.querySelector("#btn-rec").onclick = async () => {
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef = stream;
-      
-      // Setup Visualizer
-      analyser = audioCtx.createAnalyser();
-      source = audioCtx.createMediaStreamSource(stream);
-      source.connect(analyser);
-      analyser.fftSize = 256;
-      dataArray = new Uint8Array(analyser.frequencyBinCount);
-      draw();
-
-      // Setup Recorder
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-      mediaRecorder.onstop = () => {
-        audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-        audioUrl = URL.createObjectURL(audioBlob);
-        status.innerText = "Stopped. Ready to play.";
-        cancelAnimationFrame(animationId);
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height); // clear canvas
-      };
-
-      mediaRecorder.start();
-      status.innerText = "Recording...";
-      status.style.color = "red";
-    } catch (err) {
-      status.innerText = "Error: Mic access denied.";
-    }
-  };
-
-  // STOP
-  w.querySelector("#btn-stop").onclick = () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-      if (streamRef) streamRef.getTracks().forEach(track => track.stop());
-      status.style.color = "black";
-    }
-  };
-
-  // PLAY
-  w.querySelector("#btn-play").onclick = () => {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      registerMediaElement(audio);
-      audio.play();
-      status.innerText = "Playing...";
-      audio.onended = () => { status.innerText = "Ready"; };
-    }
-  };
-}
-
 
 function initPhotoshop(w) {
   const canvas = w.querySelector(".ps-canvas");
