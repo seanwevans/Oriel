@@ -5,8 +5,7 @@ import {
   DEFAULT_PDF_DATA_URI,
   DEFAULT_SPLASH_IMAGE,
   DEFAULT_WALLPAPER,
-  IRC_BOT_MESSAGES,
-  RSS_PRESETS
+  IRC_BOT_MESSAGES
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
@@ -104,6 +103,7 @@ import { getSimCityContent, initSimCity } from "./apps/simcity.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
+import { getRssReaderContent } from "./apps/rss.js";
 import {
   applyFontSelection,
   applySavedTheme,
@@ -462,11 +462,6 @@ const getBrowserPlaceholder = () => {
   return browserHome || "https://example.com";
 };
 
-const getRssPlaceholder = () => {
-  const { browserHome } = getNetworkDefaults();
-  return `${(browserHome || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
-};
-
 class WindowManager {
   constructor(initialState = null) {
     this.desktop = document.getElementById("desktop");
@@ -716,7 +711,7 @@ class WindowManager {
     if (type === "imageviewer") content = this.getImageViewerContent(initData);
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "reset") content = this.getResetContent();
-    if (type === "rss") content = this.getRssReaderContent();
+    if (type === "rss") content = getRssReaderContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "discord") content = this.getDiscordContent();
@@ -1160,31 +1155,6 @@ class WindowManager {
                         <div class="papers-log" tabindex="0">Checkpoint initialized.</div>
                     </div>
                 </div>
-            `;
-  }
-  getRssReaderContent() {
-    const presetOptions = RSS_PRESETS.map(
-      (p) => `<option value="${p.url}">${p.label}</option>`
-    ).join("");
-    return `
-              <div class="rss-layout">
-                <div class="rss-toolbar">
-                  <label class="rss-label">Feed:</label>
-                  <input class="rss-url" type="text" value="${RSS_PRESETS[0].url}" spellcheck="false" placeholder="${getRssPlaceholder()}">
-                  <select class="rss-preset" title="Popular feeds">${presetOptions}</select>
-                  <button class="task-btn rss-load">Load</button>
-                  <span class="rss-status">Ready</span>
-                </div>
-                <div class="rss-body">
-                  <div class="rss-list" aria-label="Feed items"></div>
-                  <div class="rss-preview">
-                    <div class="rss-preview-title">Choose an item to preview</div>
-                    <div class="rss-preview-meta"></div>
-                    <div class="rss-preview-text"></div>
-                    <a class="rss-preview-link" href="#" target="_blank" rel="noreferrer noopener">Open original</a>
-                  </div>
-                </div>
-              </div>
             `;
   }
   getBrowserContent() {
