@@ -322,6 +322,29 @@ export function initBrowser(win, sessions = browserSessions) {
     if (fwdBtn) fwdBtn.disabled = !hasForward;
   };
 
+  let lastLoadToken = 0;
+
+  const renderProxiedContent = async (url) => {
+    const token = ++lastLoadToken;
+    const proxied = buildProxiedUrl(url);
+    setStatus(`Loading ${url} (via text proxy)...`);
+    frame.removeAttribute("src");
+    frame.srcdoc = "";
+    try {
+      const res = await fetch(proxied);
+      if (token !== lastLoadToken) return;
+      const text = await res.text();
+      frame.srcdoc = text || `<p>Proxy returned an empty response for ${url}.</p>`;
+      setStatus(`Loaded ${url}`);
+    } catch (err) {
+      console.error(err);
+      if (token !== lastLoadToken) return;
+      frame.removeAttribute("srcdoc");
+      frame.src = proxied;
+      setStatus(`Opening ${url} directly...`);
+    }
+  };
+
   const loadUrl = (rawUrl, pushHistory = true) => {
     const url = normalizeUrl(rawUrl);
     const session = sessions[sessionId];
@@ -331,10 +354,8 @@ export function initBrowser(win, sessions = browserSessions) {
       session.history.push(url);
       session.index = session.history.length - 1;
     }
-    const proxied = buildProxiedUrl(url);
     urlInput.value = url;
-    frame.src = proxied;
-    setStatus(`Loading ${url} (via text proxy)...`);
+    renderProxiedContent(url);
     updateNavState();
   };
 
@@ -345,8 +366,7 @@ export function initBrowser(win, sessions = browserSessions) {
       session.index -= 1;
       const target = session.history[session.index];
       urlInput.value = target;
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Loading ${target} (via text proxy)...`);
+      renderProxiedContent(target);
       updateNavState();
     };
 
@@ -357,8 +377,7 @@ export function initBrowser(win, sessions = browserSessions) {
       session.index += 1;
       const target = session.history[session.index];
       urlInput.value = target;
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Loading ${target} (via text proxy)...`);
+      renderProxiedContent(target);
       updateNavState();
     };
 
@@ -367,8 +386,7 @@ export function initBrowser(win, sessions = browserSessions) {
       const session = sessions[sessionId];
       if (!session || session.index < 0) return;
       const target = session.history[session.index];
-      frame.src = buildProxiedUrl(target);
-      setStatus(`Refreshing ${target} (via text proxy)...`);
+      renderProxiedContent(target);
     };
 
   if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
