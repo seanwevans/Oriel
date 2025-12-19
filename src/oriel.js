@@ -182,11 +182,44 @@ async function ensureThree() {
 
 
 
+const INVALID_FOLDER_CHARS = /[\\/:*?"<>|]/;
+const RESERVED_FOLDER_NAMES = new Set([
+  "CON",
+  "PRN",
+  "AUX",
+  "NUL",
+  "COM1",
+  "COM2",
+  "COM3",
+  "COM4",
+  "COM5",
+  "COM6",
+  "COM7",
+  "COM8",
+  "COM9",
+  "LPT1",
+  "LPT2",
+  "LPT3",
+  "LPT4",
+  "LPT5",
+  "LPT6",
+  "LPT7",
+  "LPT8",
+  "LPT9"
+]);
+
+function normalizeFolderName(name) {
+  return name?.toUpperCase() ?? "";
+}
+
 function getUniqueFolderName(targetDir, baseName = "New Folder") {
   if (!targetDir?.children) return baseName;
+  const existingNames = new Set(
+    Object.keys(targetDir.children).map((childName) => normalizeFolderName(childName))
+  );
   let candidate = baseName;
   let counter = 1;
-  while (targetDir.children[candidate]) {
+  while (existingNames.has(normalizeFolderName(candidate))) {
     candidate = `${baseName} (${counter})`;
     counter++;
   }
@@ -194,21 +227,62 @@ function getUniqueFolderName(targetDir, baseName = "New Folder") {
 }
 
 async function createNamedFolder(targetDir, name) {
-  if (!targetDir || !name) {
+  if (!targetDir) {
     return { success: false, message: "Invalid folder target." };
   }
-  if (targetDir.children?.[name]) {
+
+  const rawName = typeof name === "string" ? name : "";
+  if (rawName) {
+    if (/[. ]$/.test(rawName)) {
+      return {
+        success: false,
+        message: "Folder names cannot end with a period or space."
+      };
+    }
+    if (INVALID_FOLDER_CHARS.test(rawName)) {
+      return {
+        success: false,
+        message:
+          "Folder names cannot contain \\ / : * ? \" < > |. Remove these characters and try again."
+      };
+    }
+  }
+
+  const trimmedName = rawName.trim();
+  if (trimmedName && RESERVED_FOLDER_NAMES.has(normalizeFolderName(trimmedName))) {
+    return {
+      success: false,
+      message:
+        "That folder name is reserved by the system. Choose a different name and try again."
+    };
+  }
+
+  let finalName = trimmedName || getUniqueFolderName(targetDir);
+  if (targetDir.children) {
+    const normalized = normalizeFolderName(finalName);
+    const existingNames = Object.keys(targetDir.children).map((childName) =>
+      normalizeFolderName(childName)
+    );
+    if (existingNames.includes(normalized)) {
+      finalName = getUniqueFolderName(targetDir, finalName);
+    }
+  }
+
+  if (targetDir.children?.[finalName]) {
     return { success: false, message: "Folder already exists!" };
   }
   if (targetDir.nativeHandle) {
     try {
-      await targetDir.nativeHandle.getDirectoryHandle(name, { create: true });
+      await targetDir.nativeHandle.getDirectoryHandle(finalName, { create: true });
       await hydrateNativeDirectory(targetDir);
     } catch (err) {
-      return { success: false, message: `Failed to create directory: ${err.message}` };
+      return {
+        success: false,
+        message: `Failed to create directory: ${err.message}`
+      };
     }
   } else {
-    targetDir.children[name] = {
+    targetDir.children[finalName] = {
       type: "dir",
       children: {}
     };
