@@ -151,6 +151,7 @@ export function initRssReader(win) {
 
   const renderItems = () => {
     list.innerHTML = "";
+    list.setAttribute("role", "listbox");
     if (!items.length) {
       list.innerHTML = '<div class="rss-empty">No items in this feed.</div>';
       return;
@@ -159,6 +160,9 @@ export function initRssReader(win) {
       const row = document.createElement("div");
       row.className = "rss-item" + (idx === selected ? " active" : "");
       row.dataset.index = idx.toString();
+      row.setAttribute("role", "option");
+      row.setAttribute("tabindex", "0");
+      row.setAttribute("aria-selected", idx === selected ? "true" : "false");
       row.innerHTML = `<div class="rss-item-title">${item.title || "(Untitled)"}</div><div class="rss-item-date">${formatDate(
         item.date
       )}</div>`;
@@ -250,6 +254,15 @@ export function initRssReader(win) {
   list.addEventListener("click", (e) => {
     const target = e.target.closest(".rss-item");
     if (!target) return;
+    const idx = parseInt(target.dataset.index || "-1", 10);
+    if (!Number.isNaN(idx)) showItem(idx);
+  });
+
+  list.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    const target = e.target.closest(".rss-item");
+    if (!target) return;
+    e.preventDefault();
     const idx = parseInt(target.dataset.index || "-1", 10);
     if (!Number.isNaN(idx)) showItem(idx);
   });
