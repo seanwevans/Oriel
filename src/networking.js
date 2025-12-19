@@ -477,17 +477,35 @@ export function initRadioGarden(win) {
     lastSearchTerm = trimmed;
     setStatus(`Searching for "${trimmed}"…`);
     if (results) results.innerHTML = "";
+    let showedStatusError = false;
     try {
       const res = await fetch(
         `${RADIO_GARDEN_PROXY}/api/ara/content/search?q=${encodeURIComponent(trimmed)}`
       );
-      const text = await res.text();
-      const data = parseRadioJson(text);
+      if (!res.ok) {
+        setStatus(`Radio Garden search failed (HTTP ${res.status}).`, true);
+        showedStatusError = true;
+        throw new Error(`Radio Garden search failed with status ${res.status}`);
+      }
+      const fallbackRes = res.clone();
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        console.warn("Radio Garden search did not return JSON, falling back to text", jsonErr);
+        try {
+          const text = await fallbackRes.text();
+          data = parseRadioJson(text);
+        } catch (parseErr) {
+          throw new Error("Unable to parse Radio Garden response.");
+        }
+      }
       const stations = extractStations(data);
       renderResults(stations);
       setStatus(`Showing ${stations.length} result${stations.length === 1 ? "" : "s"} for "${trimmed}".`);
     } catch (err) {
       console.error(err);
+      if (showedStatusError) return;
       setStatus("Could not reach radio.garden right now. Try again later.", true);
     }
   };
