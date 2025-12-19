@@ -335,6 +335,12 @@ export function initBrowser(win, sessions = browserSessions) {
     try {
       const res = await fetch(proxied);
       if (token !== lastLoadToken) return;
+      if (!res.ok) {
+        const statusMessage = `Proxy error (HTTP ${res.status})`;
+        setStatus(statusMessage);
+        frame.srcdoc = `<p>${statusMessage}</p>`;
+        return;
+      }
       const text = await res.text();
       frame.srcdoc = text || `<p>Proxy returned an empty response for ${url}.</p>`;
       setStatus(`Loaded ${url}`);
