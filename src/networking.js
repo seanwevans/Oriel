@@ -121,6 +121,8 @@ export function initRssReader(win) {
   let items = [];
   let selected = -1;
   let lastRequestedUrl = null;
+  let rssLoadToken = 0;
+  let rssAbort = null;
 
   const setStatus = (text, isError = false) => {
     status.textContent = text;
@@ -211,11 +213,15 @@ export function initRssReader(win) {
   const loadFeed = async (rawUrl) => {
     const normalized = normalizeUrl(rawUrl);
     if (!normalized) return;
+    const token = ++rssLoadToken;
+    if (rssAbort) rssAbort.abort();
+    rssAbort = new AbortController();
+    const { signal } = rssAbort;
     lastRequestedUrl = normalized;
     setStatus("Loading...");
     try {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
-      const res = await fetch(proxyUrl);
+      const res = await fetch(proxyUrl, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       let text;
 
@@ -227,11 +233,14 @@ export function initRssReader(win) {
         text = await res.text();
       }
 
+      if (token !== rssLoadToken) return;
       const parsed = parseFeed(text);
       if (!parsed.length) throw new Error("Empty feed");
+      if (token !== rssLoadToken) return;
       applyItems(parsed);
       setStatus(`Loaded ${parsed.length} items`);
     } catch (err) {
+      if (token !== rssLoadToken) return;
       console.error("RSS load error", err);
       setStatus("Failed to load feed. Showing sample items.", true);
       applyItems(DEFAULT_RSS_SAMPLE);
