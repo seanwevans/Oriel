@@ -5023,6 +5023,8 @@ body {
   border: 1px solid #c0c0c0;
   background: #ffffff;
   image-rendering: pixelated;
+}
+
 .whiteboard-root {
   display: flex;
   flex-direction: column;
