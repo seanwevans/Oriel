@@ -105,6 +105,11 @@ body {
   margin-bottom: 4px;
   image-rendering: pixelated;
 }
+.icon-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 
 .desktop-icon .icon-label {
   font-size: 14px;
@@ -352,6 +357,17 @@ body {
   height: 32px;
   margin-bottom: 4px;
   image-rendering: pixelated;
+}
+.runtime-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.runtime-error {
+  padding: 8px;
+  color: #b00020;
+  font-weight: bold;
 }
 
 .prog-label {

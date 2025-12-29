@@ -141,6 +141,34 @@ async function readStoredFileSystem() {
   }
 }
 
+export async function readFileStoreValue(key) {
+  if (!key) return null;
+  try {
+    const db = await openDatabase();
+    const stored = await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    if (stored) return stored;
+  } catch (err) {
+    console.warn(`Unable to read '${key}' from IndexedDB`, err);
+  }
+
+  if (!supportsLocalStorage) return null;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (err) {
+    console.warn(`Failed to parse stored value for '${key}'`, err);
+    return null;
+  }
+}
+
 async function writeStoredFileSystem(fs) {
   try {
     const db = await openDatabase();
@@ -157,6 +185,30 @@ async function writeStoredFileSystem(fs) {
     if (supportsLocalStorage) {
       localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fs));
     }
+  }
+}
+
+export async function writeFileStoreValue(key, value) {
+  if (!key) return;
+  try {
+    const db = await openDatabase();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.put(value, key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+    return;
+  } catch (err) {
+    console.warn(`Unable to write '${key}' to IndexedDB`, err);
+    if (!supportsLocalStorage) return;
+  }
+
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.warn(`Failed to persist '${key}' to localStorage`, err);
   }
 }
 

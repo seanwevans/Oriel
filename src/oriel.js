@@ -55,7 +55,8 @@ import {
   isNativeFsSupported,
   mountNativeFolder,
   replaceFileSystem,
-  saveFileSystem
+  saveFileSystem,
+  fileSystemReady
 } from "./filesystem.js";
 import { publish, subscribe } from "./eventBus.js";
 import {
@@ -80,7 +81,14 @@ import {
 import { initHexEditor } from "./apps/hexEditor.js";
 import { initSoundRecorder } from "./apps/soundRecorder.js";
 import { initDoom } from "./apps/doom.js";
-import { getWinFileContent, initFileManager, rFL, rFT } from "./apps/fileManager.js";
+import {
+  getWinFileContent,
+  initFileManager,
+  installSelectionFromWindow,
+  rFL,
+  rFT,
+  uninstallSelectionFromWindow
+} from "./apps/fileManager.js";
 import {
   calcInput,
   handleConsoleKey,
@@ -126,6 +134,12 @@ import {
   previewScreensaver,
   setWallpaper
 } from "./apps/controlPanel.js";
+import {
+  bootstrapInstallations,
+  getInstalledPrograms,
+  getManifestForApp,
+  getRuntimeInitializer
+} from "./installer.js";
 import { initChess } from "./apps/chess.js";
 import { initPapersPlease } from "./apps/papersPlease.js";
 
@@ -336,6 +350,28 @@ async function mountLocalFolder(btn) {
   }
 }
 
+async function installSelectedManifest(btn) {
+  const win = btn.closest(".window");
+  if (!win) return;
+  try {
+    const manifest = await installSelectionFromWindow(win);
+    alert(`Installed ${manifest.name} (${manifest.id})`);
+  } catch (err) {
+    alert(err.message || "Unable to install manifest.");
+  }
+}
+
+async function uninstallManifest(btn) {
+  const win = btn.closest(".window");
+  if (!win) return;
+  try {
+    const removedId = await uninstallSelectionFromWindow(win);
+    alert(`Uninstalled ${removedId}`);
+  } catch (err) {
+    alert(err.message || "Unable to uninstall app.");
+  }
+}
+
 function downloadJson(content, filename) {
   const blob = new Blob([content], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -537,6 +573,9 @@ function initDragAndDropImport() {
 
 subscribe("fs:change", refreshOpenFileManagers);
 subscribe("network:config-update", refreshNetworkedWindows);
+const installerReady = bootstrapInstallations().catch((err) => {
+  console.warn("Failed to bootstrap installed apps", err);
+});
 
 export const kernel = new SimulatedKernel(() => refreshAllProcessViews());
 const getBrowserPlaceholder = () => {
@@ -580,6 +619,9 @@ class WindowManager {
       this.endResize();
     });
     window.addEventListener("keydown", (e) => this.handleWindowShortcuts(e));
+    this.unsubscribeAppChange = subscribe("apps:change", () =>
+      this.refreshProgramManagerContent()
+    );
     // Restore prior desktop state
     if (initialState && initialState.windows?.length) {
       this.isRestoring = true;
@@ -756,6 +798,9 @@ class WindowManager {
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
     const id = stateOverrides.id || "win-" + Date.now();
     let content = "";
+    const defaults = this.getProgramDefaults(type) || {};
+    const resolvedWidth = w || defaults.width || 500;
+    const resolvedHeight = h || defaults.height || 400;
     // Generate App Content
     if (type === "progman") content = this.getProgramManagerContent();
     if (type === "notepad") content = this.getNotepadContent(initData);
@@ -808,7 +853,10 @@ class WindowManager {
     if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
     if (type === "hexedit") content = this.getHexEditorContent();
-    const winEl = this.createWindowDOM(id, title, w, h, content, stateOverrides);
+    if (!content && getRuntimeInitializer(type)) {
+      content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
+    }
+    const winEl = this.createWindowDOM(id, title, resolvedWidth, resolvedHeight, content, stateOverrides);
     this.desktop.appendChild(winEl);
     if (type === "progman") this.setupProgramManagerMenu(winEl);
     const rect = winEl.getBoundingClientRect();
@@ -837,8 +885,17 @@ class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
-    const initializer = APP_INITIALIZERS[type];
-    if (initializer) initializer(winEl, initData, this);
+    const initializer = APP_INITIALIZERS[type] || getRuntimeInitializer(type);
+    if (initializer) {
+      try {
+        initializer(winEl, initData, this);
+      } catch (err) {
+        console.error(`Initializer for '${type}' failed:`, err);
+        this.renderRuntimeError(winEl, err);
+      }
+    } else if (!APP_INITIALIZERS[type]) {
+      this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
+    }
     // Refresh logic
     refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
@@ -1035,7 +1092,7 @@ class WindowManager {
   }
   restoreWindows(windowsState = []) {
     windowsState.forEach((winState) => {
-      const defaults = PROGRAMS.find((p) => p.type === winState.type);
+      const defaults = this.getProgramDefaults(winState.type);
       const width =
         typeof winState.width === "number"
           ? winState.width
@@ -1165,6 +1222,17 @@ class WindowManager {
       this.maximizeWindow(active.id);
     }
   }
+  getAvailablePrograms() {
+    const merged = new Map();
+    PROGRAMS.forEach((prog) => merged.set(prog.type, prog));
+    getInstalledPrograms().forEach((prog) => {
+      if (!merged.has(prog.type)) merged.set(prog.type, prog);
+    });
+    return Array.from(merged.values());
+  }
+  getProgramDefaults(type) {
+    return this.getAvailablePrograms().find((prog) => prog.type === type) || null;
+  }
   saveDesktopState() {
     if (this.isRestoring) return;
     const state = {
@@ -1176,7 +1244,19 @@ class WindowManager {
   }
   // Helper: Icons
   getIconForType(type) {
+    const manifest = getManifestForApp(type);
+    if (manifest?.icon) {
+      if (ICONS[manifest.icon]) return ICONS[manifest.icon];
+      return `<img src="${manifest.icon}" alt="${manifest.name || type} icon" class="runtime-icon">`;
+    }
+    const dynamic = getInstalledPrograms().find((app) => app.type === type);
+    if (dynamic?.icon && ICONS[dynamic.icon]) return ICONS[dynamic.icon];
     return ICONS[type] || ICONS["help"];
+  }
+  renderRuntimeError(winEl, err) {
+    const contentArea = winEl?.querySelector(".window-content");
+    if (!contentArea) return;
+    contentArea.innerHTML = `<div class="runtime-error">Unable to start app: ${err.message}</div>`;
   }
   setupProgramManagerMenu(win) {
     const menu = win.querySelector(".menu-bar");
@@ -1199,18 +1279,34 @@ class WindowManager {
   }
   // Content Generators
   getProgramManagerContent() {
-    const programIcons = PROGRAMS.map(
-      (prog) => `
-                    <div class="prog-icon" onclick="wm.openWindow('${prog.type}', '${prog.title}', ${prog.width}, ${prog.height})">
-                        ${ICONS[prog.icon] || ICONS.help}
+    const programs = this.getAvailablePrograms();
+    if (!programs.length)
+      return '<div class="prog-man-grid"><div class="prog-label">No applications available.</div></div>';
+    const programIcons = programs
+      .map((prog) => {
+        const iconHtml = this.getIconForType(prog.type);
+        const width = prog.width || 500;
+        const height = prog.height || 400;
+        return `
+                    <div class="prog-icon" onclick="wm.openWindow('${prog.type}', '${prog.title}', ${width}, ${height})">
+                        ${iconHtml}
                         <div class="prog-label">${prog.label}</div>
-                    </div>`
-    ).join("");
+                    </div>`;
+      })
+      .join("");
     return `
                 <div class="prog-man-grid">
                     ${programIcons}
                 </div>
             `;
+  }
+  refreshProgramManagerContent() {
+    this.windows
+      .filter((win) => win.type === "progman")
+      .forEach((win) => {
+        const contentArea = win.el.querySelector(".window-content");
+        if (contentArea) contentArea.innerHTML = this.getProgramManagerContent();
+      });
   }
   getPapersContent() {
     return `
@@ -3037,6 +3133,8 @@ window.runCompiler = runCompiler;
 window.runPython = runPython;
 window.exportFileSystem = exportFileSystem;
 window.importFileSystem = importFileSystem;
+window.installSelectedManifest = installSelectedManifest;
+window.uninstallManifest = uninstallManifest;
 
 // Database App
 window.addDbRecord = addDbRecord;
@@ -3073,7 +3171,9 @@ window.applyFontSelection = applyFontSelection;
 window.submitLockPassphrase = submitLockPassphrase;
 window.hideUnlockPrompt = hideUnlockPrompt;
 
-window.onload = () => {
+window.onload = async () => {
+  await fileSystemReady.catch(() => {});
+  await installerReady.catch(() => {});
   bootDesktop();
   initDesktopContextMenu();
   initSplash();
