@@ -1,5 +1,6 @@
 import { ICONS } from "../icons.js";
 import { MOCK_FS, hydrateNativeDirectory } from "../filesystem.js";
+import { installFromManifestPath, readManifest, uninstallApp } from "../installer.js";
 
 function getWinFileContent() {
   return `
@@ -23,6 +24,8 @@ function getWinFileContent() {
                 Import
                 <input type="file" accept="application/json" onchange="importFileSystem(event)">
               </label>
+              <button class="task-btn" onclick="installSelectedManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Install</button>
+              <button class="task-btn" onclick="uninstallManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Uninstall</button>
               <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
               <span>C\\</span>
             </div>
@@ -140,6 +143,7 @@ async function rFL(w) {
   const v = w.querySelector("#file-list-view");
   w.querySelector("#file-list-header").innerText = w.cP + "*.*";
   v.innerHTML = "";
+  w.selectedEntry = null;
   if (w.cD?.nativeHandle) await hydrateNativeDirectory(w.cD);
   if (w.cD && w.cD.children)
     Object.keys(w.cD.children)
@@ -183,9 +187,43 @@ async function rFL(w) {
             x.classList.remove("selected")
           );
           r.classList.add("selected");
+          w.selectedEntry = { name: k, node: i };
         };
         v.appendChild(r);
       });
 }
 
-export { initFileManager, rFT, rFL, getWinFileContent };
+function getSelectedEntry(w) {
+  if (!w?.selectedEntry) return null;
+  const { name, node } = w.selectedEntry;
+  const path = w.cP.endsWith("\\") ? `${w.cP}${name}` : `${w.cP}\\${name}`;
+  return { name, node, path };
+}
+
+async function installSelectionFromWindow(w) {
+  const selection = getSelectedEntry(w);
+  if (!selection) throw new Error("Select a manifest file first.");
+  if (selection.node.type !== "file") throw new Error("Selected entry is not a file.");
+  const { manifest } = await installFromManifestPath(selection.path, { basePath: w.cP });
+  return manifest;
+}
+
+async function uninstallSelectionFromWindow(w) {
+  const selection = getSelectedEntry(w);
+  if (!selection) throw new Error("Select a manifest file first.");
+  if (selection.node.type !== "file") throw new Error("Selected entry is not a file.");
+  const { manifest } = await readManifest(selection.path, w.cP);
+  if (!manifest?.id) throw new Error("Manifest is missing an id.");
+  await uninstallApp(manifest.id);
+  return manifest.id;
+}
+
+export {
+  initFileManager,
+  rFT,
+  rFL,
+  getSelectedEntry,
+  getWinFileContent,
+  installSelectionFromWindow,
+  uninstallSelectionFromWindow
+};

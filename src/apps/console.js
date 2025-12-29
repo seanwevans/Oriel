@@ -1,4 +1,9 @@
 import { MOCK_FS, saveFileSystem } from "../filesystem.js";
+import {
+  getInstalledPrograms,
+  installFromManifestPath,
+  uninstallApp
+} from "../installer.js";
 
 const getKernel = () => window.kernel;
 
@@ -250,6 +255,31 @@ function registerDefaultConsoleCommands() {
   register("rm", ({ argLine, state }) => cashRm(argLine, state));
   register("cp", ({ argLine, state }) => cashCp(argLine, state));
   register("mv", ({ argLine, state }) => cashMv(argLine, state));
+  register("install", async ({ argLine, state }) => {
+    if (!argLine) return { error: "install: missing manifest path" };
+    try {
+      const { manifest } = await installFromManifestPath(argLine, { basePath: state.cwd });
+      return { lines: [`Installed ${manifest.name} (${manifest.id})`] };
+    } catch (err) {
+      return { error: `install failed: ${err.message}` };
+    }
+  });
+  register("uninstall", async ({ argLine }) => {
+    if (!argLine) return { error: "uninstall: missing app id" };
+    try {
+      const { id } = await uninstallApp(argLine.trim());
+      return { lines: [`Uninstalled ${id}`] };
+    } catch (err) {
+      return { error: `uninstall failed: ${err.message}` };
+    }
+  });
+  register("apps", () => {
+    const apps = getInstalledPrograms();
+    if (!apps.length) return { lines: ["No runtime applications installed."] };
+    return {
+      lines: apps.map((app) => `${app.type} - ${app.title} (${app.width}x${app.height})`)
+    };
+  });
   register("cd", ({ argLine, state, updatePrompt }) => {
     if (!argLine) return { lines: [state.cwd] };
     const { path, node } = consolePathFromUnix(argLine, state.cwd);
@@ -362,7 +392,10 @@ async function processConsoleCommand(w, input) {
       "TOUCH   - Create an empty file",
       "MKDIR   - Create folders",
       "CLS     - Clear the screen",
-      "ECHO    - Print text"
+      "ECHO    - Print text",
+      "INSTALL - Install an app manifest (install <path>)",
+      "UNINSTALL - Remove an installed app (uninstall <id>)",
+      "APPS    - List installed runtime apps"
     ].forEach((line) => appendConsoleLine(w, line));
     updateConsolePrompt(w);
     return;
