@@ -168,6 +168,14 @@ export const PROGRAMS = [
     label: "Beat Lab"
   },
   {
+    type: "tracker",
+    title: "Chip Studio",
+    width: 820,
+    height: 520,
+    icon: "tracker",
+    label: "Chip Studio"
+  },
+  {
     type: "clock",
     title: "Clock",
     width: 250,
