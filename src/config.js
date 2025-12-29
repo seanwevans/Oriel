@@ -19,5 +19,6 @@ export const NETWORK_CONFIG = {
     "VITE_RADIO_GARDEN_PROXY",
     `${browserProxyPrefix}http://radio.garden`
   ),
-  rssProxyRoot: getEnv("VITE_RSS_PROXY_ROOT", "https://api.allorigins.win/raw?url=")
+  rssProxyRoot: getEnv("VITE_RSS_PROXY_ROOT", "https://api.allorigins.win/raw?url="),
+  mailProxyRoot: getEnv("VITE_MAIL_PROXY_ROOT", "")
 };

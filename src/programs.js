@@ -101,7 +101,13 @@ export const PROGRAMS = [
     width: 980,
     height: 620,
     icon: "pixelstudio",
-    label: "Pixel Studio"
+    label: "Pixel Studio",
+    type: "whiteboard",
+    title: "Collaborative Whiteboard",
+    width: 900,
+    height: 640,
+    icon: "whiteboard",
+    label: "Whiteboard"
   },
   {
     type: "photoshop",
@@ -166,6 +172,14 @@ export const PROGRAMS = [
     height: 420,
     icon: "beatmaker",
     label: "Beat Lab"
+  },
+  {
+    type: "tracker",
+    title: "Chip Studio",
+    width: 820,
+    height: 520,
+    icon: "tracker",
+    label: "Chip Studio"
   },
   {
     type: "clock",
@@ -326,6 +340,14 @@ export const PROGRAMS = [
     height: 520,
     icon: "discord",
     label: "Discord"
+  },
+  {
+    type: "email",
+    title: "RetroMail",
+    width: 920,
+    height: 640,
+    icon: "email",
+    label: "Mail"
   },
   {
     type: "irc",
