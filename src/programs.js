@@ -348,6 +348,8 @@ export const PROGRAMS = [
     height: 520,
     icon: "bbs",
     label: "BBS",
+  },
+  {
     type: "email",
     title: "RetroMail",
     width: 920,
