@@ -320,6 +320,14 @@ export const PROGRAMS = [
     label: "Discord"
   },
   {
+    type: "bbs",
+    title: "BBS Dialer",
+    width: 760,
+    height: 520,
+    icon: "bbs",
+    label: "BBS"
+  },
+  {
     type: "irc",
     title: "IRC Client",
     width: 680,

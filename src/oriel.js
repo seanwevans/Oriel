@@ -17,6 +17,7 @@ import { initClock } from "./apps/clock.js";
 import { getDiscordContent, initDiscord } from "./apps/discord.js";
 import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
+import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
@@ -182,6 +183,7 @@ const APP_INITIALIZERS = {
   browser: initBrowser,
   radiogarden: initRadioGarden,
   discord: initDiscord,
+  bbs: initBbs,
   irc: initIRC,
   spotify: initSpotify,
   doom: initDoom,
@@ -842,6 +844,7 @@ class WindowManager {
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "discord") content = getDiscordContent();
+    if (type === "bbs") content = getBbsContent();
     if (type === "spotify") content = getSpotifyContent();
     if (type === "irc") content = getIRCContent();
     if (type === "vm") content = this.getVmContent();
