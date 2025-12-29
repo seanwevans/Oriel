@@ -117,6 +117,7 @@ import { getReadmeContent } from "./apps/readme.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
+import { getTrackerContent, initTracker } from "./apps/tracker.js";
 import {
   applyFontSelection,
   applySavedTheme,
@@ -164,6 +165,7 @@ const APP_INITIALIZERS = {
   soundrec: initSoundRecorder,
   radio: initRadio,
   beatmaker: initBeatMaker,
+  tracker: initTracker,
   charmap: initCharMap,
   winfile: initFileManager,
   clock: initClock,
@@ -828,6 +830,7 @@ class WindowManager {
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = getBeatMakerContent();
+    if (type === "tracker") content = getTrackerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = getWinFileContent();
     if (type === "clock") content = this.getClockContent();

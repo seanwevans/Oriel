@@ -43,6 +43,7 @@ export const DEFAULT_FS = {
           "CHARMAP.EXE": { type: "file", app: "charmap" },
           "SOUNDREC.EXE": { type: "file", app: "soundrec" },
           "BEATLAB.EXE": { type: "file", app: "beatmaker" },
+          "TRACKER.EXE": { type: "file", app: "tracker" },
           "RADIO.EXE": { type: "file", app: "radio" },
           "SPOTIFY.EXE": { type: "file", app: "spotify" },
           "CLOCK.EXE": { type: "file", app: "clock" },

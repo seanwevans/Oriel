@@ -1621,6 +1621,131 @@ body {
   border: 1px solid #b0b0b0;
 }
 
+.tracker-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  background: var(--win-gray);
+  padding: 8px;
+}
+
+.tracker-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tracker-tempo,
+.tracker-note-select,
+.tracker-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tracker-note-select label,
+.tracker-tempo label,
+.tracker-keyboard label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tracker-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #e6e6e6;
+  border: 2px inset white;
+  padding: 8px;
+  overflow: auto;
+}
+
+.tracker-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tracker-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.tracker-row-name {
+  font-weight: bold;
+  font-size: 13px;
+  width: 110px;
+}
+
+.tracker-step-row {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 4px;
+}
+
+.tracker-step {
+  background: #d4d4d4;
+  border: 1px solid #808080;
+  text-align: center;
+  padding: 4px 0;
+  font-family: "Courier New", monospace;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tracker-step:nth-child(4n) {
+  border-right: 2px solid #5a5a5a;
+}
+
+.tracker-step:hover {
+  background: #ededed;
+}
+
+.tracker-step.active {
+  background: #3ad483;
+  color: #0b2d12;
+  font-weight: bold;
+}
+
+.tracker-step.playhead {
+  outline: 2px solid var(--win-blue);
+}
+
+.tracker-step.playhead.active {
+  background: #6df3aa;
+}
+
+.tracker-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.tracker-keys-help {
+  background: #fffbe6;
+  border: 1px dashed #d3a400;
+  padding: 4px 6px;
+}
+
+.tracker-record-toggle {
+  font-weight: bold;
+}
+
+.tracker-status {
+  font-size: 13px;
+  padding: 4px 6px;
+  background: #f6f6f6;
+  border: 1px solid #b0b0b0;
+}
+
 .rss-layout {
   display: flex;
   flex-direction: column;
