@@ -101,13 +101,15 @@ export const PROGRAMS = [
     width: 980,
     height: 620,
     icon: "pixelstudio",
-    label: "Pixel Studio",
+    label: "pixelstudio"
+  },
+  {
     type: "whiteboard",
-    title: "Collaborative Whiteboard",
+    title: "Whiteboard",
     width: 900,
     height: 640,
     icon: "whiteboard",
-    label: "Whiteboard"
+    label: "whiteboard"
   },
   {
     type: "photoshop",
