@@ -22,6 +22,10 @@ import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import {
+  getPixelStudioContent,
+  initPixelStudio
+} from "./apps/pixelStudio.js";
 import { initVm } from "./apps/vm.js";
 import { initWrite } from "./apps/write.js";
 import { initArtist } from "./apps/artist.js";
@@ -161,6 +165,7 @@ const APP_INITIALIZERS = {
   reversi: initReversi,
   sudoku: initSudoku,
   paint: initPaint,
+  pixelstudio: initPixelStudio,
   notepad: initNotepad,
   photoshop: initPhotoshop,
   artist: initArtist,
@@ -831,6 +836,7 @@ class WindowManager {
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = getPaintRoot(initData);
+    if (type === "pixelstudio") content = getPixelStudioContent();
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = getSimCityContent();
     if (type === "skifree") content = getSkiFreeContent();
