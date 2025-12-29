@@ -328,6 +328,14 @@ export const PROGRAMS = [
     label: "Discord"
   },
   {
+    type: "email",
+    title: "RetroMail",
+    width: 920,
+    height: 640,
+    icon: "email",
+    label: "Mail"
+  },
+  {
     type: "irc",
     title: "IRC Client",
     width: 680,
