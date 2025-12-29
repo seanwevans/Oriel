@@ -15,6 +15,7 @@ import { initNotepad } from "./apps/notepad.js";
 import { initCardfile } from "./apps/cardfile.js";
 import { initClock } from "./apps/clock.js";
 import { getDiscordContent, initDiscord } from "./apps/discord.js";
+import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
@@ -166,6 +167,7 @@ const APP_INITIALIZERS = {
   radiogarden: initRadioGarden,
   discord: initDiscord,
   irc: initIRC,
+  spotify: initSpotify,
   doom: initDoom,
   minecraft: initMinecraft,
   n64: initN64,
@@ -791,6 +793,7 @@ class WindowManager {
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "discord") content = getDiscordContent();
+    if (type === "spotify") content = getSpotifyContent();
     if (type === "irc") content = getIRCContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
