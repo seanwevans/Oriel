@@ -96,6 +96,14 @@ export const PROGRAMS = [
     label: "Paintbrush"
   },
   {
+    type: "whiteboard",
+    title: "Collaborative Whiteboard",
+    width: 900,
+    height: 640,
+    icon: "whiteboard",
+    label: "Whiteboard"
+  },
+  {
     type: "photoshop",
     title: "Photoshop 1.0",
     width: 760,
