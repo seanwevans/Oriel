@@ -1,5 +1,4 @@
 import { ICONS } from "./icons.js";
-import { PROGRAMS } from "./programs.js";
 import {
   DEFAULT_MD_SAMPLE,
   DEFAULT_PDF_DATA_URI,
@@ -18,16 +17,22 @@ import { getDiscordContent, initDiscord } from "./apps/discord.js";
 import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
+import { getEmailContent, initEmail } from "./apps/email.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import {
+  getPixelStudioContent,
+  initPixelStudio
+} from "./apps/pixelStudio.js";
 import { initVm } from "./apps/vm.js";
 import { initWrite } from "./apps/write.js";
 import { initArtist } from "./apps/artist.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
+import { getWhiteboardRoot, initWhiteboard } from "./apps/whiteboard.js";
 import { initImageViewer } from "./apps/imageViewer.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
@@ -118,6 +123,15 @@ import { getReadmeContent } from "./apps/readme.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
+import { getTrackerContent, initTracker } from "./apps/tracker.js";
+import {
+  getAvailablePrograms as getProgramManagerApps,
+  getIconForType as getProgramManagerIcon,
+  getProgramDefaults as getProgramManagerDefaults,
+  getProgramManagerContent,
+  refreshProgramManagerContent,
+  setupProgramManagerMenu
+} from "./apps/programManager.js";
 import {
   applyFontSelection,
   applySavedTheme,
@@ -137,8 +151,6 @@ import {
 } from "./apps/controlPanel.js";
 import {
   bootstrapInstallations,
-  getInstalledPrograms,
-  getManifestForApp,
   getRuntimeInitializer
 } from "./installer.js";
 import { initChess } from "./apps/chess.js";
@@ -154,6 +166,7 @@ const APP_INITIALIZERS = {
   reversi: initReversi,
   sudoku: initSudoku,
   paint: initPaint,
+  pixelstudio: initPixelStudio,
   notepad: initNotepad,
   photoshop: initPhotoshop,
   artist: initArtist,
@@ -165,6 +178,7 @@ const APP_INITIALIZERS = {
   soundrec: initSoundRecorder,
   radio: initRadio,
   beatmaker: initBeatMaker,
+  tracker: initTracker,
   charmap: initCharMap,
   winfile: initFileManager,
   clock: initClock,
@@ -185,6 +199,7 @@ const APP_INITIALIZERS = {
   discord: initDiscord,
   bbs: initBbs,
   irc: initIRC,
+  email: initEmail,
   spotify: initSpotify,
   doom: initDoom,
   minecraft: initMinecraft,
@@ -193,6 +208,7 @@ const APP_INITIALIZERS = {
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
+  whiteboard: initWhiteboard,
   vm: initVm,
   hexedit: initHexEditor
 };
@@ -622,7 +638,7 @@ class WindowManager {
     });
     window.addEventListener("keydown", (e) => this.handleWindowShortcuts(e));
     this.unsubscribeAppChange = subscribe("apps:change", () =>
-      this.refreshProgramManagerContent()
+      refreshProgramManagerContent(this)
     );
     // Restore prior desktop state
     if (initialState && initialState.windows?.length) {
@@ -800,11 +816,11 @@ class WindowManager {
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
     const id = stateOverrides.id || "win-" + Date.now();
     let content = "";
-    const defaults = this.getProgramDefaults(type) || {};
+    const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;
     // Generate App Content
-    if (type === "progman") content = this.getProgramManagerContent();
+    if (type === "progman") content = getProgramManagerContent(this);
     if (type === "notepad") content = this.getNotepadContent(initData);
     if (type === "write") content = this.getWriteContent(initData);
     if (type === "cardfile") content = this.getCardfileContent();
@@ -822,6 +838,7 @@ class WindowManager {
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = getPaintRoot(initData);
+    if (type === "pixelstudio") content = getPixelStudioContent();
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = getSimCityContent();
     if (type === "skifree") content = getSkiFreeContent();
@@ -830,6 +847,7 @@ class WindowManager {
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = getBeatMakerContent();
+    if (type === "tracker") content = getTrackerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = getWinFileContent();
     if (type === "clock") content = this.getClockContent();
@@ -847,6 +865,7 @@ class WindowManager {
     if (type === "bbs") content = getBbsContent();
     if (type === "spotify") content = getSpotifyContent();
     if (type === "irc") content = getIRCContent();
+    if (type === "email") content = getEmailContent();
     if (type === "vm") content = this.getVmContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
@@ -855,13 +874,14 @@ class WindowManager {
     if (type === "sandspiel") content = this.getSandspielContent();
     if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
+    if (type === "whiteboard") content = getWhiteboardRoot();
     if (type === "hexedit") content = this.getHexEditorContent();
     if (!content && getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
     }
     const winEl = this.createWindowDOM(id, title, resolvedWidth, resolvedHeight, content, stateOverrides);
     this.desktop.appendChild(winEl);
-    if (type === "progman") this.setupProgramManagerMenu(winEl);
+    if (type === "progman") setupProgramManagerMenu(this, winEl);
     const rect = winEl.getBoundingClientRect();
     const initialRect = {
       left: winEl.offsetLeft,
@@ -918,6 +938,8 @@ class WindowManager {
         closingWin.el.lineRiderCleanup();
       if (typeof closingWin.el.sandspiel3dCleanup === "function")
         closingWin.el.sandspiel3dCleanup();
+      if (typeof closingWin.el.whiteboardCleanup === "function")
+        closingWin.el.whiteboardCleanup();
       if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
@@ -1226,15 +1248,10 @@ class WindowManager {
     }
   }
   getAvailablePrograms() {
-    const merged = new Map();
-    PROGRAMS.forEach((prog) => merged.set(prog.type, prog));
-    getInstalledPrograms().forEach((prog) => {
-      if (!merged.has(prog.type)) merged.set(prog.type, prog);
-    });
-    return Array.from(merged.values());
+    return getProgramManagerApps();
   }
   getProgramDefaults(type) {
-    return this.getAvailablePrograms().find((prog) => prog.type === type) || null;
+    return getProgramManagerDefaults(type);
   }
   saveDesktopState() {
     if (this.isRestoring) return;
@@ -1247,14 +1264,7 @@ class WindowManager {
   }
   // Helper: Icons
   getIconForType(type) {
-    const manifest = getManifestForApp(type);
-    if (manifest?.icon) {
-      if (ICONS[manifest.icon]) return ICONS[manifest.icon];
-      return `<img src="${manifest.icon}" alt="${manifest.name || type} icon" class="runtime-icon">`;
-    }
-    const dynamic = getInstalledPrograms().find((app) => app.type === type);
-    if (dynamic?.icon && ICONS[dynamic.icon]) return ICONS[dynamic.icon];
-    return ICONS[type] || ICONS["help"];
+    return getProgramManagerIcon(type);
   }
   renderRuntimeError(winEl, err) {
     const contentArea = winEl?.querySelector(".window-content");
@@ -1262,54 +1272,14 @@ class WindowManager {
     contentArea.innerHTML = `<div class="runtime-error">Unable to start app: ${err.message}</div>`;
   }
   setupProgramManagerMenu(win) {
-    const menu = win.querySelector(".menu-bar");
-    if (!menu) return;
-
-    menu.innerHTML = `
-                    <div class="menu-item">File</div>
-                    <div class="menu-item" data-action="cascade">Cascade Windows</div>
-                    <div class="menu-item" data-action="tile">Tile Windows</div>
-                    <div class="menu-item">Help</div>
-                `;
-    this.setupMenuBar(win);
-
-    menu.querySelector('[data-action="cascade"]')?.addEventListener("click", () =>
-      this.cascadeWindows()
-    );
-    menu.querySelector('[data-action="tile"]')?.addEventListener("click", () =>
-      this.tileWindows()
-    );
+    setupProgramManagerMenu(this, win);
   }
   // Content Generators
   getProgramManagerContent() {
-    const programs = this.getAvailablePrograms();
-    if (!programs.length)
-      return '<div class="prog-man-grid"><div class="prog-label">No applications available.</div></div>';
-    const programIcons = programs
-      .map((prog) => {
-        const iconHtml = this.getIconForType(prog.type);
-        const width = prog.width || 500;
-        const height = prog.height || 400;
-        return `
-                    <div class="prog-icon" onclick="wm.openWindow('${prog.type}', '${prog.title}', ${width}, ${height})">
-                        ${iconHtml}
-                        <div class="prog-label">${prog.label}</div>
-                    </div>`;
-      })
-      .join("");
-    return `
-                <div class="prog-man-grid">
-                    ${programIcons}
-                </div>
-            `;
+    return getProgramManagerContent(this);
   }
   refreshProgramManagerContent() {
-    this.windows
-      .filter((win) => win.type === "progman")
-      .forEach((win) => {
-        const contentArea = win.el.querySelector(".window-content");
-        if (contentArea) contentArea.innerHTML = this.getProgramManagerContent();
-      });
+    refreshProgramManagerContent(this);
   }
   getPapersContent() {
     return `

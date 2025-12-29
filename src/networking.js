@@ -49,6 +49,7 @@ let BROWSER_PROXY_PREFIX = mergedNetworkConfig.browserProxyPrefix;
 let RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
 let RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
 let RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+let MAIL_PROXY_ROOT = mergedNetworkConfig.mailProxyRoot;
 
 function syncNetworkConfig(overrides = null) {
   if (overrides) {
@@ -63,6 +64,7 @@ function syncNetworkConfig(overrides = null) {
   RADIO_BROWSER_BASE = mergedNetworkConfig.radioBrowserBase;
   RADIO_GARDEN_PROXY = mergedNetworkConfig.radioGardenProxy;
   RSS_PROXY_ROOT = mergedNetworkConfig.rssProxyRoot;
+  MAIL_PROXY_ROOT = mergedNetworkConfig.mailProxyRoot;
   return mergedNetworkConfig;
 }
 
@@ -77,6 +79,7 @@ export function updateNetworkDefaults(partial = {}) {
 }
 
 export { BROWSER_HOME, BROWSER_PROXY_PREFIX, RADIO_BROWSER_BASE, RADIO_GARDEN_PROXY, RSS_PROXY_ROOT };
+export { MAIL_PROXY_ROOT };
 export function resetNetworkDefaults() {
   mergedNetworkConfig = { ...baseNetworkConfig };
   localStorage.removeItem(NETWORK_STORAGE_KEY);
