@@ -4225,3 +4225,148 @@ body {
   font-size: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+
+.whiteboard-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.whiteboard-toolbar {
+  padding: 6px;
+  background: linear-gradient(#f8f8f8, #e9e9e9);
+  border: 1px solid var(--border-dark, #808080);
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.whiteboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.whiteboard-label {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.whiteboard-name {
+  width: 140px;
+  padding: 4px;
+}
+
+.whiteboard-tools {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.wb-tool {
+  border: 1px solid #707070;
+  background: #fdfdfd;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.wb-tool.active {
+  background: #dbe8ff;
+  border-color: #3d73c4;
+}
+
+.whiteboard-size {
+  width: 120px;
+}
+
+.whiteboard-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #333;
+}
+
+.whiteboard-board {
+  flex: 1;
+  background: #eaeaea;
+  border: 1px solid var(--border-dark, #808080);
+  padding: 6px;
+}
+
+.whiteboard-layers {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border: 1px solid #808080;
+  overflow: hidden;
+}
+
+.whiteboard-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  background: #fff;
+}
+
+.whiteboard-notes,
+.whiteboard-cursors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.whiteboard-note {
+  position: absolute;
+  width: 200px;
+  min-height: 140px;
+  border: 1px solid #c0a040;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.whiteboard-note-header {
+  font-weight: bold;
+  font-size: 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.whiteboard-note-body {
+  flex: 1;
+  width: 100%;
+  border: 1px solid #b0b0b0;
+  padding: 4px;
+  resize: none;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.whiteboard-cursor {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-4px, -4px);
+  font-size: 11px;
+}
+
+.cursor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #000;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.cursor-label {
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}

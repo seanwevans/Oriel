@@ -27,6 +27,7 @@ import { initWrite } from "./apps/write.js";
 import { initArtist } from "./apps/artist.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
 import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
+import { getWhiteboardRoot, initWhiteboard } from "./apps/whiteboard.js";
 import { initImageViewer } from "./apps/imageViewer.js";
 import { initReversi } from "./apps/reversi.js";
 import { initSolitaire } from "./apps/solitaire.js";
@@ -191,6 +192,7 @@ const APP_INITIALIZERS = {
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
+  whiteboard: initWhiteboard,
   vm: initVm,
   hexedit: initHexEditor
 };
@@ -852,6 +854,7 @@ class WindowManager {
     if (type === "sandspiel") content = this.getSandspielContent();
     if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
+    if (type === "whiteboard") content = getWhiteboardRoot();
     if (type === "hexedit") content = this.getHexEditorContent();
     if (!content && getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
@@ -915,6 +918,8 @@ class WindowManager {
         closingWin.el.lineRiderCleanup();
       if (typeof closingWin.el.sandspiel3dCleanup === "function")
         closingWin.el.sandspiel3dCleanup();
+      if (typeof closingWin.el.whiteboardCleanup === "function")
+        closingWin.el.whiteboardCleanup();
       if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();
