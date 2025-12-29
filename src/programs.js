@@ -96,6 +96,14 @@ export const PROGRAMS = [
     label: "Paintbrush"
   },
   {
+    type: "pixelstudio",
+    title: "Pixel Studio",
+    width: 980,
+    height: 620,
+    icon: "pixelstudio",
+    label: "Pixel Studio"
+  },
+  {
     type: "photoshop",
     title: "Photoshop 1.0",
     width: 760,
