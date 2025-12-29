@@ -44,6 +44,7 @@ export const DEFAULT_FS = {
           "SOUNDREC.EXE": { type: "file", app: "soundrec" },
           "BEATLAB.EXE": { type: "file", app: "beatmaker" },
           "RADIO.EXE": { type: "file", app: "radio" },
+          "SPOTIFY.EXE": { type: "file", app: "spotify" },
           "CLOCK.EXE": { type: "file", app: "clock" },
           "CONTROL.EXE": { type: "file", app: "control" },
           "RESET.EXE": { type: "file", app: "reset" },

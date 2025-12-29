@@ -168,6 +168,14 @@ export const PROGRAMS = [
     label: "Clock"
   },
   {
+    type: "spotify",
+    title: "Spotify",
+    width: 420,
+    height: 520,
+    icon: "spotify",
+    label: "Spotify"
+  },
+  {
     type: "charmap",
     title: "Character Map",
     width: 460,
