@@ -336,6 +336,14 @@ export const PROGRAMS = [
     label: "DOOM"
   },
   {
+    type: "ti83",
+    title: "TI-83 Emulator",
+    width: 620,
+    height: 520,
+    icon: "ti83",
+    label: "TI-83"
+  },
+  {
     type: "n64",
     title: "Nintendo 64",
     width: 640,

@@ -107,6 +107,7 @@ import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getClipboardContent } from "./apps/clipboard.js";
+import { getTi83Root, initTi83 } from "./apps/ti83.js";
 import {
   applyFontSelection,
   applySavedTheme,
@@ -171,6 +172,7 @@ const APP_INITIALIZERS = {
   doom: initDoom,
   minecraft: initMinecraft,
   n64: initN64,
+  ti83: initTi83,
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
@@ -798,6 +800,7 @@ class WindowManager {
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "n64") content = this.getN64Content();
+    if (type === "ti83") content = this.getTi83Content();
     if (type === "sandspiel") content = this.getSandspielContent();
     if (type === "sandspiel3d") content = this.getSandspiel3DContent();
     if (type === "papers") content = this.getPapersContent();
@@ -1286,6 +1289,10 @@ class WindowManager {
 
   getN64Content() {
     return getN64Root();
+  }
+
+  getTi83Content() {
+    return getTi83Root();
   }
   getSandspielContent() {
     return getSandspielRoot();
