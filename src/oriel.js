@@ -22,6 +22,7 @@ import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
+import { initVm } from "./apps/vm.js";
 import { initWrite } from "./apps/write.js";
 import { initArtist } from "./apps/artist.js";
 import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
@@ -176,6 +177,7 @@ const APP_INITIALIZERS = {
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
+  vm: initVm,
   hexedit: initHexEditor
 };
 
@@ -797,6 +799,7 @@ class WindowManager {
     if (type === "discord") content = getDiscordContent();
     if (type === "spotify") content = getSpotifyContent();
     if (type === "irc") content = getIRCContent();
+    if (type === "vm") content = this.getVmContent();
     if (type === "doom") content = this.getDoomContent();
     if (type === "minecraft") content = this.getMinecraftContent();
     if (type === "n64") content = this.getN64Content();
@@ -1441,6 +1444,21 @@ class WindowManager {
                 </ul>
                 <button class="task-btn reset-now-btn" style="width:180px;">Reset and Reload</button>
                 <div class="reset-status" aria-live="polite">No changes yet.</div>
+            </div>`;
+  }
+  getVmContent() {
+    return `<div class="vm-layout">
+                <div class="vm-toolbar">
+                    <div class="vm-actions">
+                        <button class="task-btn vm-boot">Boot VM</button>
+                        <button class="task-btn vm-reset" disabled>Power Off</button>
+                    </div>
+                    <div class="vm-status" aria-live="polite">VM is powered off. Click Boot to start Oriel inside Oriel.</div>
+                </div>
+                <div class="vm-note">Runs a fresh copy of Oriel in an isolated iframe. Try opening apps inside the VM for true desktop-ception.</div>
+                <div class="vm-view">
+                    <iframe class="vm-frame" title="Oriel Virtual Machine" src="about:blank"></iframe>
+                </div>
             </div>`;
   }
   getNotepadContent(txt) {

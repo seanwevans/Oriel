@@ -296,6 +296,14 @@ export const PROGRAMS = [
     label: "Browser"
   },
   {
+    type: "vm",
+    title: "Oriel VM",
+    width: 900,
+    height: 680,
+    icon: "vm",
+    label: "Oriel VM"
+  },
+  {
     type: "radiogarden",
     title: "Radio Garden",
     width: 720,
