@@ -4988,6 +4988,163 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.shaderlab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0b0f1d;
+  color: #e6ecff;
+}
+
+.shaderlab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: linear-gradient(90deg, #0f1832, #0c1528);
+  border-bottom: 1px solid #1f2a44;
+}
+
+.shaderlab-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shaderlab-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #c6d4ff;
+}
+
+.shaderlab-field select {
+  background: #0c1528;
+  color: #e6ecff;
+  border: 1px solid #25345a;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.shaderlab-stats {
+  display: flex;
+  gap: 10px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #9fbaf5;
+}
+
+.shaderlab-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 45%) 1fr;
+  gap: 10px;
+  padding: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.shaderlab-editor {
+  display: flex;
+  flex-direction: column;
+  background: #0b0d18;
+  border: 1px solid #1f2a44;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.shaderlab-editor-header {
+  padding: 8px 10px;
+  background: #101629;
+  border-bottom: 1px solid #1f2a44;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+}
+
+.shaderlab-code {
+  flex: 1;
+  background: #0f1527;
+  color: #d6e5ff;
+  border: none;
+  padding: 10px;
+  font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  min-height: 220px;
+}
+
+.shaderlab-hint {
+  padding: 6px 10px;
+  background: #0c1324;
+  border-top: 1px solid #1f2a44;
+  color: #8fa3cc;
+  font-size: 12px;
+}
+
+.shaderlab-errors {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-top: 1px solid #1f2a44;
+  color: #ffb3b3;
+  font-size: 12px;
+}
+
+.shaderlab-errors.has-errors {
+  background: #2a0f15;
+}
+
+.shaderlab-preview {
+  position: relative;
+  background: #05070f;
+  border: 1px solid #1f2a44;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 280px;
+}
+
+.shaderlab-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #05070f;
+}
+
+.shaderlab-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  font-size: 12px;
+  color: #b9c7e6;
+}
+
+.shaderlab-overlay-text,
+.shaderlab-metrics {
+  background: rgba(12, 18, 34, 0.72);
+  border: 1px solid #23345b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.shaderlab-metrics {
+  align-self: flex-end;
+  font-family: monospace;
+}
+
+@media (max-width: 920px) {
+  .shaderlab-body {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pixel-studio {
   display: flex;
   flex-direction: column;

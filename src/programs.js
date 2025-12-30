@@ -432,6 +432,14 @@ export const PROGRAMS = [
     label: "Sandspiel3D"
   },
   {
+    type: "shaderlab",
+    title: "Shader Lab",
+    width: 920,
+    height: 640,
+    icon: "shaderlab",
+    label: "Shader Lab"
+  },
+  {
     type: "papers",
     title: "Checkpoint",
     width: 640,
