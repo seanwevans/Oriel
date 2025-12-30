@@ -152,6 +152,14 @@ export const PROGRAMS = [
     label: "SkiFree"
   },
   {
+    type: "cannonduel",
+    title: "Cannon Duel",
+    width: 780,
+    height: 520,
+    icon: "cannonduel",
+    label: "Cannon Duel"
+  },
+  {
     type: "pinball",
     title: "Pinball",
     width: 520,
