@@ -5939,6 +5939,8 @@ body {
   text-align: center;
   padding: 16px;
   color: #cdd9ed;
+}
+
 .retroai-layout {
   display: flex;
   flex-direction: column;
