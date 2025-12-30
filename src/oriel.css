@@ -6055,6 +6055,72 @@ body {
   pointer-events: none;
 }
 
+.messenger {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.messenger-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.messenger-name {
+  width: 140px;
+}
+
+.messenger-status {
+  font-size: 12px;
+  color: #333;
+}
+
+.messenger-log {
+  flex: 1;
+  border: 1px solid #000;
+  background: #fff;
+  padding: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messenger-message-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  line-height: 1.4;
+}
+
+.messenger-meta {
+  color: #666;
+  font-size: 11px;
+  min-width: 52px;
+}
+
+.messenger-sender {
+  font-weight: bold;
+  color: #102a63;
+}
+
+.messenger-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.messenger-input {
+  display: flex;
+  gap: 8px;
+}
+
+.messenger-input input {
+  flex: 1;
+}
+
 .whiteboard-note {
   position: absolute;
   width: 200px;

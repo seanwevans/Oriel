@@ -424,6 +424,14 @@ export const PROGRAMS = [
     label: "Mail"
   },
   {
+    type: "messenger",
+    title: "Messenger",
+    width: 520,
+    height: 420,
+    icon: "messenger",
+    label: "Messenger"
+  },
+  {
     type: "irc",
     title: "IRC Client",
     width: 680,
