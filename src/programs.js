@@ -184,6 +184,14 @@ export const PROGRAMS = [
     label: "Chip Studio"
   },
   {
+    type: "midisequencer",
+    title: "MIDI Sequencer",
+    width: 920,
+    height: 600,
+    icon: "midisequencer",
+    label: "MIDI Seq"
+  },
+  {
     type: "clock",
     title: "Clock",
     width: 250,
