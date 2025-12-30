@@ -304,6 +304,14 @@ export const PROGRAMS = [
     label: "Console"
   },
   {
+    type: "retroai",
+    title: "Retro AI",
+    width: 620,
+    height: 520,
+    icon: "retroai",
+    label: "Retro AI"
+  },
+  {
     type: "hexedit",
     title: "Hex Editor",
     width: 720,

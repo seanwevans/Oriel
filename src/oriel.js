@@ -18,6 +18,7 @@ import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { getEmailContent, initEmail } from "./apps/email.js";
+import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
@@ -189,6 +190,7 @@ const APP_INITIALIZERS = {
   reset: initReset,
   chess: initChess,
   console: initConsole,
+  retroai: initRetroAI,
   write: initWrite,
   cardfile: initCardfile,
   taskman: initTaskMan,
@@ -837,6 +839,7 @@ class WindowManager {
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
+    if (type === "retroai") content = getRetroAIContent();
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = getPaintRoot(initData);
