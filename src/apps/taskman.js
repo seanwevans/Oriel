@@ -26,9 +26,8 @@ function refreshProcessView(viewEl) {
   kernelRef.processes.forEach((p) => {
     const row = document.createElement("div");
     row.className = "queue-row";
-    let cpuBar = "";
     const ticks = Math.min(20, Math.floor(p.cpuTime / 1000));
-    for (let i = 0; i < ticks; i++) cpuBar += "|";
+    const cpuBar = "|".repeat(ticks).padEnd(20, " ");
     // Format ID from "win-123..."
     const shortId = p.pid.split("-")[1].substring(9);
     row.innerText = `${shortId} | ${p.priority
