@@ -123,6 +123,7 @@ import { getSimCityContent, initSimCity } from "./apps/simcity.js";
 import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getPinballContent, initPinball } from "./apps/pinball.js";
+import { getAngryBirdsContent, initAngryBirds } from "./apps/angrybirds.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
 import { initMafia } from "./apps/mafia.js";
@@ -182,6 +183,7 @@ const APP_INITIALIZERS = {
   mplayer: initMediaPlayer,
   simcity: initSimCity,
   skifree: initSkiFree,
+  angrybirds: initAngryBirds,
   pinball: initPinball,
   linerider: initLineRider,
   database: initDatabase,
@@ -862,6 +864,7 @@ class WindowManager {
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = getSimCityContent();
     if (type === "skifree") content = getSkiFreeContent();
+    if (type === "angrybirds") content = getAngryBirdsContent();
     if (type === "pinball") content = getPinballContent();
     if (type === "linerider") content = getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();

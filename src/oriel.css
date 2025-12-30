@@ -4853,6 +4853,54 @@ body {
   padding: 4px 6px;
 }
 
+.angrybirds-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: linear-gradient(180deg, #f7fbff, #e7f3ff);
+  outline: none;
+}
+
+.angrybirds-layout:focus {
+  outline: 2px dashed #5086c1;
+  outline-offset: 2px;
+}
+
+.angrybirds-hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.angrybirds-stat {
+  padding: 4px 8px;
+  background: #e2edff;
+  border: 1px solid #98b6e4;
+  border-radius: 4px;
+}
+
+.angrybirds-status {
+  flex: 1;
+  font-weight: 600;
+  color: #214c7b;
+}
+
+.angrybirds-canvas {
+  border: 2px solid #3b6aa4;
+  border-radius: 6px;
+  background: #cde9ff;
+  width: 100%;
+  height: auto;
+}
+
+.angrybirds-help {
+  font-size: 11px;
+  color: #375070;
+}
+
 .pinball {
   display: flex;
   flex-direction: column;
