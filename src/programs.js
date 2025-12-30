@@ -272,6 +272,14 @@ export const PROGRAMS = [
     label: "Data Mgr"
   },
   {
+    type: "postgres",
+    title: "Postgres",
+    width: 820,
+    height: 520,
+    icon: "postgres",
+    label: "Postgres"
+  },
+  {
     type: "compiler",
     title: "Tiny C",
     width: 450,

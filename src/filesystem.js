@@ -40,6 +40,7 @@ export const DEFAULT_FS = {
           "TASKMAN.EXE": { type: "file", app: "taskman" },
           "CLIPBRD.EXE": { type: "file", app: "clipbrd" },
           "DATAMGR.EXE": { type: "file", app: "database" },
+          "POSTGRES.EXE": { type: "file", app: "postgres" },
           "CHARMAP.EXE": { type: "file", app: "charmap" },
           "SOUNDREC.EXE": { type: "file", app: "soundrec" },
           "BEATLAB.EXE": { type: "file", app: "beatmaker" },
