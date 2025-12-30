@@ -4853,6 +4853,51 @@ body {
   padding: 4px 6px;
 }
 
+.pinball {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  outline: none;
+}
+
+.pinball-hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(90deg, #0f172a, #0a0f1a);
+  color: #e5e7eb;
+  padding: 8px 10px;
+  border: 2px solid #1f2937;
+  border-radius: 6px;
+}
+
+.pinball-stat {
+  font-weight: bold;
+  font-family: "MS Sans Serif", sans-serif;
+}
+
+.pinball-status {
+  flex: 1;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.pinball-canvas {
+  width: 100%;
+  flex: 1;
+  border: 2px solid #111827;
+  border-radius: 10px;
+  background: #0b1020;
+}
+
+.pinball-help {
+  text-align: center;
+  font-size: 12px;
+  color: #374151;
+  margin-top: 2px;
+}
+
 .linerider-layout {
   height: 100%;
   display: flex;
