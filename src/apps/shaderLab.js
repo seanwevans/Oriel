@@ -1,8 +1,17 @@
 import { loadThree } from "../threeLoader.js";
 
-const DEFAULT_VERTEX = `
+const GLSL1_VERTEX = `
   precision highp float;
   attribute vec3 position;
+  void main() {
+    gl_Position = vec4(position, 1.0);
+  }
+`;
+
+const GLSL3_VERTEX = `
+  #version 300 es
+  precision highp float;
+  in vec3 position;
   void main() {
     gl_Position = vec4(position, 1.0);
   }
@@ -48,6 +57,14 @@ const PRESETS = [
 ];
 
 const ERROR_PATTERN = /ERROR:\s*\d+:(\d+)(?::(\d+))?:\s*(.*)/i;
+
+const GLSL3_HINTS = [
+  /#version\s+300\s+es/i,
+  /\bout\s+vec4\b/i,
+  /\bin\s+vec[234]\b/i,
+];
+
+const usesGLSL3 = (source) => GLSL3_HINTS.some((pattern) => pattern.test(source));
 
 export function getShaderLabRoot() {
   const options = PRESETS.map(
@@ -106,7 +123,19 @@ function parseShaderErrors(log) {
     .filter(Boolean);
 }
 
-function validateShader(gl, fragmentSource) {
+function validateShader(gl, fragmentSource, vertexSource, glslVersion) {
+  if (glslVersion === "glsl3" && !(gl instanceof WebGL2RenderingContext)) {
+    return {
+      ok: false,
+      errors: [
+        {
+          message: "WebGL2 is required for #version 300 es shaders. Please use WebGL2-compatible code or remove the version directive.",
+        },
+      ],
+      stage: "context",
+    };
+  }
+
   const compile = (source, type) => {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -116,7 +145,7 @@ function validateShader(gl, fragmentSource) {
     return { ok, log, shader };
   };
 
-  const vertex = compile(DEFAULT_VERTEX, gl.VERTEX_SHADER);
+  const vertex = compile(vertexSource, gl.VERTEX_SHADER);
   if (!vertex.ok) {
     gl.deleteShader(vertex.shader);
     return { ok: false, errors: parseShaderErrors(vertex.log), stage: "vertex" };
@@ -177,8 +206,9 @@ export async function initShaderLab(win) {
 
   let material = new THREE.ShaderMaterial({
     uniforms,
-    vertexShader: DEFAULT_VERTEX,
+    vertexShader: GLSL1_VERTEX,
     fragmentShader: DEFAULT_FRAGMENT,
+    glslVersion: THREE.GLSL1,
   });
   let mesh = new THREE.Mesh(geometry, material);
   scene.add(mesh);
@@ -240,7 +270,10 @@ export async function initShaderLab(win) {
 
   const applyShader = (source) => {
     const fragSource = source || codeArea.value || DEFAULT_FRAGMENT;
-    const validation = validateShader(gl, fragSource);
+    const glsl3 = usesGLSL3(fragSource);
+    const vertexSource = glsl3 ? GLSL3_VERTEX : GLSL1_VERTEX;
+    const glslVersion = glsl3 ? "glsl3" : "glsl1";
+    const validation = validateShader(gl, fragSource, vertexSource, glslVersion);
     if (!validation.ok) {
       setErrors(validation.errors);
       return;
@@ -250,8 +283,9 @@ export async function initShaderLab(win) {
     material.dispose();
     material = new THREE.ShaderMaterial({
       uniforms,
-      vertexShader: DEFAULT_VERTEX,
+      vertexShader: vertexSource,
       fragmentShader: fragSource,
+      glslVersion: glsl3 ? THREE.GLSL3 : THREE.GLSL1,
     });
     mesh.material = material;
   };
