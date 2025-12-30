@@ -152,6 +152,14 @@ export const PROGRAMS = [
     label: "SkiFree"
   },
   {
+    type: "pinball",
+    title: "Pinball",
+    width: 520,
+    height: 640,
+    icon: "pinball",
+    label: "Pinball"
+  },
+  {
     type: "linerider",
     title: "Line Rider",
     width: 620,

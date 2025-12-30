@@ -122,6 +122,7 @@ import { getLineRiderContent, initLineRider } from "./apps/linerider.js";
 import { getSimCityContent, initSimCity } from "./apps/simcity.js";
 import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
+import { getPinballContent, initPinball } from "./apps/pinball.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
 import { initMafia } from "./apps/mafia.js";
@@ -181,6 +182,7 @@ const APP_INITIALIZERS = {
   mplayer: initMediaPlayer,
   simcity: initSimCity,
   skifree: initSkiFree,
+  pinball: initPinball,
   linerider: initLineRider,
   database: initDatabase,
   soundrec: initSoundRecorder,
@@ -860,6 +862,7 @@ class WindowManager {
     if (type === "mplayer") content = this.getMediaPlayerContent();
     if (type === "simcity") content = getSimCityContent();
     if (type === "skifree") content = getSkiFreeContent();
+    if (type === "pinball") content = getPinballContent();
     if (type === "linerider") content = getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
     if (type === "postgres") content = getPostgresContent();
@@ -955,6 +958,8 @@ class WindowManager {
         closingWin.el.chessCleanup();
       if (typeof closingWin.el.skifreeCleanup === "function")
         closingWin.el.skifreeCleanup();
+      if (typeof closingWin.el.pinballCleanup === "function")
+        closingWin.el.pinballCleanup();
       if (typeof closingWin.el.lineRiderCleanup === "function")
         closingWin.el.lineRiderCleanup();
       if (typeof closingWin.el.sandspiel3dCleanup === "function")

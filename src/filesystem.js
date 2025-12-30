@@ -34,6 +34,7 @@ export const DEFAULT_FS = {
           "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
           "MPLAYER.EXE": { type: "file", app: "mplayer" },
           "SKIFREE.EXE": { type: "file", app: "skifree" },
+          "PINBALL.EXE": { type: "file", app: "pinball" },
           "LINERIDR.EXE": { type: "file", app: "linerider" },
           "SIMCITY.EXE": { type: "file", app: "simcity" },
           "WINFILE.EXE": { type: "file", app: "winfile" },
