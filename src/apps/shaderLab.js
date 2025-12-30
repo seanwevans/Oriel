@@ -1,21 +1,17 @@
 import { loadThree } from "../threeLoader.js";
 
-const GLSL1_VERTEX = `
-  precision highp float;
-  attribute vec3 position;
-  void main() {
-    gl_Position = vec4(position, 1.0);
-  }
-`;
+const GLSL1_VERTEX = `precision highp float;
+attribute vec3 position;
+void main() {
+  gl_Position = vec4(position, 1.0);
+}`;
 
-const GLSL3_VERTEX = `
-  #version 300 es
-  precision highp float;
-  in vec3 position;
-  void main() {
-    gl_Position = vec4(position, 1.0);
-  }
-`;
+const GLSL3_VERTEX = `#version 300 es
+precision highp float;
+in vec3 position;
+void main() {
+  gl_Position = vec4(position, 1.0);
+}`;
 
 const DEFAULT_FRAGMENT = `
 precision highp float;
