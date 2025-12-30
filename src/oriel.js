@@ -18,6 +18,7 @@ import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { getEmailContent, initEmail } from "./apps/email.js";
+import { getMessengerContent, initMessenger } from "./apps/messenger.js";
 import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
@@ -213,6 +214,7 @@ const APP_INITIALIZERS = {
   radiogarden: initRadioGarden,
   discord: initDiscord,
   bbs: initBbs,
+  messenger: initMessenger,
   irc: initIRC,
   email: initEmail,
   spotify: initSpotify,
@@ -888,6 +890,7 @@ class WindowManager {
     if (type === "discord") content = getDiscordContent();
     if (type === "bbs") content = getBbsContent();
     if (type === "spotify") content = getSpotifyContent();
+    if (type === "messenger") content = getMessengerContent();
     if (type === "irc") content = getIRCContent();
     if (type === "email") content = getEmailContent();
     if (type === "vm") content = this.getVmContent();
