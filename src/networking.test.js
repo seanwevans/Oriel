@@ -12,7 +12,7 @@ global.localStorage = {
 
 const { NETWORK_CONFIG } = await import("./config.js");
 const networking = await import("./networking.js");
-const { getNetworkDefaults, resetNetworkDefaults, updateNetworkDefaults } = networking;
+const { getNetworkDefaults, parseRssXml, resetNetworkDefaults, stripHtmlText, updateNetworkDefaults } = networking;
 
 test("partial overrides do not clear defaults", () => {
   resetNetworkDefaults();
@@ -62,4 +62,41 @@ test("overrides can be cleared without resetting defaults", () => {
 
   stored = storage.get(storageKey);
   assert.deepEqual(JSON.parse(stored), {});
+});
+
+test("RSS parsing works without DOM globals", () => {
+  const originalDOMParser = global.DOMParser;
+  const originalDocument = global.document;
+
+  // Ensure DOM globals are absent to exercise server-side code paths
+  delete global.DOMParser;
+  delete global.document;
+
+  try {
+    const xml = `
+      <rss version="2.0">
+        <channel>
+          <title>Sample Feed</title>
+          <item>
+            <title>Hello World</title>
+            <link>https://example.com/hello</link>
+            <pubDate>Tue, 31 Dec 2024 23:59:00 GMT</pubDate>
+            <description><![CDATA[<p>Hi <em>there</em>!</p><script>ignored()</script>]]></description>
+          </item>
+        </channel>
+      </rss>
+    `;
+
+    const parsed = parseRssXml(xml);
+    assert.equal(parsed.title, "Sample Feed");
+    assert.equal(parsed.items.length, 1);
+    const [item] = parsed.items;
+    assert.equal(item.title, "Hello World");
+    assert.equal(item.link, "https://example.com/hello");
+    assert.equal(stripHtmlText("<div>Hi <strong>there</strong><style>body{}</style></div>"), "Hi there");
+    assert.equal(item.summary, "Hi there!");
+  } finally {
+    global.DOMParser = originalDOMParser;
+    global.document = originalDocument;
+  }
 });
