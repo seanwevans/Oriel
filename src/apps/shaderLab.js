@@ -166,7 +166,8 @@ export async function initShaderLab(win) {
   const gl = renderer.getContext();
 
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera.position.z = 1;
   const geometry = new THREE.PlaneGeometry(2, 2);
   const uniforms = {
     iResolution: { value: new THREE.Vector3(1, 1, 1) },
