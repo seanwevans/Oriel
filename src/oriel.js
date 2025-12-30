@@ -121,6 +121,7 @@ import { getSimCityContent, initSimCity } from "./apps/simcity.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
+import { initMafia } from "./apps/mafia.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
@@ -166,6 +167,7 @@ const APP_INITIALIZERS = {
   solitaire: initSolitaire,
   reversi: initReversi,
   sudoku: initSudoku,
+  mafia: initMafia,
   paint: initPaint,
   pixelstudio: initPixelStudio,
   notepad: initNotepad,
@@ -832,6 +834,7 @@ class WindowManager {
     if (type === "solitaire") content = this.getSolitaireContent();
     if (type === "reversi") content = this.getReversiContent();
     if (type === "sudoku") content = this.getSudokuContent();
+    if (type === "mafia") content = this.getMafiaContent();
     if (type === "photoshop") content = getPhotoshopContent();
     if (type === "artist") content = this.getArtistContent();
     if (type === "compiler") content = this.getCompilerContent();
@@ -1454,6 +1457,49 @@ class WindowManager {
         </div>
         <div class="sudoku-status">Choose a difficulty to start.</div>
         <div class="sudoku-grid" aria-label="Sudoku board" role="grid"></div>
+      </div>
+    `;
+  }
+  getMafiaContent() {
+    return `
+      <div class="mafia-layout">
+        <div class="mafia-sidebar">
+          <div class="mafia-section">
+            <label class="mafia-field">Players
+              <input type="number" min="6" max="12" value="8" class="mafia-count" aria-label="Number of players">
+            </label>
+            <label class="mafia-field">AI Provider
+              <select class="mafia-provider" aria-label="AI provider">
+                <option value="local">Local improv</option>
+                <option value="openai">OpenAI</option>
+                <option value="google">Google Gemini</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </label>
+            <label class="mafia-field">API Key
+              <input type="password" class="mafia-api-key" placeholder="Optional for cloud" aria-label="API key">
+            </label>
+            <label class="mafia-field">Model (optional)
+              <input type="text" class="mafia-model" placeholder="gpt-4o-mini / gemini-1.5-flash" aria-label="Model override">
+            </label>
+            <div class="mafia-hint">Keys stay in-browser. Choose "Local improv" for an offline story.</div>
+            <button class="task-btn mafia-start">New Mystery</button>
+          </div>
+          <div class="mafia-section">
+            <div class="mafia-section-title">Roster</div>
+            <div class="mafia-roster" aria-label="Player roster"></div>
+          </div>
+        </div>
+        <div class="mafia-main">
+          <div class="mafia-status" aria-live="polite">Build your table and begin.</div>
+          <div class="mafia-controls">
+            <label>Accuse
+              <select class="mafia-suspect" aria-label="Pick a suspect"></select>
+            </label>
+            <button class="task-btn mafia-next">Run Night & Vote</button>
+          </div>
+          <div class="mafia-log" aria-live="polite"></div>
+        </div>
       </div>
     `;
   }

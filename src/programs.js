@@ -88,6 +88,14 @@ export const PROGRAMS = [
     label: "Sudoku"
   },
   {
+    type: "mafia",
+    title: "Mystery Mafia",
+    width: 760,
+    height: 640,
+    icon: "mafia",
+    label: "Mafia"
+  },
+  {
     type: "paint",
     title: "Paintbrush",
     width: 500,
