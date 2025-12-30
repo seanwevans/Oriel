@@ -144,6 +144,14 @@ export const PROGRAMS = [
     label: "Micropolis"
   },
   {
+    type: "angrybirds",
+    title: "Bird Slinger",
+    width: 860,
+    height: 540,
+    icon: "angrybirds",
+    label: "Angry Birds"
+  },
+  {
     type: "skifree",
     title: "SkiFree",
     width: 520,
