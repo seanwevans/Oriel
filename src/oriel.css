@@ -2441,6 +2441,142 @@ body {
   text-decoration: underline;
 }
 
+.netnews-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.netnews-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+  border: 1px solid var(--win-gray-shadow);
+}
+
+.netnews-title {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.netnews-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.netnews-status {
+  font-size: 12px;
+  color: #003366;
+}
+
+.netnews-status-error {
+  color: #a00000;
+  font-weight: bold;
+}
+
+.netnews-layout {
+  display: grid;
+  grid-template-columns: 220px 320px 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.netnews-pane {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.netnews-pane-label {
+  padding: 6px 8px;
+  font-weight: bold;
+  background: #efefef;
+  border-bottom: 1px solid var(--win-gray-dark);
+}
+
+.netnews-groups,
+.netnews-threads {
+  padding: 6px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.netnews-group,
+.netnews-thread {
+  border: 1px solid transparent;
+  padding: 6px;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.netnews-group:hover,
+.netnews-thread:hover {
+  border-color: var(--win-blue);
+  background: #eef3ff;
+}
+
+.netnews-group.active,
+.netnews-thread.active {
+  border-color: var(--win-blue);
+  background: #dce6ff;
+}
+
+.netnews-group-title,
+.netnews-thread-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.netnews-group-desc,
+.netnews-thread-meta {
+  font-size: 12px;
+  color: #555;
+}
+
+.netnews-pane-article {
+  padding: 10px;
+  gap: 8px;
+}
+
+.netnews-article-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.netnews-article-meta {
+  font-size: 12px;
+  color: #555;
+}
+
+.netnews-article-body {
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-line;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.netnews-open-link {
+  font-size: 13px;
+  color: var(--win-blue);
+  text-decoration: underline;
+}
+
+.netnews-empty {
+  font-size: 13px;
+  color: #444;
+}
+
 .browser-layout {
   display: flex;
   flex-direction: column;

@@ -256,6 +256,14 @@ export const PROGRAMS = [
     label: "Markdown"
   },
   {
+    type: "netnews",
+    title: "NetNews",
+    width: 980,
+    height: 640,
+    icon: "netnews",
+    label: "NetNews"
+  },
+  {
     type: "clipbrd",
     title: "Clipboard",
     width: 300,
