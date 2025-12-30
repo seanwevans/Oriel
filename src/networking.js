@@ -1,3 +1,4 @@
+import { DOMParser as XmldomParser } from "@xmldom/xmldom";
 import { DEFAULT_RSS_SAMPLE, RADIO_FALLBACK_PRESETS, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
 import { NETWORK_CONFIG } from "./config.js";
@@ -166,10 +167,18 @@ export function normalizeHttpUrl(raw) {
 }
 
 export function stripHtmlText(html) {
-  const div = document.createElement("div");
-  div.innerHTML = html || "";
-  div.querySelectorAll("script,style").forEach((n) => n.remove());
-  return (div.textContent || "").trim();
+  const safeHtml = html || "";
+  const hasDocument = typeof document !== "undefined" && document?.createElement;
+  if (hasDocument) {
+    const div = document.createElement("div");
+    div.innerHTML = safeHtml;
+    div.querySelectorAll("script,style").forEach((n) => n.remove());
+    return (div.textContent || "").trim();
+  }
+
+  const withoutScripts = safeHtml.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ");
+  const withoutTags = withoutScripts.replace(/<[^>]+>/g, " ");
+  return withoutTags.replace(/\s+/g, " ").trim().replace(/\s+([!?,.;:])/g, "$1");
 }
 
 export function formatRssDate(value) {
@@ -178,17 +187,61 @@ export function formatRssDate(value) {
   return dt.toLocaleString();
 }
 
+function selectNodes(root, selector) {
+  if (!root) return [];
+  if (typeof root.querySelectorAll === "function") return Array.from(root.querySelectorAll(selector));
+
+  const chains = selector
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => part.split(">").map((s) => s.trim()).filter(Boolean));
+
+  const results = [];
+  chains.forEach((chain) => {
+    let current = [root];
+    chain.forEach((tag) => {
+      const next = [];
+      current.forEach((node) => {
+        const matches = node.getElementsByTagName?.(tag) || [];
+        for (let i = 0; i < matches.length; i += 1) next.push(matches[i]);
+      });
+      current = next;
+    });
+    results.push(...current);
+  });
+  return results;
+}
+
+function selectNode(root, selector) {
+  return selectNodes(root, selector)[0] || null;
+}
+
+function getDomParser() {
+  if (typeof DOMParser !== "undefined") return new DOMParser();
+  if (XmldomParser) return new XmldomParser();
+  throw new Error("No XML parser available");
+}
+
 export function parseRssXml(xmlText) {
-  const parser = new DOMParser();
+  const parser = getDomParser();
   const doc = parser.parseFromString(xmlText, "application/xml");
-  if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
-  const feedTitle = doc.querySelector("channel > title, feed > title")?.textContent?.trim() || "";
-  const nodes = doc.querySelectorAll("item, entry");
-  const items = Array.from(nodes).map((node) => {
-    const get = (sel) => node.querySelector(sel)?.textContent?.trim() || "";
+  if (selectNode(doc, "parsererror")) throw new Error("Invalid feed");
+
+  const feedTitle = selectNode(doc, "channel > title, feed > title")?.textContent?.trim() || "";
+  const nodes = selectNodes(doc, "item, entry");
+  const items = nodes.map((node) => {
+    const get = (sel) => selectNode(node, sel)?.textContent?.trim() || "";
     const resolveLink = () => {
-      const linkEl = node.querySelector("link[href]");
-      if (linkEl) return linkEl.getAttribute("href") || "";
+      if (typeof node.querySelector === "function") {
+        const linkEl = node.querySelector("link[href]");
+        if (linkEl) return linkEl.getAttribute("href") || "";
+      }
+      const links = node.getElementsByTagName?.("link") || [];
+      for (let i = 0; i < links.length; i += 1) {
+        const href = links[i].getAttribute?.("href");
+        if (href) return href;
+      }
       return get("link");
     };
     return {
