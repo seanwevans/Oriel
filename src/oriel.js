@@ -133,6 +133,7 @@ import { getPacketLabContent, initPacketLab } from "./apps/packetLab.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
 import { getTrackerContent, initTracker } from "./apps/tracker.js";
+import { getApiClientContent, initApiClient } from "./apps/apiClient.js";
 import {
   getAvailablePrograms as getProgramManagerApps,
   getIconForType as getProgramManagerIcon,

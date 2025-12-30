@@ -352,6 +352,14 @@ export const PROGRAMS = [
     label: "Console"
   },
   {
+    type: "apiclient",
+    title: "API Client",
+    width: 820,
+    height: 640,
+    icon: "apiclient",
+    label: "API Client"
+  },
+  {
     type: "packetlab",
     title: "Packet Lab",
     width: 760,
