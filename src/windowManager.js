@@ -130,6 +130,7 @@ import { getReadmeContent } from "./apps/readme.js";
 import { initMafia } from "./apps/mafia.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getPacketLabContent, initPacketLab } from "./apps/packetLab.js";
+import { getApiClientContent, initApiClient } from "./apps/apiClient.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
 import { getTrackerContent, initTracker } from "./apps/tracker.js";
@@ -211,6 +212,7 @@ const APP_INITIALIZERS = {
   console: initConsole,
   packetlab: initPacketLab,
   retroai: initRetroAI,
+  apiclient: initApiClient,
   write: initWrite,
   cardfile: initCardfile,
   taskman: initTaskMan,
@@ -477,6 +479,7 @@ export class WindowManager {
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
     if (type === "packetlab") content = getPacketLabContent();
+    if (type === "apiclient") content = getApiClientContent();
     if (type === "retroai") content = getRetroAIContent();
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();

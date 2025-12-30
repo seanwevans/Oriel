@@ -6403,3 +6403,131 @@ body {
   white-space: pre-wrap;
   overflow-y: auto;
 }
+
+/* API Client */
+.httpclient {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.httpclient-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f5f8ff;
+  padding: 8px;
+  border: 1px solid #c0c0c0;
+  border-radius: 4px;
+}
+
+.httpclient-row {
+  display: flex;
+  gap: 8px;
+}
+
+.httpclient-row-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.httpclient-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.httpclient-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.httpclient-method {
+  width: 100px;
+}
+
+.httpclient-url {
+  flex: 1;
+  padding: 6px;
+}
+
+.httpclient-preview {
+  min-height: 18px;
+  color: #1f2937;
+  font-size: 12px;
+  border-top: 1px dashed #d1d5db;
+  padding-top: 4px;
+  word-break: break-word;
+}
+
+.httpclient-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid #c0c0c0;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.httpclient-status.error {
+  color: #b91c1c;
+}
+
+.httpclient-response {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.httpclient-response-headers {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  padding: 8px;
+  overflow: auto;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.httpclient-header-line + .httpclient-header-line {
+  border-top: 1px dashed #e5e7eb;
+}
+
+.httpclient-response-body {
+  border: 1px solid #d1d5db;
+  background: #0b1021;
+  color: #dbeafe;
+  padding: 8px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  border-radius: 4px;
+}
+
+.httpclient-response-body[data-format="json"] {
+  color: #b7f0ff;
+}
+
+.httpclient-hint {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.httpclient-loading {
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .httpclient-response {
+    grid-template-columns: 1fr;
+  }
+  .httpclient-row-split {
+    grid-template-columns: 1fr;
+  }
+}
