@@ -5345,3 +5345,60 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
 }
+
+.retroai-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.retroai-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.retroai-label {
+  font-weight: bold;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.retroai-persona,
+.retroai-prompt {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.retroai-description {
+  font-size: 12px;
+  padding: 6px 8px;
+  background: #f2f2f2;
+  border: 1px solid #c0c0c0;
+}
+
+.retroai-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.retroai-prompt {
+  min-height: 60px;
+  padding: 6px;
+}
+
+.retroai-output {
+  flex: 1;
+  border: 1px solid #c0c0c0;
+  background: #fff;
+  padding: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-y: auto;
+}
