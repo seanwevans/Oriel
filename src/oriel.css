@@ -1327,13 +1327,14 @@ body {
 }
 
 .queue-row {
-  display: flex;
-  justify-content: space-between;
+  display: block;
+  white-space: pre;
   border-bottom: 1px dotted #004000;
 }
 
 .queue-header {
   font-weight: bold;
+  white-space: pre;
   border-bottom: 1px solid lime;
   margin-bottom: 4px;
 }
