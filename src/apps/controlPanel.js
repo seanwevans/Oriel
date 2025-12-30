@@ -252,6 +252,7 @@ function openCPScreensaver(context, target, containerOverride) {
     { value: "tunnel", label: "Wave Tunnel", desc: "Retro vector tunnel" },
     { value: "bubbles", label: "Bubbles", desc: "Calming bubbles float up" },
     { value: "wave", label: "Waveform", desc: "Audio-reactive spectrum" },
+    { value: "castaway", label: "Castaway", desc: "Island life with a lone survivor" },
     { value: "bsod", label: "BSOD", desc: "Windows 95 Blue Screen of Death" },
     { value: "toast", label: "Flying Toasters", desc: "Surreal toaster parade" }
   ];
