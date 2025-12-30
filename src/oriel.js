@@ -27,6 +27,7 @@ import {
   getPixelStudioContent,
   initPixelStudio
 } from "./apps/pixelStudio.js";
+import { getPostgresContent, initPostgres } from "./apps/postgres.js";
 import { initVm } from "./apps/vm.js";
 import { initWrite } from "./apps/write.js";
 import { initArtist } from "./apps/artist.js";
@@ -180,6 +181,7 @@ const APP_INITIALIZERS = {
   beatmaker: initBeatMaker,
   tracker: initTracker,
   charmap: initCharMap,
+  postgres: initPostgres,
   winfile: initFileManager,
   clock: initClock,
   control: (w, initData, wmInstance) =>
@@ -844,6 +846,7 @@ class WindowManager {
     if (type === "skifree") content = getSkiFreeContent();
     if (type === "linerider") content = getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
+    if (type === "postgres") content = getPostgresContent();
     if (type === "soundrec") content = this.getSoundRecContent();
     if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = getBeatMakerContent();
