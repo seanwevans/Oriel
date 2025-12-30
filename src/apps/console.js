@@ -4,6 +4,13 @@ import {
   installFromManifestPath,
   uninstallApp
 } from "../installer.js";
+import {
+  clearKeyValueStore,
+  deleteKeyValue,
+  getKeyValue,
+  listKeyValues,
+  setKeyValue
+} from "../keyValueStore.js";
 
 const getKernel = () => window.kernel;
 
@@ -255,6 +262,37 @@ function registerDefaultConsoleCommands() {
   register("rm", ({ argLine, state }) => cashRm(argLine, state));
   register("cp", ({ argLine, state }) => cashCp(argLine, state));
   register("mv", ({ argLine, state }) => cashMv(argLine, state));
+  register("kvset", ({ argLine }) => {
+    const [key, ...rest] = (argLine || "").split(/\s+/).filter(Boolean);
+    if (!key) return { error: "kvset: missing key" };
+    if (!rest.length) return { error: "kvset: missing value" };
+    const value = rest.join(" ");
+    setKeyValue(key, value);
+    return { lines: [`Stored '${key}' = ${value}`] };
+  });
+  register("kvget", ({ argLine }) => {
+    const key = (argLine || "").split(/\s+/).filter(Boolean)[0];
+    if (!key) return { error: "kvget: missing key" };
+    const value = getKeyValue(key);
+    if (value === null) return { error: `kvget: '${key}' not found` };
+    return { lines: [value] };
+  });
+  register("kvdel", ({ argLine }) => {
+    const key = (argLine || "").split(/\s+/).filter(Boolean)[0];
+    if (!key) return { error: "kvdel: missing key" };
+    const removed = deleteKeyValue(key);
+    if (!removed) return { error: `kvdel: '${key}' not found` };
+    return { lines: [`Deleted '${key}'`] };
+  });
+  register("kvlist", () => {
+    const entries = listKeyValues();
+    if (!entries.length) return { lines: ["(no key/value pairs set)"] };
+    return { lines: entries.map(([key, value]) => `${key} = ${value}`) };
+  });
+  register("kvclear", () => {
+    clearKeyValueStore();
+    return { lines: ["Cleared key/value store"] };
+  });
   register("install", async ({ argLine, state }) => {
     if (!argLine) return { error: "install: missing manifest path" };
     try {
@@ -393,6 +431,11 @@ async function processConsoleCommand(w, input) {
       "MKDIR   - Create folders",
       "CLS     - Clear the screen",
       "ECHO    - Print text",
+      "KVSET   - Store a value (kvset <key> <value>)",
+      "KVGET   - Retrieve a value (kvget <key>)",
+      "KVDEL   - Delete a value (kvdel <key>)",
+      "KVLIST  - List all key/value pairs",
+      "KVCLEAR - Clear all key/value pairs",
       "INSTALL - Install an app manifest (install <path>)",
       "UNINSTALL - Remove an installed app (uninstall <id>)",
       "APPS    - List installed runtime apps"
