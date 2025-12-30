@@ -40,6 +40,7 @@ import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
 import { copyCharMap, initCharMap } from "./apps/charmap.js";
 import { getBeatMakerContent, initBeatMaker } from "./apps/beatMaker.js";
+import { getMidiSequencerContent, initMidiSequencer } from "./apps/midiSequencer.js";
 import {
   addDbRecord,
   deleteDbRecord,
@@ -180,6 +181,7 @@ const APP_INITIALIZERS = {
   radio: initRadio,
   beatmaker: initBeatMaker,
   tracker: initTracker,
+  midisequencer: initMidiSequencer,
   charmap: initCharMap,
   postgres: initPostgres,
   winfile: initFileManager,
@@ -851,6 +853,7 @@ class WindowManager {
     if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = getBeatMakerContent();
     if (type === "tracker") content = getTrackerContent();
+    if (type === "midisequencer") content = getMidiSequencerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = getWinFileContent();
     if (type === "clock") content = this.getClockContent();
