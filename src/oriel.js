@@ -118,6 +118,7 @@ import { SimulatedKernel } from "./kernel.js";
 import { loadThree } from "./threeLoader.js";
 import { getLineRiderContent, initLineRider } from "./apps/linerider.js";
 import { getSimCityContent, initSimCity } from "./apps/simcity.js";
+import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
@@ -196,6 +197,7 @@ const APP_INITIALIZERS = {
   imageviewer: initImageViewer,
   markdown: initMarkdownViewer,
   rss: initRssReader,
+  netnews: initNetNews,
   browser: initBrowser,
   radiogarden: initRadioGarden,
   discord: initDiscord,
@@ -862,6 +864,7 @@ class WindowManager {
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "reset") content = this.getResetContent();
     if (type === "rss") content = getRssReaderContent();
+    if (type === "netnews") content = getNetNewsContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "discord") content = getDiscordContent();
@@ -1258,7 +1261,9 @@ class WindowManager {
   }
   saveDesktopState() {
     if (this.isRestoring) return;
+    const existing = loadDesktopState();
     const state = {
+      ...existing,
       windows: this.getWindowStateSnapshot(),
       wallpaper: getWallpaperSettings(),
       themeCustom: getCurrentThemeCustom()
