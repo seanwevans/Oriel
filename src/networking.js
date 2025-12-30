@@ -1,9 +1,87 @@
 import { DEFAULT_RSS_SAMPLE, RADIO_FALLBACK_PRESETS, RSS_PRESETS } from "./defaults.js";
 import { registerMediaElement } from "./audio.js";
 import { NETWORK_CONFIG } from "./config.js";
-import { publish } from "./eventBus.js";
+import { publish, subscribe } from "./eventBus.js";
 
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
+const NETWORK_ACTIVITY_EVENT = "network:activity";
+let networkEventCounter = 0;
+
+function nextNetworkEventId() {
+  networkEventCounter += 1;
+  return networkEventCounter;
+}
+
+function normalizePreviewText(text) {
+  if (!text) return "";
+  const compact = text.replace(/\s+/g, " ").trim();
+  if (compact.length <= 240) return compact;
+  return `${compact.slice(0, 237)}...`;
+}
+
+export function publishNetworkEvent(event = {}) {
+  publish(NETWORK_ACTIVITY_EVENT, {
+    id: event.id ?? nextNetworkEventId(),
+    timestamp: event.timestamp || Date.now(),
+    ...event
+  });
+}
+
+export function subscribeToNetworkEvents(handler) {
+  return subscribe(NETWORK_ACTIVITY_EVENT, handler);
+}
+
+export async function trackedFetch(input, init = {}) {
+  const url = typeof input === "string" ? input : input?.url || String(input);
+  const method = (init.method || "GET").toUpperCase();
+  const bodyPreview = normalizePreviewText(
+    typeof init.body === "string" ? init.body : ""
+  );
+  const id = nextNetworkEventId();
+
+  publishNetworkEvent({
+    id,
+    url,
+    method,
+    phase: "request",
+    status: "pending",
+    bodyPreview
+  });
+
+  try {
+    const response = await fetch(input, init);
+    let responsePreview = "";
+    try {
+      const clone = response.clone();
+      const text = await clone.text();
+      responsePreview = normalizePreviewText(text);
+    } catch (err) {
+      responsePreview = "(unreadable payload)";
+    }
+    publishNetworkEvent({
+      id,
+      url,
+      method,
+      phase: "response",
+      status: response.status,
+      ok: response.ok,
+      bodyPreview: responsePreview,
+      contentType: response.headers?.get?.("content-type") || ""
+    });
+    return response;
+  } catch (err) {
+    publishNetworkEvent({
+      id,
+      url,
+      method,
+      phase: "error",
+      status: "error",
+      ok: false,
+      error: err?.message || "Unknown network error"
+    });
+    throw err;
+  }
+}
 
 function sanitizeNetworkOverrides(raw = {}) {
   return Object.entries(raw).reduce(
@@ -228,7 +306,7 @@ export function initRssReader(win) {
     setStatus("Loading...");
     try {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
-      const res = await fetch(proxyUrl, { signal });
+      const res = await trackedFetch(proxyUrl, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       let text;
 
@@ -358,7 +436,7 @@ export function initBrowser(win, sessions = browserSessions) {
     frame.removeAttribute("src");
     frame.srcdoc = "";
     try {
-      const res = await fetch(proxied);
+      const res = await trackedFetch(proxied);
       if (token !== lastLoadToken) return;
       if (!res.ok) {
         const statusMessage = `Proxy error (HTTP ${res.status})`;
@@ -510,7 +588,7 @@ export function initRadioGarden(win) {
     if (results) results.innerHTML = "";
     let showedStatusError = false;
     try {
-      const res = await fetch(
+      const res = await trackedFetch(
         `${RADIO_GARDEN_PROXY}/api/ara/content/search?q=${encodeURIComponent(trimmed)}`
       );
       if (!res.ok) {
@@ -702,7 +780,7 @@ export async function initRadio(win) {
     setStatus(`Loading ${description}...`);
     listEl.innerHTML = "<div class='radio-empty'>Fetching stations...</div>";
     try {
-      const res = await fetch(url);
+      const res = await trackedFetch(url);
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       stations = Array.isArray(data) ? data.slice(0, 30) : [];

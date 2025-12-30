@@ -122,6 +122,7 @@ import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
 import { getRssReaderContent } from "./apps/rss.js";
+import { getPacketLabContent, initPacketLab } from "./apps/packetLab.js";
 import { getClipboardContent } from "./apps/clipboard.js";
 import { getTi83Root, initTi83 } from "./apps/ti83.js";
 import { getTrackerContent, initTracker } from "./apps/tracker.js";
@@ -189,6 +190,7 @@ const APP_INITIALIZERS = {
   reset: initReset,
   chess: initChess,
   console: initConsole,
+  packetlab: initPacketLab,
   write: initWrite,
   cardfile: initCardfile,
   taskman: initTaskMan,
@@ -837,6 +839,7 @@ class WindowManager {
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
+    if (type === "packetlab") content = getPacketLabContent();
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = getPaintRoot(initData);
@@ -943,6 +946,8 @@ class WindowManager {
         closingWin.el.sandspiel3dCleanup();
       if (typeof closingWin.el.whiteboardCleanup === "function")
         closingWin.el.whiteboardCleanup();
+      if (typeof closingWin.el.packetLabCleanup === "function")
+        closingWin.el.packetLabCleanup();
       if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
       if (closingWin.el.doomCI) {
         closingWin.el.doomCI.exit();

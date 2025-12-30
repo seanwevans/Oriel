@@ -304,6 +304,14 @@ export const PROGRAMS = [
     label: "Console"
   },
   {
+    type: "packetlab",
+    title: "Packet Lab",
+    width: 760,
+    height: 520,
+    icon: "packetlab",
+    label: "Packet Lab"
+  },
+  {
     type: "hexedit",
     title: "Hex Editor",
     width: 720,
