@@ -18,6 +18,7 @@ import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { getEmailContent, initEmail } from "./apps/email.js";
+import { getMessengerContent, initMessenger } from "./apps/messenger.js";
 import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
@@ -124,6 +125,7 @@ import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getPinballContent, initPinball } from "./apps/pinball.js";
 import { getAngryBirdsContent, initAngryBirds } from "./apps/angrybirds.js";
+import { getCannonDuelContent, initCannonDuel } from "./apps/cannonDuel.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
 import { initMafia } from "./apps/mafia.js";
@@ -184,6 +186,7 @@ const APP_INITIALIZERS = {
   simcity: initSimCity,
   skifree: initSkiFree,
   angrybirds: initAngryBirds,
+  cannonduel: initCannonDuel,
   pinball: initPinball,
   linerider: initLineRider,
   database: initDatabase,
@@ -215,6 +218,7 @@ const APP_INITIALIZERS = {
   radiogarden: initRadioGarden,
   discord: initDiscord,
   bbs: initBbs,
+  messenger: initMessenger,
   irc: initIRC,
   email: initEmail,
   spotify: initSpotify,
@@ -865,6 +869,7 @@ class WindowManager {
     if (type === "simcity") content = getSimCityContent();
     if (type === "skifree") content = getSkiFreeContent();
     if (type === "angrybirds") content = getAngryBirdsContent();
+    if (type === "cannonduel") content = getCannonDuelContent();
     if (type === "pinball") content = getPinballContent();
     if (type === "linerider") content = getLineRiderContent();
     if (type === "database") content = this.getDatabaseContent();
@@ -891,6 +896,7 @@ class WindowManager {
     if (type === "discord") content = getDiscordContent();
     if (type === "bbs") content = getBbsContent();
     if (type === "spotify") content = getSpotifyContent();
+    if (type === "messenger") content = getMessengerContent();
     if (type === "irc") content = getIRCContent();
     if (type === "email") content = getEmailContent();
     if (type === "vm") content = this.getVmContent();
@@ -961,6 +967,8 @@ class WindowManager {
         closingWin.el.chessCleanup();
       if (typeof closingWin.el.skifreeCleanup === "function")
         closingWin.el.skifreeCleanup();
+      if (typeof closingWin.el.cannonduelCleanup === "function")
+        closingWin.el.cannonduelCleanup();
       if (typeof closingWin.el.pinballCleanup === "function")
         closingWin.el.pinballCleanup();
       if (typeof closingWin.el.lineRiderCleanup === "function")

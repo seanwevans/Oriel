@@ -160,6 +160,14 @@ export const PROGRAMS = [
     label: "SkiFree"
   },
   {
+    type: "cannonduel",
+    title: "Cannon Duel",
+    width: 780,
+    height: 520,
+    icon: "cannonduel",
+    label: "Cannon Duel"
+  },
+  {
     type: "pinball",
     title: "Pinball",
     width: 520,
@@ -422,6 +430,14 @@ export const PROGRAMS = [
     height: 640,
     icon: "email",
     label: "Mail"
+  },
+  {
+    type: "messenger",
+    title: "Messenger",
+    width: 520,
+    height: 420,
+    icon: "messenger",
+    label: "Messenger"
   },
   {
     type: "irc",
