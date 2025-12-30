@@ -157,6 +157,7 @@ import {
 } from "./installer.js";
 import { initChess } from "./apps/chess.js";
 import { initPapersPlease } from "./apps/papersPlease.js";
+import { getShaderLabRoot, initShaderLab } from "./apps/shaderLab.js";
 
 let THREE = null;
 const controlPanelContext = {};
@@ -209,6 +210,7 @@ const APP_INITIALIZERS = {
   minecraft: initMinecraft,
   n64: initN64,
   ti83: initTi83,
+  shaderlab: initShaderLab,
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
@@ -836,6 +838,7 @@ class WindowManager {
     if (type === "sudoku") content = this.getSudokuContent();
     if (type === "photoshop") content = getPhotoshopContent();
     if (type === "artist") content = this.getArtistContent();
+    if (type === "shaderlab") content = getShaderLabRoot();
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
@@ -944,6 +947,8 @@ class WindowManager {
         closingWin.el.lineRiderCleanup();
       if (typeof closingWin.el.sandspiel3dCleanup === "function")
         closingWin.el.sandspiel3dCleanup();
+      if (typeof closingWin.el.shaderLabCleanup === "function")
+        closingWin.el.shaderLabCleanup();
       if (typeof closingWin.el.whiteboardCleanup === "function")
         closingWin.el.whiteboardCleanup();
       if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
