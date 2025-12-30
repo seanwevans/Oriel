@@ -1900,6 +1900,9 @@ let waveBands = [];
 let wavePhase = 0;
 let activeCanvasMode = "2d";
 
+let fishSchool = [];
+let tunnelSegments = [];
+
 let mazeRenderer = null;
 let mazeScene = null;
 let mazeCamera = null;
@@ -2032,15 +2035,24 @@ async function startScreensaver(forceType) {
   } else if (saver === "bubbles") {
     setupBubbles();
     sInterval = setInterval(drawBubbles, 40);
-  } else if (saver === "waves") {
+  } else if (saver === "waves" || saver === "wave") {
     setupNeonWaves();
     sInterval = setInterval(drawNeonWaves, 30);
   } else if (saver === "castaway") {
     setupCastaway();
     sInterval = setInterval(drawCastaway, 40);
-  } else if (saver === "toasters") {
+  } else if (saver === "fish") {
+    setupFish();
+    sInterval = setInterval(drawFish, 35);
+  } else if (saver === "toasters" || saver === "toast") {
     setupFlyingToasters();
     sInterval = setInterval(drawFlyingToasters, 30);
+  } else if (saver === "tunnel") {
+    setupTunnel();
+    sInterval = setInterval(drawTunnel, 30);
+  } else if (saver === "bsod") {
+    showFakeBsod();
+    sInterval = null;
   } else {
     setScreensaverCanvas("2d");
     setupStarfield();
@@ -2655,6 +2667,123 @@ function drawNeonWaves() {
       else sCtx.lineTo(x, y);
     }
     sCtx.stroke();
+  });
+}
+
+function setupFish() {
+  const count = Math.max(8, Math.floor((saverCanvas.width + saverCanvas.height) / 160));
+  fishSchool = new Array(count).fill(0).map(() => ({
+    x: Math.random() * saverCanvas.width,
+    y: Math.random() * saverCanvas.height,
+    size: 18 + Math.random() * 22,
+    speed: 1 + Math.random() * 1.8,
+    sway: Math.random() * Math.PI * 2,
+    hue: Math.floor(Math.random() * 360),
+    dir: Math.random() > 0.5 ? 1 : -1
+  }));
+  sCtx.fillStyle = "#001019";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+}
+
+function drawFish() {
+  sCtx.fillStyle = "rgba(0, 10, 20, 0.25)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  fishSchool.forEach((fish) => {
+    fish.sway += 0.08;
+    fish.x += fish.speed * fish.dir;
+    fish.y += Math.sin(fish.sway) * 0.6;
+
+    if (fish.x > saverCanvas.width + fish.size) fish.x = -fish.size;
+    if (fish.x < -fish.size) fish.x = saverCanvas.width + fish.size;
+    if (fish.y > saverCanvas.height + fish.size * 0.5) fish.y = -fish.size * 0.5;
+    if (fish.y < -fish.size * 0.5) fish.y = saverCanvas.height + fish.size * 0.5;
+
+    const bodyLength = fish.size * 2.4;
+    const bodyHeight = fish.size * 1;
+    const cx = fish.dir === 1 ? fish.x : fish.x + bodyLength;
+
+    sCtx.save();
+    sCtx.translate(cx, fish.y);
+    sCtx.scale(fish.dir, 1);
+
+    const gradient = sCtx.createLinearGradient(-bodyLength / 2, 0, bodyLength / 2, 0);
+    gradient.addColorStop(0, `hsla(${fish.hue}, 70%, 60%, 0.9)`);
+    gradient.addColorStop(1, `hsla(${(fish.hue + 80) % 360}, 80%, 70%, 0.9)`);
+    sCtx.fillStyle = gradient;
+
+    sCtx.beginPath();
+    sCtx.ellipse(0, 0, bodyLength / 2, bodyHeight / 2, 0, 0, Math.PI * 2);
+    sCtx.fill();
+
+    sCtx.beginPath();
+    sCtx.moveTo(-bodyLength / 2, 0);
+    sCtx.lineTo(-bodyLength / 2 - fish.size * 0.6, fish.size * 0.6);
+    sCtx.lineTo(-bodyLength / 2 - fish.size * 0.6, -fish.size * 0.6);
+    sCtx.closePath();
+    sCtx.fill();
+
+    sCtx.fillStyle = "rgba(255,255,255,0.8)";
+    sCtx.beginPath();
+    sCtx.arc(bodyLength / 4, -fish.size * 0.12, fish.size * 0.18, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.fillStyle = "#000";
+    sCtx.beginPath();
+    sCtx.arc(bodyLength / 4, -fish.size * 0.12, fish.size * 0.08, 0, Math.PI * 2);
+    sCtx.fill();
+
+    sCtx.restore();
+  });
+}
+
+function setupTunnel() {
+  const maxSize = Math.max(saverCanvas.width, saverCanvas.height);
+  tunnelSegments = new Array(28).fill(0).map((_, i) => ({
+    radius: maxSize * (i / 12),
+    width: 3 + Math.random() * 5,
+    angle: Math.random() * Math.PI * 2,
+    speed: 6 + Math.random() * 4,
+    hue: Math.floor(Math.random() * 360)
+  }));
+  sCtx.fillStyle = "#000";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+}
+
+function drawTunnel() {
+  const cx = saverCanvas.width / 2;
+  const cy = saverCanvas.height / 2;
+  const maxSize = Math.max(saverCanvas.width, saverCanvas.height);
+  sCtx.fillStyle = "rgba(0, 0, 0, 0.2)";
+  sCtx.fillRect(0, 0, saverCanvas.width, saverCanvas.height);
+
+  tunnelSegments.forEach((seg) => {
+    seg.radius -= seg.speed;
+    seg.angle += 0.005;
+    if (seg.radius < 20) {
+      seg.radius = maxSize + Math.random() * maxSize * 0.5;
+      seg.angle = Math.random() * Math.PI * 2;
+      seg.hue = Math.floor(Math.random() * 360);
+    }
+
+    sCtx.save();
+    sCtx.translate(cx, cy);
+    sCtx.rotate(seg.angle);
+    sCtx.strokeStyle = `hsla(${seg.hue}, 80%, 65%, 0.85)`;
+    sCtx.lineWidth = seg.width;
+    const size = seg.radius;
+    sCtx.beginPath();
+    sCtx.rect(-size, -size, size * 2, size * 2);
+    sCtx.stroke();
+
+    sCtx.strokeStyle = `hsla(${(seg.hue + 120) % 360}, 90%, 70%, 0.6)`;
+    sCtx.lineWidth = 1;
+    sCtx.beginPath();
+    sCtx.moveTo(-size, 0);
+    sCtx.lineTo(size, 0);
+    sCtx.moveTo(0, -size);
+    sCtx.lineTo(0, size);
+    sCtx.stroke();
+    sCtx.restore();
   });
 }
 
