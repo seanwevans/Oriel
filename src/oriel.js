@@ -18,6 +18,7 @@ import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
 import { getIRCContent, initIRC } from "./apps/irc.js";
 import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { getEmailContent, initEmail } from "./apps/email.js";
+import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
@@ -40,6 +41,7 @@ import { initSolitaire } from "./apps/solitaire.js";
 import { initSudoku } from "./apps/sudoku.js";
 import { copyCharMap, initCharMap } from "./apps/charmap.js";
 import { getBeatMakerContent, initBeatMaker } from "./apps/beatMaker.js";
+import { getMidiSequencerContent, initMidiSequencer } from "./apps/midiSequencer.js";
 import {
   addDbRecord,
   deleteDbRecord,
@@ -118,6 +120,7 @@ import { SimulatedKernel } from "./kernel.js";
 import { loadThree } from "./threeLoader.js";
 import { getLineRiderContent, initLineRider } from "./apps/linerider.js";
 import { getSimCityContent, initSimCity } from "./apps/simcity.js";
+import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
@@ -157,6 +160,7 @@ import {
 } from "./installer.js";
 import { initChess } from "./apps/chess.js";
 import { initPapersPlease } from "./apps/papersPlease.js";
+import { getShaderLabRoot, initShaderLab } from "./apps/shaderLab.js";
 
 let THREE = null;
 const controlPanelContext = {};
@@ -181,6 +185,7 @@ const APP_INITIALIZERS = {
   radio: initRadio,
   beatmaker: initBeatMaker,
   tracker: initTracker,
+  midisequencer: initMidiSequencer,
   charmap: initCharMap,
   postgres: initPostgres,
   winfile: initFileManager,
@@ -191,6 +196,7 @@ const APP_INITIALIZERS = {
   chess: initChess,
   console: initConsole,
   packetlab: initPacketLab,
+  retroai: initRetroAI,
   write: initWrite,
   cardfile: initCardfile,
   taskman: initTaskMan,
@@ -198,6 +204,7 @@ const APP_INITIALIZERS = {
   imageviewer: initImageViewer,
   markdown: initMarkdownViewer,
   rss: initRssReader,
+  netnews: initNetNews,
   browser: initBrowser,
   radiogarden: initRadioGarden,
   discord: initDiscord,
@@ -209,6 +216,7 @@ const APP_INITIALIZERS = {
   minecraft: initMinecraft,
   n64: initN64,
   ti83: initTi83,
+  shaderlab: initShaderLab,
   sandspiel: initSandspiel,
   sandspiel3d: initSandspiel3d,
   papers: initPapersPlease,
@@ -836,10 +844,12 @@ class WindowManager {
     if (type === "sudoku") content = this.getSudokuContent();
     if (type === "photoshop") content = getPhotoshopContent();
     if (type === "artist") content = this.getArtistContent();
+    if (type === "shaderlab") content = getShaderLabRoot();
     if (type === "compiler") content = this.getCompilerContent();
     if (type === "python") content = this.getPythonContent();
     if (type === "console") content = this.getConsoleContent();
     if (type === "packetlab") content = getPacketLabContent();
+    if (type === "retroai") content = getRetroAIContent();
     if (type === "taskman") content = this.getTaskManContent();
     if (type === "chess") content = this.getChessContent();
     if (type === "paint") content = getPaintRoot(initData);
@@ -854,6 +864,7 @@ class WindowManager {
     if (type === "radio") content = this.getRadioContent();
     if (type === "beatmaker") content = getBeatMakerContent();
     if (type === "tracker") content = getTrackerContent();
+    if (type === "midisequencer") content = getMidiSequencerContent();
     if (type === "charmap") content = this.getCharMapContent();
     if (type === "winfile") content = getWinFileContent();
     if (type === "clock") content = this.getClockContent();
@@ -865,6 +876,7 @@ class WindowManager {
     if (type === "markdown") content = this.getMarkdownContent(initData);
     if (type === "reset") content = this.getResetContent();
     if (type === "rss") content = getRssReaderContent();
+    if (type === "netnews") content = getNetNewsContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "discord") content = getDiscordContent();
@@ -944,6 +956,8 @@ class WindowManager {
         closingWin.el.lineRiderCleanup();
       if (typeof closingWin.el.sandspiel3dCleanup === "function")
         closingWin.el.sandspiel3dCleanup();
+      if (typeof closingWin.el.shaderLabCleanup === "function")
+        closingWin.el.shaderLabCleanup();
       if (typeof closingWin.el.whiteboardCleanup === "function")
         closingWin.el.whiteboardCleanup();
       if (typeof closingWin.el.packetLabCleanup === "function")
@@ -1263,7 +1277,9 @@ class WindowManager {
   }
   saveDesktopState() {
     if (this.isRestoring) return;
+    const existing = loadDesktopState();
     const state = {
+      ...existing,
       windows: this.getWindowStateSnapshot(),
       wallpaper: getWallpaperSettings(),
       themeCustom: getCurrentThemeCustom()

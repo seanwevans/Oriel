@@ -184,6 +184,14 @@ export const PROGRAMS = [
     label: "Chip Studio"
   },
   {
+    type: "midisequencer",
+    title: "MIDI Sequencer",
+    width: 920,
+    height: 600,
+    icon: "midisequencer",
+    label: "MIDI Seq"
+  },
+  {
     type: "clock",
     title: "Clock",
     width: 250,
@@ -248,6 +256,14 @@ export const PROGRAMS = [
     label: "Markdown"
   },
   {
+    type: "netnews",
+    title: "NetNews",
+    width: 980,
+    height: 640,
+    icon: "netnews",
+    label: "NetNews"
+  },
+  {
     type: "clipbrd",
     title: "Clipboard",
     width: 300,
@@ -310,6 +326,14 @@ export const PROGRAMS = [
     height: 520,
     icon: "packetlab",
     label: "Packet Lab"
+  },
+  {
+    type: "retroai",
+    title: "Retro AI",
+    width: 620,
+    height: 520,
+    icon: "retroai",
+    label: "Retro AI"
   },
   {
     type: "hexedit",
@@ -438,6 +462,14 @@ export const PROGRAMS = [
     height: 620,
     icon: "sandspiel3d",
     label: "Sandspiel3D"
+  },
+  {
+    type: "shaderlab",
+    title: "Shader Lab",
+    width: 920,
+    height: 640,
+    icon: "shaderlab",
+    label: "Shader Lab"
   },
   {
     type: "papers",

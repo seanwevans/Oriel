@@ -2133,6 +2133,185 @@ body {
   border: 1px solid #b0b0b0;
 }
 
+.midi-sequencer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  background: var(--win-gray);
+  padding: 8px;
+  position: relative;
+}
+
+.midi-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.midi-transport {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.midi-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.midi-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.midi-file-picker input[type="file"] {
+  display: none;
+}
+
+.midi-file-picker {
+  border: 1px solid #808080;
+  background: #eaeaea;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.midi-status {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #b0b0b0;
+  background: #f6f6f6;
+}
+
+.midi-body {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.midi-track-list {
+  width: 190px;
+  border: 2px inset white;
+  background: #e6e6e6;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.midi-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #b0b0b0;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.midi-track.active {
+  outline: 2px solid var(--win-blue);
+  background: #ffffff;
+}
+
+.midi-track-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #404040;
+}
+
+.midi-track-name {
+  font-weight: bold;
+  flex: 1;
+}
+
+.midi-grid {
+  flex: 1;
+  border: 2px inset white;
+  background: #f0f0f0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  --midi-steps: 32;
+}
+
+.midi-grid-row {
+  display: grid;
+  grid-template-columns: 70px repeat(var(--midi-steps), minmax(18px, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.midi-grid-row.header {
+  font-size: 11px;
+  color: #555;
+  user-select: none;
+}
+
+.midi-grid-label {
+  font-weight: bold;
+  text-align: right;
+  padding-right: 6px;
+  font-size: 12px;
+}
+
+.midi-grid-cell {
+  min-height: 20px;
+  background: #d9d9d9;
+  border: 1px solid #9b9b9b;
+  cursor: pointer;
+}
+
+.midi-grid-cell:nth-child(4n + 2) {
+  border-left: 2px solid #9b9b9b;
+}
+
+.midi-grid-cell:hover {
+  background: #ededed;
+}
+
+.midi-grid-cell.on {
+  box-shadow: inset 1px 1px 0 #ffffff;
+}
+
+.midi-grid-cell.playhead {
+  outline: 2px solid var(--win-blue);
+}
+
+.midi-grid-cell.beat-marker {
+  cursor: default;
+  background: transparent;
+  border: none;
+  text-align: center;
+}
+
+.midi-flash {
+  position: absolute;
+  inset: 8px;
+  opacity: 0.1;
+  border: 2px solid #000;
+  pointer-events: none;
+  animation: midiFlash 0.18s ease-out forwards;
+}
+
+@keyframes midiFlash {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .rss-layout {
   display: flex;
   flex-direction: column;
@@ -2260,6 +2439,142 @@ body {
   font-size: 13px;
   color: var(--win-blue);
   text-decoration: underline;
+}
+
+.netnews-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 6px;
+}
+
+.netnews-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: linear-gradient(#dcdcdc, #bfbfbf);
+  border: 1px solid var(--win-gray-shadow);
+}
+
+.netnews-title {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.netnews-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.netnews-status {
+  font-size: 12px;
+  color: #003366;
+}
+
+.netnews-status-error {
+  color: #a00000;
+  font-weight: bold;
+}
+
+.netnews-layout {
+  display: grid;
+  grid-template-columns: 220px 320px 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.netnews-pane {
+  background: white;
+  border: 1px solid var(--win-gray-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.netnews-pane-label {
+  padding: 6px 8px;
+  font-weight: bold;
+  background: #efefef;
+  border-bottom: 1px solid var(--win-gray-dark);
+}
+
+.netnews-groups,
+.netnews-threads {
+  padding: 6px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.netnews-group,
+.netnews-thread {
+  border: 1px solid transparent;
+  padding: 6px;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+
+.netnews-group:hover,
+.netnews-thread:hover {
+  border-color: var(--win-blue);
+  background: #eef3ff;
+}
+
+.netnews-group.active,
+.netnews-thread.active {
+  border-color: var(--win-blue);
+  background: #dce6ff;
+}
+
+.netnews-group-title,
+.netnews-thread-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.netnews-group-desc,
+.netnews-thread-meta {
+  font-size: 12px;
+  color: #555;
+}
+
+.netnews-pane-article {
+  padding: 10px;
+  gap: 8px;
+}
+
+.netnews-article-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.netnews-article-meta {
+  font-size: 12px;
+  color: #555;
+}
+
+.netnews-article-body {
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-line;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.netnews-open-link {
+  font-size: 13px;
+  color: var(--win-blue);
+  text-decoration: underline;
+}
+
+.netnews-empty {
+  font-size: 13px;
+  color: #444;
 }
 
 .browser-layout {
@@ -4988,6 +5303,163 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.shaderlab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0b0f1d;
+  color: #e6ecff;
+}
+
+.shaderlab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: linear-gradient(90deg, #0f1832, #0c1528);
+  border-bottom: 1px solid #1f2a44;
+}
+
+.shaderlab-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shaderlab-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #c6d4ff;
+}
+
+.shaderlab-field select {
+  background: #0c1528;
+  color: #e6ecff;
+  border: 1px solid #25345a;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.shaderlab-stats {
+  display: flex;
+  gap: 10px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #9fbaf5;
+}
+
+.shaderlab-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 45%) 1fr;
+  gap: 10px;
+  padding: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.shaderlab-editor {
+  display: flex;
+  flex-direction: column;
+  background: #0b0d18;
+  border: 1px solid #1f2a44;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.shaderlab-editor-header {
+  padding: 8px 10px;
+  background: #101629;
+  border-bottom: 1px solid #1f2a44;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+}
+
+.shaderlab-code {
+  flex: 1;
+  background: #0f1527;
+  color: #d6e5ff;
+  border: none;
+  padding: 10px;
+  font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  min-height: 220px;
+}
+
+.shaderlab-hint {
+  padding: 6px 10px;
+  background: #0c1324;
+  border-top: 1px solid #1f2a44;
+  color: #8fa3cc;
+  font-size: 12px;
+}
+
+.shaderlab-errors {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-top: 1px solid #1f2a44;
+  color: #ffb3b3;
+  font-size: 12px;
+}
+
+.shaderlab-errors.has-errors {
+  background: #2a0f15;
+}
+
+.shaderlab-preview {
+  position: relative;
+  background: #05070f;
+  border: 1px solid #1f2a44;
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 280px;
+}
+
+.shaderlab-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #05070f;
+}
+
+.shaderlab-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  font-size: 12px;
+  color: #b9c7e6;
+}
+
+.shaderlab-overlay-text,
+.shaderlab-metrics {
+  background: rgba(12, 18, 34, 0.72);
+  border: 1px solid #23345b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.shaderlab-metrics {
+  align-self: flex-end;
+  font-family: monospace;
+}
+
+@media (max-width: 920px) {
+  .shaderlab-body {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pixel-studio {
   display: flex;
   flex-direction: column;
@@ -5467,4 +5939,59 @@ body {
   text-align: center;
   padding: 16px;
   color: #cdd9ed;
+.retroai-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.retroai-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.retroai-label {
+  font-weight: bold;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.retroai-persona,
+.retroai-prompt {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.retroai-description {
+  font-size: 12px;
+  padding: 6px 8px;
+  background: #f2f2f2;
+  border: 1px solid #c0c0c0;
+}
+
+.retroai-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.retroai-prompt {
+  min-height: 60px;
+  padding: 6px;
+}
+
+.retroai-output {
+  flex: 1;
+  border: 1px solid #c0c0c0;
+  background: #fff;
+  padding: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-y: auto;
 }

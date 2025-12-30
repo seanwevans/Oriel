@@ -158,6 +158,85 @@ export function updateNetworkDefaults(partial = {}) {
 
 export { BROWSER_HOME, BROWSER_PROXY_PREFIX, RADIO_BROWSER_BASE, RADIO_GARDEN_PROXY, RSS_PROXY_ROOT };
 export { MAIL_PROXY_ROOT };
+export function normalizeHttpUrl(raw) {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
+}
+
+export function stripHtmlText(html) {
+  const div = document.createElement("div");
+  div.innerHTML = html || "";
+  div.querySelectorAll("script,style").forEach((n) => n.remove());
+  return (div.textContent || "").trim();
+}
+
+export function formatRssDate(value) {
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "No date";
+  return dt.toLocaleString();
+}
+
+export function parseRssXml(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, "application/xml");
+  if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
+  const feedTitle = doc.querySelector("channel > title, feed > title")?.textContent?.trim() || "";
+  const nodes = doc.querySelectorAll("item, entry");
+  const items = Array.from(nodes).map((node) => {
+    const get = (sel) => node.querySelector(sel)?.textContent?.trim() || "";
+    const resolveLink = () => {
+      const linkEl = node.querySelector("link[href]");
+      if (linkEl) return linkEl.getAttribute("href") || "";
+      return get("link");
+    };
+    return {
+      title: get("title"),
+      link: resolveLink(),
+      date: get("pubDate") || get("updated") || get("published"),
+      summary: stripHtmlText(get("description") || get("summary") || get("content"))
+    };
+  });
+  return { title: feedTitle, items };
+}
+
+export async function fetchRssFeed(rawUrl, options = {}) {
+  const normalized = normalizeHttpUrl(rawUrl);
+  if (!normalized) throw new Error("Feed URL is required");
+  const { signal } = options;
+  const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
+  const res = await fetch(proxyUrl, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  let text;
+  try {
+    const data = await res.json();
+    text = data?.contents || "";
+  } catch (jsonErr) {
+    console.warn("RSS proxy did not return JSON, falling back to text", jsonErr);
+    text = await res.text();
+  }
+  const parsed = parseRssXml(text);
+  return { ...parsed, sourceUrl: normalized };
+}
+
+export async function fetchGroupedRssFeeds(feeds = [], options = {}) {
+  const tasks = (feeds || []).map(async (feed) => {
+    try {
+      const { items, title } = await fetchRssFeed(feed.url, options);
+      return items.map((item) => ({
+        ...item,
+        feedId: feed.id || feed.url,
+        feedTitle: feed.title || feed.label || title || feed.url
+      }));
+    } catch (err) {
+      console.warn("Failed to load feed", feed?.url, err);
+      return [];
+    }
+  });
+  const results = await Promise.all(tasks);
+  return results.flat();
+}
 export function resetNetworkDefaults() {
   mergedNetworkConfig = { ...baseNetworkConfig };
   localStorage.removeItem(NETWORK_STORAGE_KEY);
@@ -210,26 +289,6 @@ export function initRssReader(win) {
     status.classList.toggle("rss-status-error", isError);
   };
 
-  const normalizeUrl = (raw) => {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
-    return trimmed;
-  };
-
-  const sanitizeText = (html) => {
-    const div = document.createElement("div");
-    div.innerHTML = html || "";
-    div.querySelectorAll("script,style").forEach((n) => n.remove());
-    return (div.textContent || "").trim();
-  };
-
-  const formatDate = (value) => {
-    const dt = new Date(value);
-    if (Number.isNaN(dt.getTime())) return "No date";
-    return dt.toLocaleString();
-  };
-
   const renderItems = () => {
     list.innerHTML = "";
     list.setAttribute("role", "listbox");
@@ -244,7 +303,7 @@ export function initRssReader(win) {
       row.setAttribute("role", "option");
       row.setAttribute("tabindex", "0");
       row.setAttribute("aria-selected", idx === selected ? "true" : "false");
-      row.innerHTML = `<div class="rss-item-title">${item.title || "(Untitled)"}</div><div class="rss-item-date">${formatDate(
+      row.innerHTML = `<div class="rss-item-title">${item.title || "(Untitled)"}</div><div class="rss-item-date">${formatRssDate(
         item.date
       )}</div>`;
       list.appendChild(row);
@@ -257,35 +316,14 @@ export function initRssReader(win) {
     renderItems();
     if (!item) return;
     titleEl.textContent = item.title || "(Untitled)";
-    metaEl.textContent = `${formatDate(item.date)} · ${item.link || "No link"}`;
-    textEl.textContent = sanitizeText(item.summary) || "(No description)";
+    metaEl.textContent = `${formatRssDate(item.date)} · ${item.link || "No link"}`;
+    textEl.textContent = stripHtmlText(item.summary) || "(No description)";
     if (item.link) {
       linkEl.href = item.link;
       linkEl.style.display = "inline";
     } else {
       linkEl.style.display = "none";
     }
-  };
-
-  const parseFeed = (xmlText) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, "application/xml");
-    if (doc.querySelector("parsererror")) throw new Error("Invalid feed");
-    const nodes = doc.querySelectorAll("item, entry");
-    return Array.from(nodes).map((node) => {
-      const get = (sel) => node.querySelector(sel)?.textContent?.trim() || "";
-      const resolveLink = () => {
-        const linkEl = node.querySelector("link[href]");
-        if (linkEl) return linkEl.getAttribute("href") || "";
-        return get("link");
-      };
-      return {
-        title: get("title"),
-        link: resolveLink(),
-        date: get("pubDate") || get("updated") || get("published"),
-        summary: get("description") || get("summary") || get("content")
-      };
-    });
   };
 
   const applyItems = (listItems) => {
@@ -296,7 +334,7 @@ export function initRssReader(win) {
   };
 
   const loadFeed = async (rawUrl) => {
-    const normalized = normalizeUrl(rawUrl);
+    const normalized = normalizeHttpUrl(rawUrl);
     if (!normalized) return;
     const token = ++rssLoadToken;
     if (rssAbort) rssAbort.abort();
@@ -319,9 +357,7 @@ export function initRssReader(win) {
       }
 
       if (token !== rssLoadToken) return;
-      const parsed = parseFeed(text);
       if (!parsed.length) throw new Error("Empty feed");
-      if (token !== rssLoadToken) return;
       applyItems(parsed);
       setStatus(`Loaded ${parsed.length} items`);
     } catch (err) {
