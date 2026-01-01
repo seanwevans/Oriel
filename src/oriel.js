@@ -20,6 +20,7 @@ import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
 import { getEmailContent, initEmail } from "./apps/email.js";
 import { getMessengerContent, initMessenger } from "./apps/messenger.js";
 import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
+import { getCeleryManContent, initCeleryMan } from "./apps/celeryman.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";

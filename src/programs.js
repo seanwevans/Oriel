@@ -400,6 +400,14 @@ export const PROGRAMS = [
     label: "Browser"
   },
   {
+    type: "celeryman",
+    title: "Celery Man",
+    width: 920,
+    height: 640,
+    icon: "celeryman",
+    label: "Celery Man"
+  },
+  {
     type: "vm",
     title: "Oriel VM",
     width: 900,

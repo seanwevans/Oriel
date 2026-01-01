@@ -2725,6 +2725,72 @@ body {
   font-size: 13px;
 }
 
+.celeryman {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 10px;
+  background: linear-gradient(#f5fff8, #e6f4ff);
+  border: 1px solid var(--win-gray-shadow);
+}
+
+.celeryman-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.celeryman-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #0b2239;
+}
+
+.celeryman-subtitle {
+  color: #2a3f55;
+  font-size: 13px;
+}
+
+.celeryman-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.celeryman-status {
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--win-gray-shadow);
+  background: #f5f5f5;
+  color: #111;
+  border-radius: 4px;
+}
+
+.celeryman-status[data-tone="error"] {
+  background: #ffe8e5;
+  color: #a10505;
+}
+
+.celeryman-status[data-tone="success"] {
+  background: #e6f5ea;
+  color: #0e5c2c;
+}
+
+.celeryman-frame-wrap {
+  flex: 1;
+  border: 1px solid var(--win-gray-shadow);
+  background: #0b2239;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.celeryman-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #0b2239;
+}
+
 .radio-search-row {
   display: grid;
   grid-template-columns: 1fr auto;
