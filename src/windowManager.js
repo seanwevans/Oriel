@@ -23,6 +23,7 @@ import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
 import { initKakuro } from "./apps/kakuro.js";
 import { initMarkdownViewer } from "./apps/markdown.js";
 import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
+import { getCeleryManContent, initCeleryMan } from "./apps/celeryman.js";
 import { initPdfReader } from "./apps/pdfReader.js";
 import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
 import {
@@ -202,6 +203,7 @@ const APP_INITIALIZERS = {
   tracker: initTracker,
   midisequencer: initMidiSequencer,
   charmap: initCharMap,
+  celeryman: initCeleryMan,
   postgres: initPostgres,
   winfile: initFileManager,
   clock: initClock,
@@ -513,6 +515,7 @@ export class WindowManager {
     if (type === "netnews") content = getNetNewsContent();
     if (type === "browser") content = this.getBrowserContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
+    if (type === "celeryman") content = getCeleryManContent();
     if (type === "discord") content = getDiscordContent();
     if (type === "bbs") content = getBbsContent();
     if (type === "spotify") content = getSpotifyContent();
