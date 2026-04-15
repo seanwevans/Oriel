@@ -11,18 +11,27 @@ import {
   listKeyValues,
   setKeyValue
 } from "../keyValueStore.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const getKernel = () => window.kernel;
 
+class ConsoleApp extends BaseApp {
+  mount() {
+    this.windowEl.consoleState = {
+      cwd: "C:\\",
+      history: [],
+      historyIndex: null
+    };
+    updateConsolePrompt(this.windowEl);
+    const input = this.windowEl.querySelector(".console-input");
+    if (input) input.focus();
+  }
+}
+
 function initConsole(w) {
-  w.consoleState = {
-    cwd: "C:\\",
-    history: [],
-    historyIndex: null
-  };
-  updateConsolePrompt(w);
-  const input = w.querySelector(".console-input");
-  if (input) input.focus();
+  const app = new ConsoleApp({ windowEl: w });
+  app.mount();
+  return app;
 }
 
 function getConsoleState(w) {
@@ -634,6 +643,7 @@ function calcInput(e, v) {
 
 export {
   calcInput,
+  ConsoleApp,
   handleConsoleKey,
   initConsole,
   registerConsoleCommands,
