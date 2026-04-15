@@ -10,7 +10,7 @@ import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
 import { getN64Root, initN64 } from "./apps/n64.js";
-import { initNotepad } from "./apps/notepad.js";
+import { NotepadApp } from "./apps/notepad.js";
 import { initCardfile } from "./apps/cardfile.js";
 import { initClock } from "./apps/clock.js";
 import { getDiscordContent, initDiscord } from "./apps/discord.js";
@@ -94,7 +94,7 @@ import { initSoundRecorder } from "./apps/soundRecorder.js";
 import { initDoom } from "./apps/doom.js";
 import {
   getWinFileContent,
-  initFileManager,
+  FileManagerApp,
   installSelectionFromWindow,
   rFL,
   rFT,
@@ -102,8 +102,8 @@ import {
 } from "./apps/fileManager.js";
 import {
   calcInput,
+  ConsoleApp,
   handleConsoleKey,
-  initConsole,
   registerConsoleCommands,
   runCompiler,
   runPython
@@ -173,76 +173,98 @@ import {
   screensaverContext,
   submitLockPassphrase
 } from "./apps/screensaver.js";
+import { BaseApp } from "./apps/base/BaseApp.js";
 
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
 const APP_INITIALIZERS = {
-  mines: initMinesweeper,
-  kakuro: initKakuro,
-  solitaire: initSolitaire,
-  reversi: initReversi,
-  sudoku: initSudoku,
-  mafia: initMafia,
-  paint: initPaint,
-  pixelstudio: initPixelStudio,
-  notepad: initNotepad,
-  photoshop: initPhotoshop,
-  artist: initArtist,
-  mplayer: initMediaPlayer,
-  simcity: initSimCity,
-  skifree: initSkiFree,
-  angrybirds: initAngryBirds,
-  cannonduel: initCannonDuel,
-  pinball: initPinball,
-  linerider: initLineRider,
-  database: initDatabase,
-  soundrec: initSoundRecorder,
-  radio: initRadio,
-  beatmaker: initBeatMaker,
-  tracker: initTracker,
-  midisequencer: initMidiSequencer,
-  charmap: initCharMap,
-  celeryman: initCeleryMan,
-  postgres: initPostgres,
-  winfile: initFileManager,
-  clock: initClock,
-  control: (w, initData, wmInstance) =>
-    initControlPanel(controlPanelContext, w, initData, wmInstance),
-  reset: initReset,
-  chess: initChess,
-  console: initConsole,
-  packetlab: initPacketLab,
-  retroai: initRetroAI,
-  apiclient: initApiClient,
-  write: initWrite,
-  cardfile: initCardfile,
-  taskman: initTaskMan,
-  pdfreader: initPdfReader,
-  imageviewer: initImageViewer,
-  markdown: initMarkdownViewer,
-  rss: initRssReader,
-  netnews: initNetNews,
-  browser: initBrowser,
-  radiogarden: initRadioGarden,
-  discord: initDiscord,
-  bbs: initBbs,
-  messenger: initMessenger,
-  irc: initIRC,
-  email: initEmail,
-  spotify: initSpotify,
-  doom: initDoom,
-  minecraft: initMinecraft,
-  n64: initN64,
-  ti83: initTi83,
-  shaderlab: initShaderLab,
-  sandspiel: initSandspiel,
-  sandspiel3d: initSandspiel3d,
-  papers: initPapersPlease,
-  whiteboard: initWhiteboard,
-  vm: initVm,
-  hexedit: initHexEditor
+  mines: createLegacyAppAdapter(initMinesweeper),
+  kakuro: createLegacyAppAdapter(initKakuro),
+  solitaire: createLegacyAppAdapter(initSolitaire),
+  reversi: createLegacyAppAdapter(initReversi),
+  sudoku: createLegacyAppAdapter(initSudoku),
+  mafia: createLegacyAppAdapter(initMafia),
+  paint: createLegacyAppAdapter(initPaint),
+  pixelstudio: createLegacyAppAdapter(initPixelStudio),
+  notepad: NotepadApp,
+  photoshop: createLegacyAppAdapter(initPhotoshop),
+  artist: createLegacyAppAdapter(initArtist),
+  mplayer: createLegacyAppAdapter(initMediaPlayer),
+  simcity: createLegacyAppAdapter(initSimCity),
+  skifree: createLegacyAppAdapter(initSkiFree),
+  angrybirds: createLegacyAppAdapter(initAngryBirds),
+  cannonduel: createLegacyAppAdapter(initCannonDuel),
+  pinball: createLegacyAppAdapter(initPinball),
+  linerider: createLegacyAppAdapter(initLineRider),
+  database: createLegacyAppAdapter(initDatabase),
+  soundrec: createLegacyAppAdapter(initSoundRecorder),
+  radio: createLegacyAppAdapter(initRadio),
+  beatmaker: createLegacyAppAdapter(initBeatMaker),
+  tracker: createLegacyAppAdapter(initTracker),
+  midisequencer: createLegacyAppAdapter(initMidiSequencer),
+  charmap: createLegacyAppAdapter(initCharMap),
+  celeryman: createLegacyAppAdapter(initCeleryMan),
+  postgres: createLegacyAppAdapter(initPostgres),
+  winfile: FileManagerApp,
+  clock: createLegacyAppAdapter(initClock),
+  control: createLegacyAppAdapter((w, initData, wmInstance) =>
+    initControlPanel(controlPanelContext, w, initData, wmInstance)
+  ),
+  reset: createLegacyAppAdapter(initReset),
+  chess: createLegacyAppAdapter(initChess),
+  console: ConsoleApp,
+  packetlab: createLegacyAppAdapter(initPacketLab),
+  retroai: createLegacyAppAdapter(initRetroAI),
+  apiclient: createLegacyAppAdapter(initApiClient),
+  write: createLegacyAppAdapter(initWrite),
+  cardfile: createLegacyAppAdapter(initCardfile),
+  taskman: createLegacyAppAdapter(initTaskMan),
+  pdfreader: createLegacyAppAdapter(initPdfReader),
+  imageviewer: createLegacyAppAdapter(initImageViewer),
+  markdown: createLegacyAppAdapter(initMarkdownViewer),
+  rss: createLegacyAppAdapter(initRssReader),
+  netnews: createLegacyAppAdapter(initNetNews),
+  browser: createLegacyAppAdapter(initBrowser),
+  radiogarden: createLegacyAppAdapter(initRadioGarden),
+  discord: createLegacyAppAdapter(initDiscord),
+  bbs: createLegacyAppAdapter(initBbs),
+  messenger: createLegacyAppAdapter(initMessenger),
+  irc: createLegacyAppAdapter(initIRC),
+  email: createLegacyAppAdapter(initEmail),
+  spotify: createLegacyAppAdapter(initSpotify),
+  doom: createLegacyAppAdapter(initDoom),
+  minecraft: createLegacyAppAdapter(initMinecraft),
+  n64: createLegacyAppAdapter(initN64),
+  ti83: createLegacyAppAdapter(initTi83),
+  shaderlab: createLegacyAppAdapter(initShaderLab),
+  sandspiel: createLegacyAppAdapter(initSandspiel),
+  sandspiel3d: createLegacyAppAdapter(initSandspiel3d),
+  papers: createLegacyAppAdapter(initPapersPlease),
+  whiteboard: createLegacyAppAdapter(initWhiteboard),
+  vm: createLegacyAppAdapter(initVm),
+  hexedit: createLegacyAppAdapter(initHexEditor)
 };
+
+class LegacyFunctionApp extends BaseApp {
+  constructor({ initializer, ...args }) {
+    super(args);
+    this.initializer = initializer;
+  }
+
+  mount() {
+    return this.initializer(
+      this.windowEl,
+      this.initData,
+      this.services.windowManager
+    );
+  }
+}
+
+function createLegacyAppAdapter(initializer) {
+  return ({ windowEl, initData, services }) =>
+    new LegacyFunctionApp({ windowEl, initData, services, initializer });
+}
 
 export class WindowManager {
   constructor(initialState = null) {
@@ -550,6 +572,7 @@ export class WindowManager {
       el: winEl,
       type,
       title,
+      appInstance: null,
       minimized: false,
       maximized: false,
       prevRect: stateOverrides.prevRect || null,
@@ -564,10 +587,17 @@ export class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
-    const initializer = APP_INITIALIZERS[type] || getRuntimeInitializer(type);
-    if (initializer) {
+    const appDefinition = APP_INITIALIZERS[type] || getRuntimeInitializer(type);
+    if (appDefinition) {
       try {
-        initializer(winEl, initData, this);
+        const appInstance = this.instantiateApp(appDefinition, winEl, initData);
+        winObj.appInstance = appInstance || null;
+        if (appInstance && typeof appInstance.mount === "function") {
+          Promise.resolve(appInstance.mount()).catch((err) => {
+            console.error(`Initializer for '${type}' failed:`, err);
+            this.renderRuntimeError(winEl, err);
+          });
+        }
       } catch (err) {
         console.error(`Initializer for '${type}' failed:`, err);
         this.renderRuntimeError(winEl, err);
@@ -586,6 +616,13 @@ export class WindowManager {
     const index = this.windows.findIndex((w) => w.id === id);
     if (index > -1) {
       const closingWin = this.windows[index];
+      if (typeof closingWin.appInstance?.dispose === "function") {
+        try {
+          closingWin.appInstance.dispose();
+        } catch (err) {
+          console.error(`App dispose for '${closingWin.type}' failed:`, err);
+        }
+      }
       if (typeof closingWin.el.chessCleanup === "function")
         closingWin.el.chessCleanup();
       if (typeof closingWin.el.skifreeCleanup === "function")
@@ -699,11 +736,40 @@ export class WindowManager {
       if (w.id === id) {
         w.el.style.zIndex = this.highestZ;
         w.el.classList.add("active");
+        if (typeof w.appInstance?.onFocus === "function") {
+          w.appInstance.onFocus();
+        }
       } else {
         w.el.classList.remove("active");
+        if (typeof w.appInstance?.onBlur === "function") {
+          w.appInstance.onBlur();
+        }
       }
     });
     this.saveDesktopState();
+  }
+  instantiateApp(appDefinition, windowEl, initData) {
+    const services = {
+      windowManager: this,
+      kernel,
+      publish,
+      subscribe
+    };
+    const appParams = { windowEl, initData, services };
+    if (typeof appDefinition !== "function") return null;
+    if (appDefinition.prototype instanceof BaseApp) {
+      return new appDefinition(appParams);
+    }
+    const maybeInstance = appDefinition(appParams);
+    if (maybeInstance && typeof maybeInstance.mount === "function") {
+      return maybeInstance;
+    }
+    return new LegacyFunctionApp({
+      windowEl,
+      initData,
+      services,
+      initializer: appDefinition
+    });
   }
   // Drag Logic
   startDrag(e, winEl) {
@@ -1376,5 +1442,3 @@ export class WindowManager {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
-
-
