@@ -8,57 +8,49 @@ import {
 } from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
-import { getMinecraftRoot, initMinecraft } from "./apps/minecraft.js";
-import { getN64Root, initN64 } from "./apps/n64.js";
-import { NotepadApp } from "./apps/notepad.js";
-import { initCardfile } from "./apps/cardfile.js";
-import { initClock } from "./apps/clock.js";
-import { getDiscordContent, initDiscord } from "./apps/discord.js";
-import { getSpotifyContent, initSpotify } from "./apps/spotify.js";
-import { getIRCContent, initIRC } from "./apps/irc.js";
-import { getBbsContent, initBbs } from "./apps/bbsDialer.js";
-import { getEmailContent, initEmail } from "./apps/email.js";
-import { getMessengerContent, initMessenger } from "./apps/messenger.js";
-import { getRetroAIContent, initRetroAI } from "./apps/retroAI.js";
-import { initKakuro } from "./apps/kakuro.js";
-import { initMarkdownViewer } from "./apps/markdown.js";
-import { initMinesweeper, resetMines } from "./apps/minesweeper.js";
-import { getCeleryManContent, initCeleryMan } from "./apps/celeryman.js";
-import { initPdfReader } from "./apps/pdfReader.js";
-import { clearPaint, getPaintRoot, initPaint, selectPaintTool } from "./apps/paint.js";
-import {
-  getPixelStudioContent,
-  initPixelStudio
-} from "./apps/pixelStudio.js";
-import { getPostgresContent, initPostgres } from "./apps/postgres.js";
-import { initVm } from "./apps/vm.js";
-import { initWrite } from "./apps/write.js";
-import { initArtist } from "./apps/artist.js";
-import { getSandspielRoot, initSandspiel } from "./apps/sandspiel.js";
-import { getSandspiel3DRoot, initSandspiel3d } from "./apps/sandspiel3d.js";
-import { getWhiteboardRoot, initWhiteboard } from "./apps/whiteboard.js";
-import { initImageViewer } from "./apps/imageViewer.js";
-import { initReversi } from "./apps/reversi.js";
-import { initSolitaire } from "./apps/solitaire.js";
-import { initSudoku } from "./apps/sudoku.js";
-import { copyCharMap, initCharMap } from "./apps/charmap.js";
-import { getBeatMakerContent, initBeatMaker } from "./apps/beatMaker.js";
-import { getMidiSequencerContent, initMidiSequencer } from "./apps/midiSequencer.js";
-import {
-  addDbRecord,
-  deleteDbRecord,
-  exportDbToCsv,
-  initDatabase
-} from "./apps/database.js";
-import { initMediaPlayer } from "./apps/mediaPlayer.js";
-import {
-  endTask,
-  initTaskMan,
-  refreshAllProcessViews,
-  refreshAllTaskManagers,
-  switchTask
-} from "./apps/taskman.js";
-import { initReset } from "./apps/reset.js";
+import { getDiscordContent } from "./apps/discord.js";
+import { getSpotifyContent } from "./apps/spotify.js";
+import { getIRCContent } from "./apps/irc.js";
+import { getBbsContent } from "./apps/bbsDialer.js";
+import { getEmailContent } from "./apps/email.js";
+import { getMessengerContent } from "./apps/messenger.js";
+import { getRetroAIContent } from "./apps/retroAI.js";
+import { resetMines } from "./apps/minesweeper.js";
+import { getCeleryManContent } from "./apps/celeryman.js";
+import { clearPaint, getPaintRoot, selectPaintTool } from "./apps/paint.js";
+import { getPixelStudioContent } from "./apps/pixelStudio.js";
+import { getPostgresContent } from "./apps/postgres.js";
+import { getSandspielRoot } from "./apps/sandspiel.js";
+import { getSandspiel3DRoot } from "./apps/sandspiel3d.js";
+import { getWhiteboardRoot } from "./apps/whiteboard.js";
+import { copyCharMap } from "./apps/charmap.js";
+import { getBeatMakerContent } from "./apps/beatMaker.js";
+import { getMidiSequencerContent } from "./apps/midiSequencer.js";
+import { addDbRecord, deleteDbRecord, exportDbToCsv } from "./apps/database.js";
+import { endTask, refreshAllProcessViews, refreshAllTaskManagers, switchTask } from "./apps/taskman.js";
+import { browserSessions, getNetworkDefaults, refreshNetworkedWindows, resetNetworkDefaults, updateNetworkDefaults } from "./networking.js";
+import { getWinFileContent, installSelectionFromWindow, rFL, rFT, uninstallSelectionFromWindow } from "./apps/fileManager.js";
+import { calcInput, handleConsoleKey, registerConsoleCommands, runCompiler, runPython } from "./apps/console.js";
+import { getPhotoshopContent, psApplyFilter, psExport, psFillCanvas, psNewDocument, psTriggerOpen, setPsTool } from "./apps/photoshop.js";
+import { getLineRiderContent } from "./apps/linerider.js";
+import { getSimCityContent } from "./apps/simcity.js";
+import { getNetNewsContent } from "./apps/netnews.js";
+import { getSkiFreeContent } from "./apps/skifree.js";
+import { getPinballContent } from "./apps/pinball.js";
+import { getAngryBirdsContent } from "./apps/angrybirds.js";
+import { getCannonDuelContent } from "./apps/cannonDuel.js";
+import { getRssReaderContent } from "./apps/rss.js";
+import { getPacketLabContent } from "./apps/packetLab.js";
+import { getApiClientContent } from "./apps/apiClient.js";
+import { getTi83Root } from "./apps/ti83.js";
+import { getTrackerContent } from "./apps/tracker.js";
+import { applyFontSelection, applySavedTheme, applyScreensaver, applyTheme, getCurrentThemeCustom, handleThemeInputChange, openCPColor, openCPDefaults, openCPDesktop, openCPFonts, openCPScreensaver, openCPSound, previewScreensaver, setWallpaper } from "./apps/controlPanel.js";
+import { bootstrapInstallations } from "./installer.js";
+import { getShaderLabRoot } from "./apps/shaderLab.js";
+import { AppRegistry } from "./core/AppRegistry.js";
+import { AppHost } from "./core/AppHost.js";
+import { getMinecraftRoot } from "./apps/minecraft.js";
+import { getN64Root } from "./apps/n64.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -78,63 +70,10 @@ import {
   registerMediaElement,
   setSystemVolume
 } from "./audio.js";
-import {
-  browserSessions,
-  getNetworkDefaults,
-  initBrowser,
-  initRadio,
-  initRadioGarden,
-  initRssReader,
-  refreshNetworkedWindows,
-  resetNetworkDefaults,
-  updateNetworkDefaults
-} from "./networking.js";
-import { initHexEditor } from "./apps/hexEditor.js";
-import { initSoundRecorder } from "./apps/soundRecorder.js";
-import { initDoom } from "./apps/doom.js";
-import {
-  getWinFileContent,
-  FileManagerApp,
-  installSelectionFromWindow,
-  rFL,
-  rFT,
-  uninstallSelectionFromWindow
-} from "./apps/fileManager.js";
-import {
-  calcInput,
-  ConsoleApp,
-  handleConsoleKey,
-  registerConsoleCommands,
-  runCompiler,
-  runPython
-} from "./apps/console.js";
-import {
-  getPhotoshopContent,
-  initPhotoshop,
-  psApplyFilter,
-  psExport,
-  psFillCanvas,
-  psNewDocument,
-  psTriggerOpen,
-  setPsTool
-} from "./apps/photoshop.js";
 import { SimulatedKernel } from "./kernel.js";
-import { getLineRiderContent, initLineRider } from "./apps/linerider.js";
-import { getSimCityContent, initSimCity } from "./apps/simcity.js";
-import { getNetNewsContent, initNetNews } from "./apps/netnews.js";
-import { getSkiFreeContent, initSkiFree } from "./apps/skifree.js";
-import { getPinballContent, initPinball } from "./apps/pinball.js";
-import { getAngryBirdsContent, initAngryBirds } from "./apps/angrybirds.js";
-import { getCannonDuelContent, initCannonDuel } from "./apps/cannonDuel.js";
 import { getCalcContent } from "./apps/calc.js";
 import { getReadmeContent } from "./apps/readme.js";
-import { initMafia } from "./apps/mafia.js";
-import { getRssReaderContent } from "./apps/rss.js";
-import { getPacketLabContent, initPacketLab } from "./apps/packetLab.js";
-import { getApiClientContent, initApiClient } from "./apps/apiClient.js";
 import { getClipboardContent } from "./apps/clipboard.js";
-import { getTi83Root, initTi83 } from "./apps/ti83.js";
-import { getTrackerContent, initTracker } from "./apps/tracker.js";
 import {
   getAvailablePrograms as getProgramManagerApps,
   getIconForType as getProgramManagerIcon,
@@ -143,30 +82,6 @@ import {
   refreshProgramManagerContent,
   setupProgramManagerMenu
 } from "./apps/programManager.js";
-import {
-  applyFontSelection,
-  applySavedTheme,
-  applyScreensaver,
-  applyTheme,
-  getCurrentThemeCustom,
-  handleThemeInputChange,
-  initControlPanel,
-  openCPColor,
-  openCPDefaults,
-  openCPDesktop,
-  openCPFonts,
-  openCPScreensaver,
-  openCPSound,
-  previewScreensaver,
-  setWallpaper
-} from "./apps/controlPanel.js";
-import {
-  bootstrapInstallations,
-  getRuntimeInitializer
-} from "./installer.js";
-import { initChess } from "./apps/chess.js";
-import { initPapersPlease } from "./apps/papersPlease.js";
-import { getShaderLabRoot, initShaderLab } from "./apps/shaderLab.js";
 import {
   hideUnlockPrompt,
   initScreensaver,
@@ -178,73 +93,6 @@ import { BaseApp } from "./apps/base/BaseApp.js";
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
-const APP_INITIALIZERS = {
-  mines: createLegacyAppAdapter(initMinesweeper),
-  kakuro: createLegacyAppAdapter(initKakuro),
-  solitaire: createLegacyAppAdapter(initSolitaire),
-  reversi: createLegacyAppAdapter(initReversi),
-  sudoku: createLegacyAppAdapter(initSudoku),
-  mafia: createLegacyAppAdapter(initMafia),
-  paint: createLegacyAppAdapter(initPaint),
-  pixelstudio: createLegacyAppAdapter(initPixelStudio),
-  notepad: NotepadApp,
-  photoshop: createLegacyAppAdapter(initPhotoshop),
-  artist: createLegacyAppAdapter(initArtist),
-  mplayer: createLegacyAppAdapter(initMediaPlayer),
-  simcity: createLegacyAppAdapter(initSimCity),
-  skifree: createLegacyAppAdapter(initSkiFree),
-  angrybirds: createLegacyAppAdapter(initAngryBirds),
-  cannonduel: createLegacyAppAdapter(initCannonDuel),
-  pinball: createLegacyAppAdapter(initPinball),
-  linerider: createLegacyAppAdapter(initLineRider),
-  database: createLegacyAppAdapter(initDatabase),
-  soundrec: createLegacyAppAdapter(initSoundRecorder),
-  radio: createLegacyAppAdapter(initRadio),
-  beatmaker: createLegacyAppAdapter(initBeatMaker),
-  tracker: createLegacyAppAdapter(initTracker),
-  midisequencer: createLegacyAppAdapter(initMidiSequencer),
-  charmap: createLegacyAppAdapter(initCharMap),
-  celeryman: createLegacyAppAdapter(initCeleryMan),
-  postgres: createLegacyAppAdapter(initPostgres),
-  winfile: FileManagerApp,
-  clock: createLegacyAppAdapter(initClock),
-  control: createLegacyAppAdapter((w, initData, wmInstance) =>
-    initControlPanel(controlPanelContext, w, initData, wmInstance)
-  ),
-  reset: createLegacyAppAdapter(initReset),
-  chess: createLegacyAppAdapter(initChess),
-  console: ConsoleApp,
-  packetlab: createLegacyAppAdapter(initPacketLab),
-  retroai: createLegacyAppAdapter(initRetroAI),
-  apiclient: createLegacyAppAdapter(initApiClient),
-  write: createLegacyAppAdapter(initWrite),
-  cardfile: createLegacyAppAdapter(initCardfile),
-  taskman: createLegacyAppAdapter(initTaskMan),
-  pdfreader: createLegacyAppAdapter(initPdfReader),
-  imageviewer: createLegacyAppAdapter(initImageViewer),
-  markdown: createLegacyAppAdapter(initMarkdownViewer),
-  rss: createLegacyAppAdapter(initRssReader),
-  netnews: createLegacyAppAdapter(initNetNews),
-  browser: createLegacyAppAdapter(initBrowser),
-  radiogarden: createLegacyAppAdapter(initRadioGarden),
-  discord: createLegacyAppAdapter(initDiscord),
-  bbs: createLegacyAppAdapter(initBbs),
-  messenger: createLegacyAppAdapter(initMessenger),
-  irc: createLegacyAppAdapter(initIRC),
-  email: createLegacyAppAdapter(initEmail),
-  spotify: createLegacyAppAdapter(initSpotify),
-  doom: createLegacyAppAdapter(initDoom),
-  minecraft: createLegacyAppAdapter(initMinecraft),
-  n64: createLegacyAppAdapter(initN64),
-  ti83: createLegacyAppAdapter(initTi83),
-  shaderlab: createLegacyAppAdapter(initShaderLab),
-  sandspiel: createLegacyAppAdapter(initSandspiel),
-  sandspiel3d: createLegacyAppAdapter(initSandspiel3d),
-  papers: createLegacyAppAdapter(initPapersPlease),
-  whiteboard: createLegacyAppAdapter(initWhiteboard),
-  vm: createLegacyAppAdapter(initVm),
-  hexedit: createLegacyAppAdapter(initHexEditor)
-};
 
 class LegacyFunctionApp extends BaseApp {
   constructor({ initializer, ...args }) {
@@ -292,6 +140,13 @@ export class WindowManager {
       initialL: 0,
       initialT: 0
     };
+    this.appRegistry = new AppRegistry({ controlPanelContext });
+    this.appHost = new AppHost({
+      onMountError: ({ err, winEl, type }) => {
+        console.error(`Initializer for '${type}' failed:`, err);
+        this.renderRuntimeError(winEl, err);
+      }
+    });
     // Global Listeners
     window.addEventListener("mousemove", (e) => {
       this.onDrag(e);
@@ -554,7 +409,8 @@ export class WindowManager {
     if (type === "papers") content = this.getPapersContent();
     if (type === "whiteboard") content = getWhiteboardRoot();
     if (type === "hexedit") content = this.getHexEditorContent();
-    if (!content && getRuntimeInitializer(type)) {
+    const initializer = this.appRegistry.resolve(type);
+    if (!content && this.appRegistry.getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
     }
     const winEl = this.createWindowDOM(id, title, resolvedWidth, resolvedHeight, content, stateOverrides);
@@ -587,22 +443,9 @@ export class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic if needed
-    const appDefinition = APP_INITIALIZERS[type] || getRuntimeInitializer(type);
-    if (appDefinition) {
-      try {
-        const appInstance = this.instantiateApp(appDefinition, winEl, initData);
-        winObj.appInstance = appInstance || null;
-        if (appInstance && typeof appInstance.mount === "function") {
-          Promise.resolve(appInstance.mount()).catch((err) => {
-            console.error(`Initializer for '${type}' failed:`, err);
-            this.renderRuntimeError(winEl, err);
-          });
-        }
-      } catch (err) {
-        console.error(`Initializer for '${type}' failed:`, err);
-        this.renderRuntimeError(winEl, err);
-      }
-    } else if (!APP_INITIALIZERS[type]) {
+    if (initializer) {
+      this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+    } else {
       this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
     }
     // Refresh logic
@@ -616,36 +459,7 @@ export class WindowManager {
     const index = this.windows.findIndex((w) => w.id === id);
     if (index > -1) {
       const closingWin = this.windows[index];
-      if (typeof closingWin.appInstance?.dispose === "function") {
-        try {
-          closingWin.appInstance.dispose();
-        } catch (err) {
-          console.error(`App dispose for '${closingWin.type}' failed:`, err);
-        }
-      }
-      if (typeof closingWin.el.chessCleanup === "function")
-        closingWin.el.chessCleanup();
-      if (typeof closingWin.el.skifreeCleanup === "function")
-        closingWin.el.skifreeCleanup();
-      if (typeof closingWin.el.cannonduelCleanup === "function")
-        closingWin.el.cannonduelCleanup();
-      if (typeof closingWin.el.pinballCleanup === "function")
-        closingWin.el.pinballCleanup();
-      if (typeof closingWin.el.lineRiderCleanup === "function")
-        closingWin.el.lineRiderCleanup();
-      if (typeof closingWin.el.sandspiel3dCleanup === "function")
-        closingWin.el.sandspiel3dCleanup();
-      if (typeof closingWin.el.shaderLabCleanup === "function")
-        closingWin.el.shaderLabCleanup();
-      if (typeof closingWin.el.whiteboardCleanup === "function")
-        closingWin.el.whiteboardCleanup();
-      if (typeof closingWin.el.packetLabCleanup === "function")
-        closingWin.el.packetLabCleanup();
-      if (typeof closingWin.el.ircCleanup === "function") closingWin.el.ircCleanup();
-      if (closingWin.el.doomCI) {
-        closingWin.el.doomCI.exit();
-        closingWin.el.doomCI = null;
-      }
+      this.appHost.unmount(closingWin);
       closingWin.el.remove();
       // Remove minimized icon if exists
       const minIcon = document.getElementById("min-" + id);
@@ -1442,3 +1256,4 @@ export class WindowManager {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
+
