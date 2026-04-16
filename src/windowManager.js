@@ -88,10 +88,31 @@ import {
   screensaverContext,
   submitLockPassphrase
 } from "./apps/screensaver.js";
+import { BaseApp } from "./apps/base/BaseApp.js";
 
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
+
+class LegacyFunctionApp extends BaseApp {
+  constructor({ initializer, ...args }) {
+    super(args);
+    this.initializer = initializer;
+  }
+
+  mount() {
+    return this.initializer(
+      this.windowEl,
+      this.initData,
+      this.services.windowManager
+    );
+  }
+}
+
+function createLegacyAppAdapter(initializer) {
+  return ({ windowEl, initData, services }) =>
+    new LegacyFunctionApp({ windowEl, initData, services, initializer });
+}
 
 export class WindowManager {
   constructor(initialState = null) {
@@ -407,6 +428,7 @@ export class WindowManager {
       el: winEl,
       type,
       title,
+      appInstance: null,
       minimized: false,
       maximized: false,
       prevRect: stateOverrides.prevRect || null,
@@ -528,11 +550,40 @@ export class WindowManager {
       if (w.id === id) {
         w.el.style.zIndex = this.highestZ;
         w.el.classList.add("active");
+        if (typeof w.appInstance?.onFocus === "function") {
+          w.appInstance.onFocus();
+        }
       } else {
         w.el.classList.remove("active");
+        if (typeof w.appInstance?.onBlur === "function") {
+          w.appInstance.onBlur();
+        }
       }
     });
     this.saveDesktopState();
+  }
+  instantiateApp(appDefinition, windowEl, initData) {
+    const services = {
+      windowManager: this,
+      kernel,
+      publish,
+      subscribe
+    };
+    const appParams = { windowEl, initData, services };
+    if (typeof appDefinition !== "function") return null;
+    if (appDefinition.prototype instanceof BaseApp) {
+      return new appDefinition(appParams);
+    }
+    const maybeInstance = appDefinition(appParams);
+    if (maybeInstance && typeof maybeInstance.mount === "function") {
+      return maybeInstance;
+    }
+    return new LegacyFunctionApp({
+      windowEl,
+      initData,
+      services,
+      initializer: appDefinition
+    });
   }
   // Drag Logic
   startDrag(e, winEl) {

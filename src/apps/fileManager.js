@@ -1,6 +1,7 @@
 import { ICONS } from "../icons.js";
 import { MOCK_FS, hydrateNativeDirectory } from "../filesystem.js";
 import { installFromManifestPath, readManifest, uninstallApp } from "../installer.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 function getWinFileContent() {
   return `
@@ -45,13 +46,21 @@ function getWinFileContent() {
       `;
 }
 
+class FileManagerApp extends BaseApp {
+  async mount() {
+    const defaultDrive = Object.keys(MOCK_FS)[0] || "C\\";
+    this.windowEl.cP = defaultDrive;
+    this.windowEl.cD = MOCK_FS[defaultDrive];
+    this.windowEl.currentDirObj = this.windowEl.cD;
+    await rFT(this.windowEl);
+    await rFL(this.windowEl);
+  }
+}
+
 async function initFileManager(w) {
-  const defaultDrive = Object.keys(MOCK_FS)[0] || "C\\";
-  w.cP = defaultDrive;
-  w.cD = MOCK_FS[defaultDrive];
-  w.currentDirObj = w.cD;
-  await rFT(w);
-  await rFL(w);
+  const app = new FileManagerApp({ windowEl: w });
+  await app.mount();
+  return app;
 }
 
 
@@ -219,6 +228,7 @@ async function uninstallSelectionFromWindow(w) {
 }
 
 export {
+  FileManagerApp,
   initFileManager,
   rFT,
   rFL,
