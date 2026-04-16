@@ -1,6 +1,7 @@
 import { PROGRAMS } from "../programs.js";
 import { ICONS } from "../icons.js";
 import { getInstalledPrograms, getManifestForApp } from "../installer.js";
+import { getWindowContentElement } from "../windowContent.js";
 
 export function getAvailablePrograms() {
   const merged = new Map();
@@ -73,7 +74,7 @@ export function refreshProgramManagerContent(wm) {
   wm.windows
     .filter((win) => win.type === "progman")
     .forEach((win) => {
-      const contentArea = win.el.querySelector(".window-content");
+      const contentArea = getWindowContentElement(win.el);
       if (contentArea) contentArea.innerHTML = getProgramManagerContent(wm);
     });
 }
