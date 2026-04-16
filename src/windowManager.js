@@ -89,6 +89,7 @@ import {
   submitLockPassphrase
 } from "./apps/screensaver.js";
 import { BaseApp } from "./apps/base/BaseApp.js";
+import { getWindowBodyContainer } from "./windowContent.js";
 
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
@@ -243,16 +244,9 @@ export class WindowManager {
     const resolvedWidth =
       typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
     const resolvedHeight =
+      typeof height === "number" ? `${height}px` : height || height === 0 ? height : "";
     win.setAttribute("role", "dialog");
     win.setAttribute("aria-label", title);
-    win.style.width =
-      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
-    win.style.height =
-      typeof height === "number"
-        ? `${height}px`
-        : height || height === 0
-          ? height
-          : "";
     const resolvedLeft =
       stateOverrides.left !== undefined
         ? stateOverrides.left
@@ -819,7 +813,7 @@ export class WindowManager {
     return getProgramManagerIcon(type);
   }
   renderRuntimeError(winEl, err) {
-    const contentArea = winEl?.querySelector(".window-content");
+    const contentArea = getWindowBodyContainer(winEl);
     if (!contentArea) return;
     contentArea.innerHTML = `<div class="runtime-error">Unable to start app: ${err.message}</div>`;
   }
@@ -1262,4 +1256,3 @@ export class WindowManager {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
-
