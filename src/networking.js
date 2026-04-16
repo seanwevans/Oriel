@@ -293,7 +293,10 @@ export function initRssReader(win) {
     list.innerHTML = "";
     list.setAttribute("role", "listbox");
     if (!items.length) {
-      list.innerHTML = '<div class="rss-empty">No items in this feed.</div>';
+      const empty = document.createElement("div");
+      empty.className = "rss-empty";
+      empty.textContent = "No items in this feed.";
+      list.appendChild(empty);
       return;
     }
     items.forEach((item, idx) => {
@@ -303,9 +306,17 @@ export function initRssReader(win) {
       row.setAttribute("role", "option");
       row.setAttribute("tabindex", "0");
       row.setAttribute("aria-selected", idx === selected ? "true" : "false");
-      row.innerHTML = `<div class="rss-item-title">${item.title || "(Untitled)"}</div><div class="rss-item-date">${formatRssDate(
-        item.date
-      )}</div>`;
+
+      const title = document.createElement("div");
+      title.className = "rss-item-title";
+      title.textContent = item.title || "(Untitled)";
+
+      const date = document.createElement("div");
+      date.className = "rss-item-date";
+      date.textContent = formatRssDate(item.date);
+
+      row.appendChild(title);
+      row.appendChild(date);
       list.appendChild(row);
     });
   };
@@ -577,30 +588,74 @@ export function initRadioGarden(win) {
   let lastSearchTerm = null;
 
   const buildLink = (path) => `https://radio.garden${path}`;
+  const toValidRadioGardenUrl = (path) => {
+    if (!path) return null;
+    try {
+      const url = new URL(buildLink(path));
+      if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+      return url.toString();
+    } catch (err) {
+      return null;
+    }
+  };
 
   const renderResults = (stations) => {
     if (!results) return;
+    results.innerHTML = "";
     if (!stations.length) {
-      results.innerHTML = `<div class="radio-empty">No stations found for that search.</div>`;
+      const empty = document.createElement("div");
+      empty.className = "radio-empty";
+      empty.textContent = "No stations found for that search.";
+      results.appendChild(empty);
       return;
     }
-    results.innerHTML = stations
-      .map((station) => {
-        const title = station.page?.title || "Unknown Station";
-        const subtitle = station.page?.subtitle || "";
-        const url = station.page?.url ? buildLink(station.page.url) : null;
-        return `<div class="radio-card" role="listitem">
-                  <div class="radio-card-main">
-                    <div class="radio-card-title">${title}</div>
-                    <div class="radio-card-sub">${subtitle}</div>
-                  </div>
-                  <div class="radio-card-actions">
-                    <button class="radio-pill" data-radio-link="${url || ""}" ${url ? "" : "disabled"}>Open</button>
-                    <button class="radio-pill ghost" data-copy-link="${url || ""}" ${url ? "" : "disabled"}>Copy Link</button>
-                  </div>
-                </div>`;
-      })
-      .join("");
+
+    stations.forEach((station) => {
+      const title = station.page?.title || "Unknown Station";
+      const subtitle = station.page?.subtitle || "";
+      const url = toValidRadioGardenUrl(station.page?.url || "");
+
+      const card = document.createElement("div");
+      card.className = "radio-card";
+      card.setAttribute("role", "listitem");
+
+      const main = document.createElement("div");
+      main.className = "radio-card-main";
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "radio-card-title";
+      titleEl.textContent = title;
+
+      const subtitleEl = document.createElement("div");
+      subtitleEl.className = "radio-card-sub";
+      subtitleEl.textContent = subtitle;
+
+      main.appendChild(titleEl);
+      main.appendChild(subtitleEl);
+
+      const actions = document.createElement("div");
+      actions.className = "radio-card-actions";
+
+      const openBtn = document.createElement("button");
+      openBtn.className = "radio-pill";
+      openBtn.textContent = "Open";
+      openBtn.dataset.radioLink = url || "";
+      openBtn.disabled = !url;
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "radio-pill ghost";
+      copyBtn.textContent = "Copy Link";
+      copyBtn.dataset.copyLink = url || "";
+      copyBtn.disabled = !url;
+
+      actions.appendChild(openBtn);
+      actions.appendChild(copyBtn);
+
+      card.appendChild(main);
+      card.appendChild(actions);
+
+      results.appendChild(card);
+    });
   };
 
   const parseRadioJson = (text) => {
@@ -762,7 +817,10 @@ export async function initRadio(win) {
   const renderStations = () => {
     listEl.innerHTML = "";
     if (!stations.length) {
-      listEl.innerHTML = "<div class='radio-empty'>No stations loaded yet.</div>";
+      const empty = document.createElement("div");
+      empty.className = "radio-empty";
+      empty.textContent = "No stations loaded yet.";
+      listEl.appendChild(empty);
       return;
     }
     stations.forEach((st, idx) => {
@@ -776,16 +834,24 @@ export async function initRadio(win) {
         .filter(Boolean)
         .slice(0, 3)
         .join(", ");
-      btn.innerHTML = `
-        <div class="radio-station-title">${st.name || "Unnamed Station"}</div>
-        <div class="radio-meta-line">${st.country || ""}${
-        st.language ? " · " + st.language : ""
-      }</div>
-        <div class="radio-meta-line">${
-          st.codec ? st.codec.toUpperCase() + " · " : ""
-        }${st.bitrate ? st.bitrate + " kbps" : ""}${
-        tags ? " · " + tags : ""
-      }</div>`;
+
+      const title = document.createElement("div");
+      title.className = "radio-station-title";
+      title.textContent = st.name || "Unnamed Station";
+
+      const metaPrimary = document.createElement("div");
+      metaPrimary.className = "radio-meta-line";
+      metaPrimary.textContent = `${st.country || ""}${st.language ? ` · ${st.language}` : ""}`;
+
+      const metaSecondary = document.createElement("div");
+      metaSecondary.className = "radio-meta-line";
+      metaSecondary.textContent = `${st.codec ? `${st.codec.toUpperCase()} · ` : ""}${
+        st.bitrate ? `${st.bitrate} kbps` : ""
+      }${tags ? ` · ${tags}` : ""}`;
+
+      btn.appendChild(title);
+      btn.appendChild(metaPrimary);
+      btn.appendChild(metaSecondary);
       btn.addEventListener("click", () => selectStation(idx));
       listEl.appendChild(btn);
     });
