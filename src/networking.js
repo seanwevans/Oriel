@@ -356,6 +356,7 @@ export function initRssReader(win) {
         text = await res.text();
       }
 
+      const parsed = parseRssXml(text).items;
       if (token !== rssLoadToken) return;
       if (!parsed.length) throw new Error("Empty feed");
       applyItems(parsed);
