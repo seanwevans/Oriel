@@ -49,7 +49,7 @@ export function refreshAllTaskManagers(manager) {
   const wmRef = manager || window.wm;
   if (!wmRef) return;
   document.querySelectorAll(".window").forEach((w) => {
-    if (w.dataset.type === "Task List") {
+    if (w.dataset.appType === "taskman") {
       const list = w.querySelector("#task-list");
       if (list) refreshTaskList(list, w.dataset.id, wmRef);
     }
@@ -58,7 +58,7 @@ export function refreshAllTaskManagers(manager) {
 
 export function refreshAllProcessViews() {
   document.querySelectorAll(".window").forEach((w) => {
-    if (w.dataset.type === "Task List") {
+    if (w.dataset.appType === "taskman") {
       const view = w.querySelector("#task-queue-view");
       if (view) refreshProcessView(view);
     }
