@@ -287,7 +287,7 @@ export class WindowManager {
                 </div>
                 <div class="window-body"></div>
             `;
-    const windowBody = win.querySelector(".window-body");
+    const windowBody = getWindowBodyContainer(win);
     if (windowBody) {
       if (typeof content === "string") {
         windowBody.innerHTML = content;

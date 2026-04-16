@@ -14,6 +14,10 @@ import {
   updateNetworkDefaults
 } from "../networking.js";
 import { publish } from "../eventBus.js";
+import {
+  getWindowBodyContainer,
+  resolveWindowContentContainer
+} from "../windowContent.js";
 
 const DEFAULT_THEME = {
   winTeal: "#008080",
@@ -173,8 +177,7 @@ function openCPDesktop(context, el, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = el?.closest ? el.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (el instanceof HTMLElement ? el : null);
+  const body = resolveWindowContentContainer(el, targetContainer);
   if (!body) return;
 
   if (w) {
@@ -226,8 +229,7 @@ function openCPScreensaver(context, target, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = target?.closest ? target.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (target instanceof HTMLElement ? target : null);
+  const body = resolveWindowContentContainer(target, targetContainer);
   if (!body) return;
 
   if (w) {
@@ -319,8 +321,7 @@ function openCPSound(target, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = target?.closest ? target.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (target instanceof HTMLElement ? target : null);
+  const body = resolveWindowContentContainer(target, targetContainer);
   if (!body) return;
 
   if (w) {
@@ -393,8 +394,7 @@ function openCPDefaults(target, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = target?.closest ? target.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (target instanceof HTMLElement ? target : null);
+  const body = resolveWindowContentContainer(target, targetContainer);
   if (!body) return;
 
   if (w) {
@@ -520,8 +520,7 @@ function openCPFonts(target, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = target?.closest ? target.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (target instanceof HTMLElement ? target : null);
+  const body = resolveWindowContentContainer(target, targetContainer);
   if (!body) return;
 
   if (w) {
@@ -598,8 +597,7 @@ function openCPColor(target, containerOverride) {
     if (area) targetContainer = area;
   }
   const w = target?.closest ? target.closest(".window") : null;
-  const body =
-    targetContainer || (w ? w.querySelector(".window-body") : null) || (target instanceof HTMLElement ? target : null);
+  const body = resolveWindowContentContainer(target, targetContainer);
   if (!body) return;
   if (w) {
     w
@@ -647,7 +645,7 @@ function openCPColor(target, containerOverride) {
 
 function initControlPanel(context, w, _initData, windowManager) {
   const menu = w.querySelector(".menu-bar");
-  const body = w.querySelector(".window-body");
+  const body = getWindowBodyContainer(w);
   if (!menu || !body) return;
 
   menu.innerHTML = `
