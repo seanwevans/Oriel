@@ -243,16 +243,9 @@ export class WindowManager {
     const resolvedWidth =
       typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
     const resolvedHeight =
+      typeof height === "number" ? `${height}px` : height || height === 0 ? height : "";
     win.setAttribute("role", "dialog");
     win.setAttribute("aria-label", title);
-    win.style.width =
-      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
-    win.style.height =
-      typeof height === "number"
-        ? `${height}px`
-        : height || height === 0
-          ? height
-          : "";
     const resolvedLeft =
       stateOverrides.left !== undefined
         ? stateOverrides.left
