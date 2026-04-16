@@ -237,7 +237,7 @@ export class WindowManager {
       });
     });
   }
-  createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
+  createWindowDOM(id, type, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
     const resolvedWidth =
@@ -266,7 +266,8 @@ export class WindowManager {
     win.style.left = typeof resolvedLeft === "number" ? `${resolvedLeft}px` : resolvedLeft;
     win.style.top = typeof resolvedTop === "number" ? `${resolvedTop}px` : resolvedTop;
     win.dataset.id = id;
-    win.dataset.type = title; // For task manager filter
+    win.dataset.appType = type;
+    win.dataset.title = title;
     // HTML Structure with Resize Handles
     win.innerHTML = `
                 <div class="resizer n" data-resize="n"></div>
@@ -413,7 +414,15 @@ export class WindowManager {
     if (!content && this.appRegistry.getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
     }
-    const winEl = this.createWindowDOM(id, title, resolvedWidth, resolvedHeight, content, stateOverrides);
+    const winEl = this.createWindowDOM(
+      id,
+      type,
+      title,
+      resolvedWidth,
+      resolvedHeight,
+      content,
+      stateOverrides
+    );
     this.desktop.appendChild(winEl);
     if (type === "progman") setupProgramManagerMenu(this, winEl);
     const rect = winEl.getBoundingClientRect();
@@ -1256,4 +1265,3 @@ export class WindowManager {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }
-
