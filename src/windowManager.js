@@ -284,10 +284,16 @@ export class WindowManager {
                     <div class="menu-item">Edit</div>
                     <div class="menu-item">Help</div>
                 </div>
-                <div class="window-body">
-                    ${content}
-                </div>
+                <div class="window-body"></div>
             `;
+    const windowBody = win.querySelector(".window-body");
+    if (windowBody) {
+      if (typeof content === "string") {
+        windowBody.innerHTML = content;
+      } else if (content instanceof Node) {
+        windowBody.appendChild(content);
+      }
+    }
     // Drag Start
     const titleBar = win.querySelector(".title-bar");
     titleBar.addEventListener("mousedown", (e) => {
