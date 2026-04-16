@@ -238,22 +238,15 @@ export class WindowManager {
       });
     });
   }
-  createWindowDOM(id, title, width, height, content, stateOverrides = {}) {
+  createWindowDOM(id, type, title, width, height, content, stateOverrides = {}) {
     const win = document.createElement("div");
     win.classList.add("window");
     const resolvedWidth =
       typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
     const resolvedHeight =
+      typeof height === "number" ? `${height}px` : height || height === 0 ? height : "";
     win.setAttribute("role", "dialog");
     win.setAttribute("aria-label", title);
-    win.style.width =
-      typeof width === "number" ? width + "px" : width || width === 0 ? width : "";
-    win.style.height =
-      typeof height === "number"
-        ? `${height}px`
-        : height || height === 0
-          ? height
-          : "";
     const resolvedLeft =
       stateOverrides.left !== undefined
         ? stateOverrides.left
@@ -267,7 +260,8 @@ export class WindowManager {
     win.style.left = typeof resolvedLeft === "number" ? `${resolvedLeft}px` : resolvedLeft;
     win.style.top = typeof resolvedTop === "number" ? `${resolvedTop}px` : resolvedTop;
     win.dataset.id = id;
-    win.dataset.type = title; // For task manager filter
+    win.dataset.appType = type;
+    win.dataset.title = title;
     // HTML Structure with Resize Handles
     win.innerHTML = `
                 <div class="resizer n" data-resize="n"></div>
@@ -291,10 +285,16 @@ export class WindowManager {
                     <div class="menu-item">Edit</div>
                     <div class="menu-item">Help</div>
                 </div>
-                <div class="window-body">
-                    ${content}
-                </div>
+                <div class="window-body"></div>
             `;
+    const windowBody = win.querySelector(".window-body");
+    if (windowBody) {
+      if (typeof content === "string") {
+        windowBody.innerHTML = content;
+      } else if (content instanceof Node) {
+        windowBody.appendChild(content);
+      }
+    }
     // Drag Start
     const titleBar = win.querySelector(".title-bar");
     titleBar.addEventListener("mousedown", (e) => {
@@ -414,7 +414,15 @@ export class WindowManager {
     if (!content && this.appRegistry.getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
     }
-    const winEl = this.createWindowDOM(id, title, resolvedWidth, resolvedHeight, content, stateOverrides);
+    const winEl = this.createWindowDOM(
+      id,
+      type,
+      title,
+      resolvedWidth,
+      resolvedHeight,
+      content,
+      stateOverrides
+    );
     this.desktop.appendChild(winEl);
     if (type === "progman") setupProgramManagerMenu(this, winEl);
     const rect = winEl.getBoundingClientRect();
