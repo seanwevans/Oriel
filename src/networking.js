@@ -345,6 +345,7 @@ export function initRssReader(win) {
     try {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
       const res = await trackedFetch(proxyUrl, { signal });
+      const fallbackRes = res.clone();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       let text;
 
@@ -353,7 +354,7 @@ export function initRssReader(win) {
         text = data?.contents || "";
       } catch (jsonErr) {
         console.warn("RSS proxy did not return JSON, falling back to text", jsonErr);
-        text = await res.text();
+        text = await fallbackRes.text();
       }
 
       const parsed = parseRssXml(text).items;
