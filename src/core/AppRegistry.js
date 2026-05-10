@@ -59,6 +59,7 @@ import { getRuntimeInitializer } from "../installer.js";
 import { initChess } from "../apps/chess.js";
 import { initPapersPlease } from "../apps/papersPlease.js";
 import { initShaderLab } from "../apps/shaderLab.js";
+import { initCodePen } from "../apps/codepen.js";
 
 export class AppRegistry {
   constructor({ controlPanelContext = {}, runtimeInitializerResolver = getRuntimeInitializer } = {}) {
@@ -115,6 +116,7 @@ export class AppRegistry {
       rss: initRssReader,
       netnews: initNetNews,
       browser: initBrowser,
+      codepen: initCodePen,
       radiogarden: initRadioGarden,
       discord: initDiscord,
       bbs: initBbs,
