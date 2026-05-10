@@ -1,20 +1,65 @@
 import { DEFAULT_MD_SAMPLE } from "../defaults.js";
 
-function renderMarkdown(text) {
-  const escapeHtml = (str) =>
-    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const applyInline = (str) => {
-    let html = escapeHtml(str);
-    html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-    html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    html = html.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
-    return html;
-  };
+const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
 
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(str) {
+  return escapeHtml(str);
+}
+
+function getSafeLinkHref(href) {
+  const trimmedHref = href.trim();
+  if (!trimmedHref || trimmedHref !== href) return null;
+
+  try {
+    const url = new URL(trimmedHref);
+    if (!SAFE_LINK_PROTOCOLS.has(url.protocol)) return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
+function applyTextFormatting(str) {
+  let html = escapeHtml(str);
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  return html;
+}
+
+function applyInline(str) {
+  const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let html = "";
+  let lastIndex = 0;
+
+  str.replace(linkPattern, (match, label, href, offset) => {
+    html += applyTextFormatting(str.slice(lastIndex, offset));
+
+    const safeHref = getSafeLinkHref(href);
+    if (safeHref) {
+      html += `<a href="${escapeAttribute(safeHref)}" target="_blank" rel="noopener noreferrer">${applyTextFormatting(label)}</a>`;
+    } else {
+      html += applyTextFormatting(match);
+    }
+
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  html += applyTextFormatting(str.slice(lastIndex));
+  return html;
+}
+
+export function renderMarkdown(text) {
   const lines = text.split(/\r?\n/);
   const output = [];
   let inList = false;
