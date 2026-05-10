@@ -260,6 +260,25 @@ test("createWindowDOM renders a hostile title as text, not markup", () => {
   assert.equal(win.getAttribute("aria-label"), hostileTitle);
 });
 
+
+test("Write renders user-provided initial content as text", () => {
+  const wm = createTestWindowManager();
+  const hostileContent = "<img src=x onerror=alert(1)>";
+
+  const win = wm.createWindowDOM(
+    "write-id",
+    "write",
+    "Write",
+    320,
+    240,
+    wm.getWriteContent(hostileContent)
+  );
+
+  const editor = win.querySelector(".write-editor");
+  assert.equal(editor.textContent, hostileContent);
+  assert.equal(win.querySelector("img"), null);
+});
+
 test("createWindowDOM wires window controls with event listeners", () => {
   const wm = createTestWindowManager();
   const win = wm.createWindowDOM("event-id", "notes", "Safe", 320, 240, "");
