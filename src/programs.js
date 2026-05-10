@@ -130,7 +130,7 @@ export const PROGRAMS = [
   },
   {
     type: "photoshop",
-    title: "Photoshop 1.0",
+    title: "Photoshop 3.0",
     width: 760,
     height: 560,
     icon: "photoshop",

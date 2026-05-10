@@ -1,52 +1,97 @@
+const TOOL_NAMES = {
+  marquee: "Marquee",
+  lasso: "Lasso",
+  wand: "Magic Wand",
+  crop: "Crop",
+  move: "Move",
+  brush: "Paintbrush",
+  pencil: "Pencil",
+  line: "Line",
+  rect: "Rectangle",
+  circle: "Ellipse",
+  fill: "Paint Bucket",
+  picker: "Eyedropper",
+  eraser: "Eraser",
+  zoom: "Zoom"
+};
+
 function getPhotoshopContent() {
   return `
-        <div class="ps-app">
-          <div class="ps-toolbar">
-            <div class="ps-tool" data-tool="brush">🖌️ Brush</div>
-            <div class="ps-tool" data-tool="line">📏 Line</div>
-            <div class="ps-tool" data-tool="rect">⬛ Rect</div>
-            <div class="ps-tool" data-tool="circle">⚪ Circle</div>
-            <div class="ps-tool" data-tool="fill">🌊 Fill</div>
-            <div class="ps-tool" data-tool="erase">🧽 Erase</div>
+        <div class="ps-layout ps-classic" role="application" aria-label="Adobe Photoshop 3.0 workspace">
+          <div class="ps-menu-bar" aria-label="Photoshop menu bar">
+            <span>File</span><span>Edit</span><span>Mode</span><span>Image</span><span>Select</span><span>Filter</span><span>View</span><span>Window</span><span>Help</span>
           </div>
-          <div class="ps-main">
-            <div class="ps-sidebar">
-              <div class="ps-section">
-                <label>Primary</label>
-                <input type="color" class="ps-color-primary" value="#1d7be3" />
+          <div class="ps-options-bar">
+            <span class="ps-brand">Adobe Photoshop 3.0</span>
+            <span>Tool: <strong class="ps-tool-label">Paintbrush</strong></span>
+            <span>Brush: <strong class="ps-size-label">8 px</strong></span>
+            <span>Mode: Normal</span>
+            <span>Opacity: 100%</span>
+          </div>
+          <div class="ps-body">
+            <aside class="ps-toolbar" aria-label="Tools">
+              <button class="ps-tool active" data-tool="marquee" title="Marquee">▧</button>
+              <button class="ps-tool" data-tool="move" title="Move">✥</button>
+              <button class="ps-tool" data-tool="lasso" title="Lasso">⌁</button>
+              <button class="ps-tool" data-tool="wand" title="Magic Wand">✦</button>
+              <button class="ps-tool" data-tool="crop" title="Crop">⌗</button>
+              <button class="ps-tool" data-tool="picker" title="Eyedropper">⌕</button>
+              <button class="ps-tool" data-tool="brush" title="Paintbrush">✎</button>
+              <button class="ps-tool" data-tool="pencil" title="Pencil">▮</button>
+              <button class="ps-tool" data-tool="eraser" title="Eraser">▱</button>
+              <button class="ps-tool" data-tool="fill" title="Paint Bucket">▰</button>
+              <button class="ps-tool" data-tool="line" title="Line">╱</button>
+              <button class="ps-tool" data-tool="rect" title="Rectangle">□</button>
+              <button class="ps-tool" data-tool="circle" title="Ellipse">○</button>
+              <button class="ps-tool" data-tool="zoom" title="Zoom">⌕</button>
+              <div class="ps-color-wells" aria-label="Foreground and background colors">
+                <input type="color" class="ps-color-primary" title="Foreground" value="#000000" />
+                <input type="color" class="ps-color-secondary" title="Background" value="#ffffff" />
               </div>
-              <div class="ps-section">
-                <label>Secondary</label>
-                <input type="color" class="ps-color-secondary" value="#ffffff" />
+            </aside>
+            <main class="ps-canvas-wrap">
+              <div class="ps-document-window">
+                <div class="ps-document-title">Untitled-1 @ 100% (RGB)</div>
+                <canvas class="ps-canvas" width="640" height="420"></canvas>
               </div>
-              <div class="ps-section">
-                <label>Brush Size</label>
-                <input type="range" min="1" max="50" value="8" class="ps-size-slider" />
-              </div>
-              <div class="ps-section">
-                <label>Filters</label>
-                <button class="task-btn" id="ps-invert">Invert</button>
-                <button class="task-btn" id="ps-grayscale">Grayscale</button>
-                <button class="task-btn" id="ps-scanlines">Scanlines</button>
-              </div>
-              <div class="ps-section">
-                <label>Document</label>
-                <button class="task-btn" id="ps-new">New</button>
-                <button class="task-btn" id="ps-open">Open</button>
-                <button class="task-btn" id="ps-save">Save</button>
-                <button class="task-btn" id="ps-export">Export PNG</button>
-                <input type="file" accept="image/*" class="ps-file-input" style="display:none" />
-              </div>
-              <div class="ps-section">
-                <label>Swatches</label>
+            </main>
+            <aside class="ps-panel" aria-label="Palettes">
+              <section class="ps-panel-group">
+                <div class="ps-palette-title">Navigator / Info</div>
+                <div class="ps-info-grid">
+                  <span>W:</span><strong>640 px</strong><span>H:</span><strong>420 px</strong>
+                  <span>X:</span><strong class="ps-x-label">0</strong><span>Y:</span><strong class="ps-y-label">0</strong>
+                </div>
+              </section>
+              <section class="ps-panel-group">
+                <div class="ps-palette-title">Brushes</div>
+                <label class="ps-control-row">Size <input type="range" min="1" max="50" value="8" class="ps-size-slider" /></label>
+                <div class="ps-brush-preview"><span></span></div>
+              </section>
+              <section class="ps-panel-group">
+                <div class="ps-palette-title">Color / Swatches</div>
                 <div class="ps-swatches"></div>
-              </div>
-            </div>
-            <div class="ps-canvas-area">
-              <canvas class="ps-canvas" width="960" height="540"></canvas>
-              <div class="ps-status">Ready. Brush (B) | Size: 8px | Primary: #1d7be3 | Secondary: #ffffff</div>
-            </div>
+              </section>
+              <section class="ps-panel-group">
+                <div class="ps-palette-title">Layers / Channels / Paths</div>
+                <div class="ps-tabs"><span class="active">Layers</span><span>Channels</span><span>Paths</span></div>
+                <div class="ps-layer-row"><span class="ps-eye">◉</span><span>Background</span><span>100%</span></div>
+              </section>
+              <section class="ps-panel-group">
+                <div class="ps-palette-title">Actions</div>
+                <div class="ps-filter-buttons">
+                  <button class="task-btn" id="ps-new">New</button>
+                  <button class="task-btn" id="ps-open">Open…</button>
+                  <button class="task-btn" id="ps-export">Save As…</button>
+                  <button class="task-btn" data-filter="invert">Invert</button>
+                  <button class="task-btn" data-filter="grayscale">Grayscale</button>
+                  <button class="task-btn" data-filter="scanlines">Halftone</button>
+                </div>
+                <input type="file" accept="image/*" class="ps-file-input" style="display:none" />
+              </section>
+            </aside>
           </div>
+          <div class="ps-status">Ready. Paintbrush | Size: 8 px | Foreground: #000000 | Background: #ffffff</div>
         </div>
       `;
 }
@@ -54,25 +99,21 @@ function getPhotoshopContent() {
 function initPhotoshop(w) {
   const canvas = w.querySelector(".ps-canvas");
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#fdfdfd";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const swatchContainer = w.querySelector(".ps-swatches");
   const palette = [
-    "#000000",
-    "#ffffff",
-    "#1d7be3",
-    "#f7c948",
-    "#e55381",
-    "#7dd87d",
-    "#8b5cf6",
-    "#ff7f11",
-    "#6dd3e7",
-    "#2c3e50"
+    "#000000", "#808080", "#c0c0c0", "#ffffff", "#800000",
+    "#ff0000", "#808000", "#ffff00", "#008000", "#00ff00",
+    "#008080", "#00ffff", "#000080", "#0000ff", "#800080",
+    "#ff00ff", "#7f3f00", "#ff7f00", "#bfbf7f", "#007fff"
   ];
   palette.forEach((c) => {
-    const sw = document.createElement("div");
+    const sw = document.createElement("button");
+    sw.type = "button";
     sw.className = "ps-swatch";
+    sw.title = c;
     sw.style.background = c;
     sw.onclick = () => {
       w.querySelector(".ps-color-primary").value = c;
@@ -94,6 +135,11 @@ function initPhotoshop(w) {
     startY: 0
   };
 
+  w.querySelectorAll(".ps-tool").forEach((btn) => {
+    btn.addEventListener("click", () => setPsTool(btn, btn.dataset.tool));
+  });
+  setPsTool(w.querySelector('.ps-tool[data-tool="brush"]'), "brush");
+
   const sizeSlider = w.querySelector(".ps-size-slider");
   sizeSlider.addEventListener("input", (e) => {
     w.ps.size = parseInt(e.target.value, 10) || 1;
@@ -102,9 +148,18 @@ function initPhotoshop(w) {
 
   w.querySelector(".ps-color-primary").addEventListener("input", (e) => {
     w.ps.primary = e.target.value;
+    updatePsStatus(w);
   });
   w.querySelector(".ps-color-secondary").addEventListener("input", (e) => {
     w.ps.secondary = e.target.value;
+    updatePsStatus(w);
+  });
+
+  w.querySelector("#ps-new").addEventListener("click", () => psNewDocument(w.querySelector("#ps-new")));
+  w.querySelector("#ps-open").addEventListener("click", () => psTriggerOpen(w.querySelector("#ps-open")));
+  w.querySelector("#ps-export").addEventListener("click", () => psExport(w.querySelector("#ps-export")));
+  w.querySelectorAll("[data-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => psApplyFilter(btn, btn.dataset.filter));
   });
 
   const fileInput = w.querySelector(".ps-file-input");
@@ -116,7 +171,7 @@ function initPhotoshop(w) {
       const img = new Image();
       img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#fdfdfd";
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
         const wScaled = img.width * scale;
@@ -132,7 +187,9 @@ function initPhotoshop(w) {
 
   const getPos = (evt) => {
     const rect = canvas.getBoundingClientRect();
-    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (evt.clientX - rect.left) * scaleX, y: (evt.clientY - rect.top) * scaleY };
   };
 
   const stopDrawing = () => {
@@ -141,9 +198,11 @@ function initPhotoshop(w) {
 
   canvas.addEventListener("mousedown", (e) => {
     const { x, y } = getPos(e);
-    if (w.ps.tool === "fill") {
-      ctx.fillStyle = w.ps.primary;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (["fill", "marquee", "lasso", "wand", "crop", "move", "zoom"].includes(w.ps.tool)) {
+      if (w.ps.tool === "fill") {
+        ctx.fillStyle = w.ps.primary;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       return;
     }
     if (w.ps.tool === "picker") {
@@ -159,18 +218,20 @@ function initPhotoshop(w) {
     w.ps.drawing = true;
     w.ps.startX = x;
     w.ps.startY = y;
-    if (w.ps.tool === "brush" || w.ps.tool === "eraser") {
+    if (["brush", "pencil", "eraser"].includes(w.ps.tool)) {
       ctx.beginPath();
       ctx.moveTo(x, y);
     }
   });
 
   canvas.addEventListener("mousemove", (e) => {
-    if (!w.ps.drawing) return;
     const { x, y } = getPos(e);
-    if (w.ps.tool === "brush" || w.ps.tool === "eraser") {
-      ctx.lineWidth = w.ps.size;
-      ctx.lineCap = "round";
+    w.querySelector(".ps-x-label").textContent = Math.round(x);
+    w.querySelector(".ps-y-label").textContent = Math.round(y);
+    if (!w.ps.drawing) return;
+    if (["brush", "pencil", "eraser"].includes(w.ps.tool)) {
+      ctx.lineWidth = w.ps.tool === "pencil" ? 1 : w.ps.size;
+      ctx.lineCap = w.ps.tool === "pencil" ? "square" : "round";
       ctx.strokeStyle = w.ps.tool === "eraser" ? w.ps.secondary : w.ps.primary;
       ctx.lineTo(x, y);
       ctx.stroke();
@@ -182,14 +243,27 @@ function initPhotoshop(w) {
   canvas.addEventListener("mouseup", (e) => {
     if (!w.ps.drawing) return;
     const { x, y } = getPos(e);
+    ctx.strokeStyle = w.ps.primary;
+    ctx.lineWidth = Math.max(1, Math.floor(w.ps.size / 2));
     if (w.ps.tool === "rect") {
-      const width = x - w.ps.startX;
-      const height = y - w.ps.startY;
-      ctx.fillStyle = `${w.ps.primary}cc`;
-      ctx.strokeStyle = w.ps.primary;
-      ctx.lineWidth = Math.max(1, Math.floor(w.ps.size / 2));
-      ctx.fillRect(w.ps.startX, w.ps.startY, width, height);
-      ctx.strokeRect(w.ps.startX + 0.5, w.ps.startY + 0.5, width, height);
+      ctx.strokeRect(w.ps.startX + 0.5, w.ps.startY + 0.5, x - w.ps.startX, y - w.ps.startY);
+    } else if (w.ps.tool === "circle") {
+      ctx.beginPath();
+      ctx.ellipse(
+        (w.ps.startX + x) / 2,
+        (w.ps.startY + y) / 2,
+        Math.abs(x - w.ps.startX) / 2,
+        Math.abs(y - w.ps.startY) / 2,
+        0,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+    } else if (w.ps.tool === "line") {
+      ctx.beginPath();
+      ctx.moveTo(w.ps.startX, w.ps.startY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
     }
     stopDrawing();
   });
@@ -203,8 +277,20 @@ function initPhotoshop(w) {
 function updatePsStatus(w) {
   const toolLabel = w.querySelector(".ps-tool-label");
   const sizeLabel = w.querySelector(".ps-size-label");
-  if (toolLabel) toolLabel.textContent = w.ps.tool[0].toUpperCase() + w.ps.tool.slice(1);
-  if (sizeLabel) sizeLabel.textContent = `${w.ps.size}px`;
+  const status = w.querySelector(".ps-status");
+  const preview = w.querySelector(".ps-brush-preview span");
+  const toolName = TOOL_NAMES[w.ps.tool] || w.ps.tool;
+  if (toolLabel) toolLabel.textContent = toolName;
+  if (sizeLabel) sizeLabel.textContent = `${w.ps.size} px`;
+  if (status) {
+    status.textContent = `Ready. ${toolName} | Size: ${w.ps.size} px | Foreground: ${w.ps.primary} | Background: ${w.ps.secondary}`;
+  }
+  if (preview) {
+    const size = Math.max(2, Math.min(30, w.ps.size));
+    preview.style.width = `${size}px`;
+    preview.style.height = `${size}px`;
+    preview.style.background = w.ps.primary;
+  }
 }
 
 function setPsTool(btn, tool) {
@@ -229,6 +315,13 @@ function psApplyFilter(btn, type) {
       r = 255 - r;
       g = 255 - g;
       b = 255 - b;
+    } else if (type === "scanlines") {
+      const y = Math.floor(i / 4 / canvas.width);
+      if (y % 4 < 2) {
+        r *= 0.72;
+        g *= 0.72;
+        b *= 0.72;
+      }
     } else if (type === "contrast") {
       const factor = 1.2;
       r = Math.min(255, (r - 128) * factor + 128);
@@ -271,7 +364,7 @@ function psTriggerOpen(btn) {
 function psNewDocument(btn) {
   const w = btn.closest(".window");
   const { ctx, canvas } = w.ps;
-  ctx.fillStyle = "#fdfdfd";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -281,7 +374,7 @@ function psExport(btn) {
   const url = canvas.toDataURL("image/png");
   const link = document.createElement("a");
   link.href = url;
-  link.download = "oriel-photoshop.png";
+  link.download = "oriel-photoshop-3.png";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
