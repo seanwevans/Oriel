@@ -1192,18 +1192,32 @@ export class WindowManager {
   getNotepadContent(txt) {
     const text = typeof txt === "string" ? txt : txt?.text;
     const showToolbar = Boolean(txt?.nativeFileHandle);
-    return `
-      <div class="notepad-layout">
-        ${
-          showToolbar
-            ? `<div class="notepad-toolbar"><button class="task-btn notepad-save">Save</button><span class="notepad-status"></span></div>`
-            : ""
-        }
-        <textarea class="notepad-area" spellcheck="false">${
-          text || "Welcome to Oriel 1.0!"
-        }</textarea>
-      </div>
-    `;
+    const layout = document.createElement("div");
+    layout.classList.add("notepad-layout");
+
+    if (showToolbar) {
+      const toolbar = document.createElement("div");
+      toolbar.classList.add("notepad-toolbar");
+
+      const saveButton = document.createElement("button");
+      saveButton.classList.add("task-btn", "notepad-save");
+      saveButton.textContent = "Save";
+      toolbar.appendChild(saveButton);
+
+      const status = document.createElement("span");
+      status.classList.add("notepad-status");
+      toolbar.appendChild(status);
+
+      layout.appendChild(toolbar);
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.classList.add("notepad-area");
+    textarea.spellcheck = false;
+    textarea.value = text ?? "Welcome to Oriel 1.0!";
+    layout.appendChild(textarea);
+
+    return layout;
   }
   getCompilerContent() {
     return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runCompiler(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
@@ -1238,47 +1252,175 @@ export class WindowManager {
   getPdfReaderContent(initData) {
     const src = initData?.src || DEFAULT_PDF_DATA_URI;
     const name = initData?.name || "Sample.pdf";
-    return `<div class="pdf-reader">
-                <div class="pdf-toolbar">
-                    <label class="task-btn file-btn">Open File<input type="file" accept="application/pdf" class="pdf-file-input"></label>
-                    <input type="text" class="pdf-url-input" placeholder="Paste PDF URL and click Load" value="">
-                    <button class="task-btn pdf-load-btn">Load</button>
-                    <div class="pdf-status">Loaded ${name}</div>
-                </div>
-                <div class="pdf-viewer">
-                    <iframe class="pdf-frame" src="${src}" title="PDF Viewer"></iframe>
-                </div>
-            </div>`;
+
+    const root = document.createElement("div");
+    root.classList.add("pdf-reader");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("pdf-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open File";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "application/pdf";
+    fileInput.classList.add("pdf-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.classList.add("pdf-url-input");
+    urlInput.placeholder = "Paste PDF URL and click Load";
+    urlInput.value = "";
+    toolbar.appendChild(urlInput);
+
+    const loadButton = document.createElement("button");
+    loadButton.classList.add("task-btn", "pdf-load-btn");
+    loadButton.textContent = "Load";
+    toolbar.appendChild(loadButton);
+
+    const status = document.createElement("div");
+    status.classList.add("pdf-status");
+    status.textContent = `Loaded ${name}`;
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const viewer = document.createElement("div");
+    viewer.classList.add("pdf-viewer");
+    const frame = document.createElement("iframe");
+    frame.classList.add("pdf-frame");
+    frame.title = "PDF Viewer";
+    frame.src = src;
+    viewer.appendChild(frame);
+    root.appendChild(viewer);
+
+    return root;
   }
   getImageViewerContent(initData) {
     const name = initData?.name || "";
     const src = initData?.src || "";
-    return `<div class="img-viewer">
-                <div class="img-toolbar">
-                    <label class="task-btn file-btn">Open Image<input type="file" accept="image/*" class="img-file-input"></label>
-                    <input type="text" class="img-url-input" placeholder="Paste image URL and click Load" value="${src ? src : ""}">
-                    <button class="task-btn img-load-btn">Load</button>
-                    <div class="img-status">${src ? `Loaded ${name || "image"}` : "No image loaded"}</div>
-                </div>
-                <div class="img-display">
-                    <div class="img-placeholder" ${src ? "style=\"display:none\"" : ""}>Drop an image or click Open</div>
-                    <img class="img-preview" ${src ? `src="${src}"` : "style=\"display:none\""} alt="${name || "Image preview"}">
-                </div>
-            </div>`;
+
+    const root = document.createElement("div");
+    root.classList.add("img-viewer");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("img-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open Image";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.classList.add("img-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.classList.add("img-url-input");
+    urlInput.placeholder = "Paste image URL and click Load";
+    urlInput.value = src || "";
+    toolbar.appendChild(urlInput);
+
+    const loadButton = document.createElement("button");
+    loadButton.classList.add("task-btn", "img-load-btn");
+    loadButton.textContent = "Load";
+    toolbar.appendChild(loadButton);
+
+    const status = document.createElement("div");
+    status.classList.add("img-status");
+    status.textContent = src ? `Loaded ${name || "image"}` : "No image loaded";
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const display = document.createElement("div");
+    display.classList.add("img-display");
+
+    const placeholder = document.createElement("div");
+    placeholder.classList.add("img-placeholder");
+    placeholder.textContent = "Drop an image or click Open";
+    if (src) placeholder.style.display = "none";
+    display.appendChild(placeholder);
+
+    const preview = document.createElement("img");
+    preview.classList.add("img-preview");
+    preview.alt = name || "Image preview";
+    if (src) {
+      preview.src = src;
+    } else {
+      preview.style.display = "none";
+    }
+    display.appendChild(preview);
+
+    root.appendChild(display);
+
+    return root;
   }
   getMarkdownContent(initData) {
-    const initialText = typeof initData === "string" ? initData : initData || DEFAULT_MD_SAMPLE;
-    return `<div class="md-viewer">
-                <div class="md-toolbar">
-                    <label class="task-btn file-btn">Open .md<input type="file" accept=".md,text/markdown" class="md-file-input"></label>
-                    <button class="task-btn md-sample-btn">Sample</button>
-                    <div class="md-status">Ready</div>
-                </div>
-                <div class="md-body">
-                    <textarea class="md-input" spellcheck="false" placeholder="Paste Markdown here">${initialText}</textarea>
-                    <div class="md-preview" aria-live="polite"></div>
-                </div>
-            </div>`;
+    const initialText =
+      typeof initData === "string"
+        ? initData
+        : typeof initData?.text === "string"
+        ? initData.text
+        : DEFAULT_MD_SAMPLE;
+
+    const root = document.createElement("div");
+    root.classList.add("md-viewer");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("md-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open .md";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".md,text/markdown";
+    fileInput.classList.add("md-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const sampleButton = document.createElement("button");
+    sampleButton.classList.add("task-btn", "md-sample-btn");
+    sampleButton.textContent = "Sample";
+    toolbar.appendChild(sampleButton);
+
+    const status = document.createElement("div");
+    status.classList.add("md-status");
+    status.textContent = "Ready";
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const body = document.createElement("div");
+    body.classList.add("md-body");
+
+    const textarea = document.createElement("textarea");
+    textarea.classList.add("md-input");
+    textarea.spellcheck = false;
+    textarea.placeholder = "Paste Markdown here";
+    textarea.value = initialText;
+    body.appendChild(textarea);
+
+    const preview = document.createElement("div");
+    preview.classList.add("md-preview");
+    preview.setAttribute("aria-live", "polite");
+    body.appendChild(preview);
+
+    root.appendChild(body);
+
+    return root;
   }
   getHexEditorContent() {
     return `<div class="hex-layout">

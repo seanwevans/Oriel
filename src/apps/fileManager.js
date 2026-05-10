@@ -108,6 +108,18 @@ async function openNativeFile(node, displayName) {
   wm.openWindow("hexedit", name, 640, 520, buffer);
 }
 
+function appendIconLabel(parent, iconMarkup, labelText) {
+  const iconContainer = document.createElement("span");
+  iconContainer.className = "file-item-icon";
+  iconContainer.innerHTML = iconMarkup;
+
+  const label = document.createElement("span");
+  label.textContent = labelText;
+
+  parent.appendChild(iconContainer);
+  parent.appendChild(label);
+}
+
 async function rFT(w) {
   const r = w.querySelector("#file-tree-root");
   r.innerHTML = "";
@@ -120,8 +132,7 @@ async function rFT(w) {
     if (o?.nativeHandle) await hydrateNativeDirectory(o);
     const d = document.createElement("div");
     d.className = "tree-item " + (w.cP === p ? "selected" : "");
-    d.innerHTML =
-      ICONS.folder + `<span>${p.split("\\").pop() || "C\\"}</span>`;
+    appendIconLabel(d, ICONS.folder, p.split("\\").pop() || "C\\");
     d.onclick = async (e) => {
       e.stopPropagation();
       w.cP = p;
@@ -161,12 +172,12 @@ async function rFL(w) {
         const i = w.cD.children[k],
           r = document.createElement("div");
         r.className = "file-item";
-        r.innerHTML =
-          (i.type === "file"
-            ? k.endsWith(".EXE")
-              ? ICONS.file_exe
-              : ICONS.file_txt
-            : ICONS.folder) + `<span>${k}</span>`;
+        const iconMarkup = i.type === "file"
+          ? k.endsWith(".EXE")
+            ? ICONS.file_exe
+            : ICONS.file_txt
+          : ICONS.folder;
+        appendIconLabel(r, iconMarkup, k);
         r.ondblclick = async () => {
           if (i.type === "dir") {
             const np = w.cP.endsWith("\\") ? w.cP + k : w.cP + "\\" + k;
