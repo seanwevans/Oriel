@@ -521,8 +521,15 @@ export class WindowManager {
     if (!win) return;
     win.lastRect = this.getWindowRectSnapshot(win);
     if (win.minimized) return;
+
+    const wasActive = win.el.classList.contains("active");
     win.el.style.display = "none";
+    win.el.classList.remove("active");
+    if (wasActive && typeof win.appInstance?.onBlur === "function") {
+      win.appInstance.onBlur();
+    }
     win.minimized = true;
+
     // Create Icon at bottom
     const existing = document.getElementById("min-" + id);
     if (existing) existing.remove();
@@ -547,7 +554,12 @@ export class WindowManager {
 
     icon.addEventListener("click", () => this.restoreWindow(id));
     this.addKeyboardActivation(icon, () => this.restoreWindow(id));
-    this.minimizedContainer.appendChild(icon);
+    this.minimizedContainer?.appendChild(icon);
+
+    if (wasActive && !this.isRestoring) {
+      const nextActive = this.getTopWindowByZ();
+      if (nextActive) this.focusWindow(nextActive.id);
+    }
     this.saveDesktopState();
   }
   restoreWindow(id) {
@@ -587,9 +599,11 @@ export class WindowManager {
     this.saveDesktopState();
   }
   focusWindow(id) {
+    const target = this.windows.find((w) => w.id === id);
+    if (!target || target.minimized) return;
     if (this.isRestoring) {
       this.windows.forEach((w) =>
-        w.el.classList.toggle("active", w.id === id)
+        w.el.classList.toggle("active", w.id === id && !w.minimized)
       );
       return;
     }
@@ -602,8 +616,9 @@ export class WindowManager {
           w.appInstance.onFocus();
         }
       } else {
+        const wasActive = w.el.classList.contains("active");
         w.el.classList.remove("active");
-        if (typeof w.appInstance?.onBlur === "function") {
+        if (wasActive && typeof w.appInstance?.onBlur === "function") {
           w.appInstance.onBlur();
         }
       }
@@ -768,9 +783,12 @@ export class WindowManager {
     win.lastRect = snapshot;
     return snapshot;
   }
-  getTopWindowByZ() {
-    if (this.windows.length === 0) return null;
-    return this.windows.reduce((top, current) => {
+  getTopWindowByZ({ includeMinimized = false } = {}) {
+    const candidates = includeMinimized
+      ? this.windows
+      : this.windows.filter((w) => !w.minimized);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((top, current) => {
       const currentZ = parseInt(current.el.style.zIndex || "0", 10);
       const topZ = parseInt(top.el.style.zIndex || "0", 10);
       return currentZ >= topZ ? current : top;

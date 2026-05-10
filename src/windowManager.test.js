@@ -15,6 +15,10 @@ class FakeClassList {
     return this.classes.has(className);
   }
 
+  remove(...classes) {
+    classes.forEach((className) => this.classes.delete(className));
+  }
+
   toggle(className, force) {
     if (force === true) {
       this.classes.add(className);
@@ -92,6 +96,31 @@ class FakeElement {
     child.parentNode = this;
     this.children.push(child);
     return child;
+  }
+
+  remove() {
+    if (!this.parentNode) return;
+    const siblings = this.parentNode.children;
+    const index = siblings.indexOf(this);
+    if (index >= 0) siblings.splice(index, 1);
+    this.parentNode = null;
+  }
+
+  get offsetLeft() {
+    return parseInt(this.style.left || "0", 10) || 0;
+  }
+
+  get offsetTop() {
+    return parseInt(this.style.top || "0", 10) || 0;
+  }
+
+  getBoundingClientRect() {
+    return {
+      left: this.offsetLeft,
+      top: this.offsetTop,
+      width: parseInt(this.style.width || "0", 10) || 0,
+      height: parseInt(this.style.height || "0", 10) || 0
+    };
   }
 
   replaceChildren(...children) {
@@ -264,4 +293,62 @@ test("Cardfile content exposes the controls its initializer wires", () => {
   assert.match(content, /id="card-del"/);
   assert.doesNotMatch(content, /id="card-add-btn"/);
   assert.doesNotMatch(content, /id="card-del-btn"/);
+});
+
+test("minimizing the active window hides it and activates the next visible window", () => {
+  const wm = createTestWindowManager();
+  wm.highestZ = 102;
+  wm.minimizedContainer = new FakeElement("div");
+  wm.saveDesktopState = () => {};
+  wm.getIconForType = () => "";
+  wm.focusWindow = WindowManager.prototype.focusWindow;
+  wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
+  wm.getTopWindowByZ = WindowManager.prototype.getTopWindowByZ;
+  wm.getWindowRectSnapshot = WindowManager.prototype.getWindowRectSnapshot;
+
+  const first = wm.createWindowDOM("first", "notes", "First", 320, 240, "");
+  const second = wm.createWindowDOM("second", "calc", "Second", 320, 240, "");
+  first.style.zIndex = "101";
+  second.style.zIndex = "102";
+  second.classList.add("active");
+  wm.windows = [
+    { id: "first", el: first, type: "notes", title: "First", minimized: false },
+    { id: "second", el: second, type: "calc", title: "Second", minimized: false }
+  ];
+
+  wm.minimizeWindow("second");
+
+  assert.equal(second.style.display, "none");
+  assert.equal(wm.windows[1].minimized, true);
+  assert.equal(second.classList.contains("active"), false);
+  assert.equal(first.classList.contains("active"), true);
+  assert.equal(wm.minimizedContainer.children.length, 1);
+});
+
+test("top window lookup and shortcuts ignore minimized windows", () => {
+  const wm = createTestWindowManager();
+  const visible = wm.createWindowDOM("visible", "notes", "Visible", 320, 240, "");
+  const hidden = wm.createWindowDOM("hidden", "calc", "Hidden", 320, 240, "");
+  visible.style.zIndex = "10";
+  hidden.style.zIndex = "999";
+  wm.windows = [
+    { id: "visible", el: visible, type: "notes", title: "Visible", minimized: false },
+    { id: "hidden", el: hidden, type: "calc", title: "Hidden", minimized: true }
+  ];
+
+  assert.equal(wm.getTopWindowByZ().id, "visible");
+  assert.equal(wm.getTopWindowByZ({ includeMinimized: true }).id, "hidden");
+
+  const event = {
+    altKey: true,
+    key: "F4",
+    defaultPrevented: false,
+    preventDefault() {
+      this.defaultPrevented = true;
+    }
+  };
+  WindowManager.prototype.handleWindowShortcuts.call(wm, event);
+
+  assert.equal(event.defaultPrevented, true);
+  assert.deepEqual(wm.closeWindowCalls, ["visible"]);
 });
