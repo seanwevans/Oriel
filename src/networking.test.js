@@ -95,3 +95,25 @@ test("overrides can be cleared without resetting defaults", () => {
   stored = storage.get(storageKey);
   assert.deepEqual(JSON.parse(stored), {});
 });
+
+test("RSS proxy text responses are read without attempting JSON first", async () => {
+  const xml = "<?xml version=\"1.0\"?><rss><channel><title>Example</title></channel></rss>";
+  const response = new Response(xml, {
+    headers: { "content-type": "application/rss+xml" }
+  });
+
+  const text = await networking.readRssResponseText(response);
+
+  assert.equal(text, xml);
+});
+
+test("RSS proxy JSON envelopes return their contents field", async () => {
+  const xml = "<?xml version=\"1.0\"?><rss><channel><title>Example</title></channel></rss>";
+  const response = new Response(JSON.stringify({ contents: xml }), {
+    headers: { "content-type": "application/json" }
+  });
+
+  const text = await networking.readRssResponseText(response);
+
+  assert.equal(text, xml);
+});
