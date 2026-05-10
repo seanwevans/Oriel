@@ -28,7 +28,14 @@ import { getBeatMakerContent } from "./apps/beatMaker.js";
 import { getMidiSequencerContent } from "./apps/midiSequencer.js";
 import { addDbRecord, deleteDbRecord, exportDbToCsv } from "./apps/database.js";
 import { endTask, refreshAllProcessViews, refreshAllTaskManagers, switchTask } from "./apps/taskman.js";
-import { browserSessions, getNetworkDefaults, refreshNetworkedWindows, resetNetworkDefaults, updateNetworkDefaults } from "./networking.js";
+import {
+  BROWSER_SANDBOX_POLICY,
+  browserSessions,
+  getNetworkDefaults,
+  refreshNetworkedWindows,
+  resetNetworkDefaults,
+  updateNetworkDefaults
+} from "./networking.js";
 import { getWinFileContent, installSelectionFromWindow, rFL, rFT, uninstallSelectionFromWindow } from "./apps/fileManager.js";
 import { calcInput, handleConsoleKey, registerConsoleCommands, runCompiler, runPython } from "./apps/console.js";
 import { getPhotoshopContent, psApplyFilter, psExport, psFillCanvas, psNewDocument, psTriggerOpen, setPsTool } from "./apps/photoshop.js";
@@ -938,7 +945,7 @@ export class WindowManager {
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
-                <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <iframe class="browser-frame" src="about:blank" sandbox="${BROWSER_SANDBOX_POLICY}"></iframe>
                 <div class="browser-status">Enter a URL to begin browsing.</div>
               </div>
             </div>`;
