@@ -265,3 +265,60 @@ test("Cardfile content exposes the controls its initializer wires", () => {
   assert.doesNotMatch(content, /id="card-add-btn"/);
   assert.doesNotMatch(content, /id="card-del-btn"/);
 });
+
+test("Notepad file content remains textarea value text", () => {
+  const wm = createTestWindowManager();
+  const hostileText = "notes </textarea> \"quoted\" <img src=x onerror=alert(1)>";
+
+  const content = wm.getNotepadContent({
+    text: hostileText,
+    nativeFileHandle: { createWritable() {} }
+  });
+  const win = wm.createWindowDOM("notepad-hostile", "notepad", "note.txt", 320, 240, content);
+
+  assert.equal(win.querySelector(".notepad-area").value, hostileText);
+  assert.equal(win.querySelector(".notepad-status").textContent, "");
+  assert.equal(win.querySelector("img"), null);
+});
+
+test("Markdown file content remains textarea value text", () => {
+  const wm = createTestWindowManager();
+  const hostileText = "# Title\n</textarea> \"quoted\" <img src=x onerror=alert(1)>";
+
+  const content = wm.getMarkdownContent(hostileText);
+  const win = wm.createWindowDOM("markdown-hostile", "markdown", "README.md", 320, 240, content);
+
+  assert.equal(win.querySelector(".md-input").value, hostileText);
+  assert.equal(win.querySelector(".md-preview").textContent, "");
+  assert.equal(win.querySelector("img"), null);
+});
+
+test("PDF reader file name and source are assigned without HTML interpolation", () => {
+  const wm = createTestWindowManager();
+  const hostileName = "manual </textarea> \"quoted\" <img src=x onerror=alert(1)>.pdf";
+  const hostileSrc = 'https://example.test/manual.pdf?name="quoted"&literal=<img>';
+
+  const content = wm.getPdfReaderContent({ name: hostileName, src: hostileSrc });
+  const win = wm.createWindowDOM("pdf-hostile", "pdfreader", hostileName, 320, 240, content);
+
+  assert.equal(win.querySelector(".pdf-status").textContent, `Loaded ${hostileName}`);
+  assert.equal(win.querySelector(".pdf-frame").src, hostileSrc);
+  assert.equal(win.querySelector(".pdf-url-input").value, "");
+  assert.equal(win.querySelector("img"), null);
+});
+
+test("Image viewer file name and URL remain DOM property values", () => {
+  const wm = createTestWindowManager();
+  const hostileName = "photo </textarea> \"quoted\" <img src=x onerror=alert(1)>.png";
+  const hostileSrc = 'data:image/png;base64,PHRleHQ+IjwvaW1nPiI=';
+
+  const content = wm.getImageViewerContent({ name: hostileName, src: hostileSrc });
+  const win = wm.createWindowDOM("image-hostile", "imageviewer", hostileName, 320, 240, content);
+  const preview = win.querySelector(".img-preview");
+
+  assert.equal(win.querySelector(".img-status").textContent, `Loaded ${hostileName}`);
+  assert.equal(win.querySelector(".img-url-input").value, hostileSrc);
+  assert.equal(preview.src, hostileSrc);
+  assert.equal(preview.alt, hostileName);
+  assert.equal(win.querySelectorAll("img").length, 1);
+});
