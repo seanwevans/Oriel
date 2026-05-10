@@ -149,6 +149,6 @@ export function refreshProgramManagerContent(wm) {
     .filter((win) => win.type === "progman")
     .forEach((win) => {
       const contentArea = getWindowBodyContainer(win.el);
-      if (contentArea) contentArea.innerHTML = getProgramManagerContent(wm);
+      if (contentArea) contentArea.replaceChildren(getProgramManagerContent(wm));
     });
 }
