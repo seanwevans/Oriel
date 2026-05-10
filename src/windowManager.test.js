@@ -351,6 +351,8 @@ test("top window lookup and shortcuts ignore minimized windows", () => {
 
   assert.equal(event.defaultPrevented, true);
   assert.deepEqual(wm.closeWindowCalls, ["visible"]);
+});
+
 test("Notepad file content remains textarea value text", () => {
   const wm = createTestWindowManager();
   const hostileText = "notes </textarea> \"quoted\" <img src=x onerror=alert(1)>";
