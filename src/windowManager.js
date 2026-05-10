@@ -462,7 +462,7 @@ export class WindowManager {
       initData,
       services
     });
-    let content =
+    content =
       typeof appInstance?.getWindowContent === "function"
         ? appInstance.getWindowContent()
         : "";
