@@ -1,8 +1,52 @@
 import { loadDesktopState, persistDesktopState } from "./state.js";
-import { getWallpaperSettings } from "./wallpaper.js";
-import { refreshAllTaskManagers } from "./apps/taskman.js";
-import { browserSessions } from "./networking.js";
-import { getCurrentThemeCustom } from "./apps/controlPanel.js";
+import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
+import { getDiscordContent } from "./apps/discord.js";
+import { getSpotifyContent } from "./apps/spotify.js";
+import { getIRCContent } from "./apps/irc.js";
+import { getBbsContent } from "./apps/bbsDialer.js";
+import { getEmailContent } from "./apps/email.js";
+import { getMessengerContent } from "./apps/messenger.js";
+import { getRetroAIContent } from "./apps/retroAI.js";
+import { resetMines } from "./apps/minesweeper.js";
+import { getCeleryManContent } from "./apps/celeryman.js";
+import { clearPaint, getPaintRoot, selectPaintTool } from "./apps/paint.js";
+import { getPixelStudioContent } from "./apps/pixelStudio.js";
+import { getPostgresContent } from "./apps/postgres.js";
+import { getSandspielRoot } from "./apps/sandspiel.js";
+import { getSandspiel3DRoot } from "./apps/sandspiel3d.js";
+import { getWhiteboardRoot } from "./apps/whiteboard.js";
+import { copyCharMap } from "./apps/charmap.js";
+import { getBeatMakerContent } from "./apps/beatMaker.js";
+import { getMidiSequencerContent } from "./apps/midiSequencer.js";
+import { addDbRecord, deleteDbRecord, exportDbToCsv } from "./apps/database.js";
+import { endTask, refreshAllProcessViews, refreshAllTaskManagers, switchTask } from "./apps/taskman.js";
+import {
+  BROWSER_SANDBOX_POLICY,
+  browserSessions,
+  getNetworkDefaults,
+  refreshNetworkedWindows,
+  resetNetworkDefaults,
+  updateNetworkDefaults
+} from "./networking.js";
+import { getWinFileContent, installSelectionFromWindow, rFL, rFT, uninstallSelectionFromWindow } from "./apps/fileManager.js";
+import { calcInput, handleConsoleKey, registerConsoleCommands, runCompiler, runPython } from "./apps/console.js";
+import { getPhotoshopContent, psApplyFilter, psExport, psFillCanvas, psNewDocument, psTriggerOpen, setPsTool } from "./apps/photoshop.js";
+import { getLineRiderContent } from "./apps/linerider.js";
+import { getSimCityContent } from "./apps/simcity.js";
+import { getNetNewsContent } from "./apps/netnews.js";
+import { getSkiFreeContent } from "./apps/skifree.js";
+import { getPinballContent } from "./apps/pinball.js";
+import { getAngryBirdsContent } from "./apps/angrybirds.js";
+import { getCannonDuelContent } from "./apps/cannonDuel.js";
+import { getRssReaderContent } from "./apps/rss.js";
+import { getPacketLabContent } from "./apps/packetLab.js";
+import { getApiClientContent } from "./apps/apiClient.js";
+import { getCodePenContent } from "./apps/codepen.js";
+import { getTi83Root } from "./apps/ti83.js";
+import { getTrackerContent } from "./apps/tracker.js";
+import { applyFontSelection, applySavedTheme, applyScreensaver, applyTheme, getCurrentThemeCustom, handleThemeInputChange, openCPColor, openCPDefaults, openCPDesktop, openCPFonts, openCPScreensaver, openCPSound, previewScreensaver, setWallpaper } from "./apps/controlPanel.js";
+import { bootstrapInstallations } from "./installer.js";
+import { getShaderLabRoot } from "./apps/shaderLab.js";
 import { AppRegistry } from "./core/AppRegistry.js";
 import { AppHost } from "./core/AppHost.js";
 import { publish, subscribe } from "./eventBus.js";
@@ -21,11 +65,53 @@ export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
 
+class LegacyFunctionApp extends BaseApp {
+  constructor({ initializer, ...args }) {
+    super(args);
+    this.initializer = initializer;
+    this.mountedAppInstance = null;
+    this.disposed = false;
+  }
+
+  mount() {
+    const mountResult = this.initializer(
+      this.windowEl,
+      this.initData,
+      this.services.windowManager
+    );
+
+    if (mountResult && typeof mountResult.then === "function") {
+      return mountResult.then((mountedAppInstance) => {
+        this.mountedAppInstance = mountedAppInstance || null;
+        if (this.disposed) this.disposeMountedAppInstance();
+        return this;
+      });
+    }
+
+    this.mountedAppInstance = mountResult || null;
+    if (this.disposed) this.disposeMountedAppInstance();
+    return this;
+  }
+
+  disposeMountedAppInstance() {
+    if (typeof this.mountedAppInstance?.dispose === "function") {
+      this.mountedAppInstance.dispose();
+    }
+    this.mountedAppInstance = null;
+  }
+
+  dispose() {
+    this.disposed = true;
+    this.disposeMountedAppInstance();
+  }
+}
+
 export class WindowManager {
-  constructor(initialState = null) {
+  constructor(initialState = null, { appActions = {}, kernel: kernelService = null } = {}) {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
+    this.nextWindowSeq = 1;
     this.highestZ = 100;
     this.isRestoring = false;
     this.dragState = {
@@ -46,6 +132,45 @@ export class WindowManager {
       initialH: 0,
       initialL: 0,
       initialT: 0
+    };
+    this.kernel = kernelService || window.kernel;
+    this.appActions = {
+      switchTask: ({ event }) => switchTask(event),
+      endTask: ({ event }) => endTask(event),
+      closeWindow: ({ windowEl }) => this.closeWindow(windowEl.dataset.id),
+      mediaPlay: ({ windowEl }) => windowEl.querySelector(".mplayer-video")?.play(),
+      mediaPause: ({ windowEl }) => windowEl.querySelector(".mplayer-video")?.pause(),
+      mediaStop: ({ windowEl }) => {
+        const video = windowEl.querySelector(".mplayer-video");
+        if (!video) return;
+        video.pause();
+        video.currentTime = 0;
+      },
+      calcInput: ({ event, target }) => calcInput(event, target.dataset.calcValue),
+      handleConsoleKey: ({ event }) => handleConsoleKey(event),
+      selectPaintTool: ({ target }) => selectPaintTool(target, target.dataset.paintTool),
+      clearPaint: ({ target }) => clearPaint(target),
+      reloadN64: ({ windowEl }) => {
+        const iframe = windowEl.querySelector("iframe");
+        if (iframe) iframe.src = iframe.src;
+      },
+      copyCharMap: ({ target }) => copyCharMap(target),
+      clearCharMap: ({ windowEl }) => {
+        const input = windowEl.querySelector("#char-copy-input");
+        if (input) input.value = "";
+      },
+      openCPColor: ({ target }) => openCPColor(target),
+      openCPDesktop: ({ target }) => openCPDesktop(controlPanelContext, target),
+      openCPScreensaver: ({ target }) => openCPScreensaver(controlPanelContext, target),
+      openCPSound: ({ target }) => openCPSound(target),
+      openCPFonts: ({ target }) => openCPFonts(target),
+      runCompiler: ({ event }) => runCompiler(event),
+      runPython: ({ event }) => runPython(event),
+      focusConsole: ({ windowEl }) => windowEl.querySelector(".console-input")?.focus(),
+      resetMines: ({ windowEl }) => resetMines(windowEl),
+      addDbRecord: ({ target }) => addDbRecord(target),
+      exportDbToCsv: ({ target }) => exportDbToCsv(target),
+      ...appActions
     };
     this.appRegistry = new AppRegistry({ controlPanelContext });
     this.appHost = new AppHost({
@@ -82,6 +207,31 @@ export class WindowManager {
     }
     if (this.windows.length === 0)
       this.openWindow("progman", "Program Manager", 500, 480);
+  }
+  createAutoWindowId() {
+    if (!Number.isInteger(this.nextWindowSeq) || this.nextWindowSeq < 1) {
+      this.nextWindowSeq = 1;
+    }
+
+    let id;
+    do {
+      id = `win-${Date.now()}-${this.nextWindowSeq++}`;
+    } while (this.windows.some((w) => w.id === id));
+
+    return id;
+  }
+  resolveWindowId(stateOverrides = {}) {
+    if (stateOverrides.id) {
+      if (!this.windows.some((w) => w.id === stateOverrides.id)) {
+        return stateOverrides.id;
+      }
+
+      console.warn(
+        `Restored window id '${stateOverrides.id}' already exists; generated a new id instead.`
+      );
+    }
+
+    return this.createAutoWindowId();
   }
   addKeyboardActivation(el, handler) {
     if (!el) return;
@@ -230,6 +380,7 @@ export class WindowManager {
         contentArea.appendChild(content);
       }
     }
+    this.attachDelegatedAppEvents(win);
     // Drag Start
     titleBar.addEventListener("mousedown", (e) => {
       if (
@@ -265,8 +416,38 @@ export class WindowManager {
     win.addEventListener("mousedown", () => this.focusWindow(id));
     return win;
   }
+
+  attachDelegatedAppEvents(win) {
+    win.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-app-action]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appAction];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
+
+    win.addEventListener("change", (event) => {
+      const target = event.target.closest("[data-app-change]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appChange];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
+
+    win.addEventListener("keydown", (event) => {
+      const target = event.target.closest("[data-app-keydown]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appKeydown];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
+  }
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
-    const id = stateOverrides.id || "win-" + Date.now();
+    const id = this.resolveWindowId(stateOverrides);
+    let content = "";
     const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;
@@ -325,20 +506,12 @@ export class WindowManager {
     }
     this.windows.push(winObj);
     // Register Process
-    kernel.registerProcess(id, title);
+    this.kernel?.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
-    if (appInstance) {
-      const mountResult = this.appHost.mountInstance({ appInstance, winEl, winObj, type });
-      if (mountResult && typeof mountResult.then === "function") {
-        winObj.pendingMountPromise = mountResult;
-        winEl.pendingMountPromise = mountResult;
-        mountResult.finally(() => {
-          if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
-        });
-      }
-    } else if (initializer) {
-      const mountResult = this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+    if (initializer) {
+      const appInstance = this.instantiateApp(initializer, winEl, initData);
+      const mountResult = this.appHost.mount({ appInstance, winEl, winObj, type });
       if (mountResult && typeof mountResult.then === "function") {
         winObj.pendingMountPromise = mountResult;
         winEl.pendingMountPromise = mountResult;
@@ -368,7 +541,7 @@ export class WindowManager {
       this.windows.splice(index, 1);
       delete browserSessions[id];
       // Kill Process
-      kernel.unregisterProcess(id);
+      this.kernel?.unregisterProcess(id);
       refreshAllTaskManagers(this);
       this.saveDesktopState();
     }
@@ -481,6 +654,25 @@ export class WindowManager {
       }
     });
     this.saveDesktopState();
+  }
+  instantiateApp(appDefinition, windowEl, initData) {
+    const services = {
+      windowManager: this,
+      kernel: this.kernel,
+      publish,
+      subscribe
+    };
+    const appParams = { windowEl, initData, services };
+    if (typeof appDefinition !== "function") return null;
+    if (appDefinition.prototype instanceof BaseApp) {
+      return new appDefinition(appParams);
+    }
+    return new LegacyFunctionApp({
+      windowEl,
+      initData,
+      services,
+      initializer: appDefinition
+    });
   }
   // Drag Logic
   startDrag(e, winEl) {
@@ -724,28 +916,423 @@ export class WindowManager {
   setupProgramManagerMenu(win) {
     setupProgramManagerMenu(this, win);
   }
-  getAppContent(type, initData = null) {
-    const registry = this.appRegistry || new AppRegistry({ controlPanelContext });
-    const app = registry.createApp(type, {
-      windowEl: null,
-      initData,
-      services: {
-        windowManager: this,
-        kernel: globalThis.kernel || null,
-        publish,
-        subscribe
-      }
-    });
-    return typeof app?.getWindowContent === "function" ? app.getWindowContent() : "";
+  // Content Generators
+  getProgramManagerContent() {
+    return getProgramManagerContent(this);
   }
-  getCardfileContent(initData) {
-    return this.getAppContent("cardfile", initData);
+  refreshProgramManagerContent() {
+    refreshProgramManagerContent(this);
+  }
+  getPapersContent() {
+    return `
+                <div class="papers-layout">
+                    <div class="papers-header">
+                        <div class="papers-title">Checkpoint Alpha</div>
+                        <div class="papers-subtitle">"Glory to Orielstotzka"</div>
+                    </div>
+                    <div class="papers-stats">Day <span class="papers-day">1</span> · Credits: <span class="papers-credits">20</span> · Citations: <span class="papers-mistakes">0</span></div>
+                    <div class="papers-body">
+                        <div class="papers-docs">
+                            <div class="papers-photo"></div>
+                            <div class="papers-fields">
+                                <div class="papers-field"><span class="papers-label">Name:</span> <span class="papers-name">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Nation:</span> <span class="papers-nation">---</span></div>
+                                <div class="papers-field"><span class="papers-label">ID:</span> <span class="papers-id">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Expires:</span> <span class="papers-expiry">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Purpose:</span> <span class="papers-purpose">---</span></div>
+                            </div>
+                        </div>
+                        <div class="papers-reason">Review documents and choose to approve or deny.</div>
+                        <div class="papers-actions">
+                            <button class="task-btn papers-approve">Approve</button>
+                            <button class="task-btn papers-deny">Deny</button>
+                            <button class="task-btn papers-next">Next Traveler</button>
+                        </div>
+                        <div class="papers-log" tabindex="0">Checkpoint initialized.</div>
+                    </div>
+                </div>
+            `;
+  }
+  getBrowserContent() {
+    return `<div class="browser-layout">
+              <div class="browser-toolbar">
+                <button class="browser-btn" data-action="back" title="Back">◀</button>
+                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+                <button class="browser-btn" data-action="home" title="Home">⌂</button>
+                <input class="browser-url" type="text" placeholder="${this.getBrowserPlaceholder()}" spellcheck="false">
+                <button class="browser-btn go-btn" data-action="go">Go</button>
+              </div>
+              <div class="browser-view">
+                <iframe class="browser-frame" src="about:blank" sandbox="${BROWSER_SANDBOX_POLICY}"></iframe>
+                <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
+  }
+  getBrowserPlaceholder() {
+    const { browserHome } = getNetworkDefaults();
+    return browserHome || "https://example.com";
+  }
+
+  getRadioGardenContent() {
+    return `<div class="radio-garden">
+              <div class="radio-header">
+                <div>
+                  <div class="radio-title">Radio Garden</div>
+                  <div class="radio-subtitle">Search the globe and jump to a live station.</div>
+                </div>
+                <button class="task-btn radio-open-site">Open radio.garden</button>
+              </div>
+              <div class="radio-search-row">
+                <input class="radio-search-input" type="text" placeholder="Search by city, country, or station name" spellcheck="false">
+                <button class="task-btn radio-search-btn">Search</button>
+              </div>
+              <div class="radio-quick-row">
+                <span class="radio-quick-label">Quick picks:</span>
+                <div class="radio-quick-list">
+                  <button class="radio-chip" data-query="Tokyo">Tokyo</button>
+                  <button class="radio-chip" data-query="London">London</button>
+                  <button class="radio-chip" data-query="São Paulo">São Paulo</button>
+                  <button class="radio-chip" data-query="Sydney">Sydney</button>
+                  <button class="radio-chip" data-query="Lagos">Lagos</button>
+                </div>
+              </div>
+              <div class="radio-status">Type a query to load stations via the Radio Garden directory.</div>
+              <div class="radio-results" role="list"></div>
+            </div>`;
+  }
+
+  getMinecraftContent() {
+    return getMinecraftRoot();
+  }
+
+  getN64Content() {
+    return getN64Root();
+  }
+
+  getTi83Content() {
+    return getTi83Root();
+  }
+  getSandspielContent() {
+    return getSandspielRoot();
+  }
+  getSandspiel3DContent() {
+    return getSandspiel3DRoot();
+  }
+  getRadioContent() {
+    return `<div class="radio-layout">
+              <div class="radio-toolbar">
+                <div class="radio-search">
+                  <input type="text" class="radio-query" placeholder="Search stations or genres..." spellcheck="false" />
+                  <button class="task-btn radio-search-btn">Search</button>
+                  <button class="task-btn radio-top-btn" title="Load popular stations">Top</button>
+                </div>
+                <div class="radio-status">Find and play live internet radio via the free Radio Browser API.</div>
+              </div>
+              <div class="radio-body">
+                <div class="radio-list" role="listbox" aria-label="Radio stations"></div>
+                <div class="radio-player">
+                  <div class="radio-now">No station selected.</div>
+                  <audio class="radio-audio" controls></audio>
+                  <div class="radio-actions">
+                    <button class="task-btn radio-play">Play</button>
+                    <button class="task-btn radio-stop">Stop</button>
+                  </div>
+                  <div class="radio-meta">Use search or Top to load stations.</div>
+                </div>
+              </div>
+            </div>`;
+  }
+  getDoomContent() {
+    return `
+      <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
+        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></canvas>
+      </div>
+    `;
+  }
+  getTaskManContent() {
+    return `
+                <div class="task-mgr-layout">
+                    <div class="task-list" id="task-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="task-btns">
+                        <button class="task-btn" data-app-action="switchTask">Switch To</button>
+                        <button class="task-btn" data-app-action="endTask">End Task</button>
+                        <button class="task-btn" data-app-action="closeWindow">Cancel</button>
+                    </div>
+                    <div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div>
+                    <div class="task-queue-view" id="task-queue-view">
+                        <!-- Queue Data -->
+                    </div>
+                </div>
+            `;
+  }
+  // ... [Previous Content Methods] ...
+  getReversiContent() {
+    return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
+  }
+  getChessContent() {
+    return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
+  }
+  getMediaPlayerContent() {
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" data-app-action="mediaPlay">▶</div><div class="mplayer-btn" data-app-action="mediaPause">||</div><div class="mplayer-btn" data-app-action="mediaStop">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
+  }
+  getSolitaireContent() {
+    return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
+  }
+  getSudokuContent() {
+    return `
+      <div class="sudoku-layout">
+        <div class="sudoku-toolbar">
+          <label class="sudoku-field">Difficulty
+            <select class="sudoku-difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+          <button class="task-btn sudoku-new">New Puzzle</button>
+          <button class="task-btn sudoku-check">Check</button>
+          <button class="task-btn sudoku-reset">Reset</button>
+        </div>
+        <div class="sudoku-status">Choose a difficulty to start.</div>
+        <div class="sudoku-grid" aria-label="Sudoku board" role="grid"></div>
+      </div>
+    `;
+  }
+  getMafiaContent() {
+    return `
+      <div class="mafia-layout">
+        <div class="mafia-sidebar">
+          <div class="mafia-section">
+            <label class="mafia-field">Players
+              <input type="number" min="6" max="12" value="8" class="mafia-count" aria-label="Number of players">
+            </label>
+            <label class="mafia-field">AI Provider
+              <select class="mafia-provider" aria-label="AI provider">
+                <option value="local">Local improv</option>
+                <option value="openai">OpenAI</option>
+                <option value="google">Google Gemini</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </label>
+            <label class="mafia-field">API Key
+              <input type="password" class="mafia-api-key" placeholder="Optional for cloud" aria-label="API key">
+            </label>
+            <label class="mafia-field">Model (optional)
+              <input type="text" class="mafia-model" placeholder="gpt-4o-mini / gemini-1.5-flash" aria-label="Model override">
+            </label>
+            <div class="mafia-hint">Keys stay in-browser. Choose "Local improv" for an offline story.</div>
+            <button class="task-btn mafia-start">New Mystery</button>
+          </div>
+          <div class="mafia-section">
+            <div class="mafia-section-title">Roster</div>
+            <div class="mafia-roster" aria-label="Player roster"></div>
+          </div>
+        </div>
+        <div class="mafia-main">
+          <div class="mafia-status" aria-live="polite">Build your table and begin.</div>
+          <div class="mafia-controls">
+            <label>Accuse
+              <select class="mafia-suspect" aria-label="Pick a suspect"></select>
+            </label>
+            <button class="task-btn mafia-next">Run Night & Vote</button>
+          </div>
+          <div class="mafia-log" aria-live="polite"></div>
+        </div>
+      </div>
+    `;
+  }
+  getWriteContent(txt) {
+    const layout = document.createElement("div");
+    layout.classList.add("write-layout");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("write-toolbar");
+
+    const createSelect = ({ className, title, options, selectedValue }) => {
+      const select = document.createElement("select");
+      select.classList.add("write-select", className);
+      select.title = title;
+      options.forEach(({ value, label }) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        if (value === selectedValue) option.selected = true;
+        select.appendChild(option);
+      });
+      return select;
+    };
+
+    toolbar.appendChild(
+      createSelect({
+        className: "write-font",
+        title: "Font Family",
+        options: [
+          { value: "Times New Roman", label: "Times New Roman" },
+          { value: "Arial", label: "Arial" },
+          { value: "Courier New", label: "Courier New" },
+          { value: "Georgia", label: "Georgia" },
+          { value: "Verdana", label: "Verdana" }
+        ],
+        selectedValue: "Times New Roman"
+      })
+    );
+    toolbar.appendChild(
+      createSelect({
+        className: "write-size",
+        title: "Font Size",
+        options: [
+          { value: "2", label: "10" },
+          { value: "3", label: "12" },
+          { value: "4", label: "14" },
+          { value: "5", label: "18" },
+          { value: "6", label: "24" },
+          { value: "7", label: "32" }
+        ],
+        selectedValue: "4"
+      })
+    );
+
+    [
+      { cmd: "bold", title: "Bold", label: "B" },
+      { cmd: "italic", title: "Italic", label: "I" },
+      { cmd: "underline", title: "Underline", label: "U" }
+    ].forEach(({ cmd, title, label }) => {
+      const button = document.createElement("button");
+      button.classList.add("fmt-btn");
+      button.dataset.cmd = cmd;
+      button.title = title;
+      button.textContent = label;
+      toolbar.appendChild(button);
+    });
+
+    const editor = document.createElement("div");
+    editor.classList.add("write-editor");
+    editor.setAttribute("contenteditable", "true");
+    editor.setAttribute("spellcheck", "false");
+    editor.textContent = txt || "Welcome to Oriel Write.";
+
+    layout.appendChild(toolbar);
+    layout.appendChild(editor);
+    return layout;
+  }
+  getCardfileContent() {
+    return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add">Add</button><button class="task-btn" id="card-del">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
+  }
+  getSoundRecContent() {
+    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
+  }
+  getCharMapContent() {
+    return `<div class="char-map-layout">
+              <div class="char-map-toolbar">
+                <div class="char-preview" aria-live="polite">A</div>
+                <div class="char-meta">
+                  <div class="char-code" id="char-code-label">U+0041 · Dec 65</div>
+                  <div class="char-font-row">
+                    <label for="char-font-select">Font:</label>
+                    <select class="char-font" id="char-font-select">
+                      <option value="'Times New Roman', serif">Times New Roman</option>
+                      <option value="'Arial', sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif">Symbols</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="char-grid" id="char-grid"></div>
+              <div class="char-controls">
+                <label>Characters to copy:</label>
+                <div class="copy-row">
+                  <input type="text" class="char-input" id="char-copy-input" readonly>
+                  <button class="task-btn" data-app-action="copyCharMap" style="width:60px">Copy</button>
+                </div>
+                <button class="task-btn" data-app-action="clearCharMap">Clear</button>
+              </div>
+            </div>`;
+  }
+  getClockContent() {
+    return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
+  }
+  getControlPanelContent() {
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" data-app-action="openCPColor">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" data-app-action="openCPDesktop">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" data-app-action="openCPScreensaver">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" data-app-action="openCPSound">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" data-app-action="openCPFonts"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+  }
+  getResetContent() {
+    return `<div class="reset-layout" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+                <div class="reset-warning" style="background:#fff3cd; border:1px solid #e0c25c; padding:10px;">
+                    <strong>Reset Oriel</strong>
+                    <div>This will clear all saved desktop windows, wallpaper, volume, network defaults, and file or app data.</div>
+                </div>
+                <ul style="margin:0 0 4px 20px; padding:0; line-height:1.4;">
+                    <li>Desktop layout & wallpaper</li>
+                    <li>File system changes</li>
+                    <li>Sound levels & network presets</li>
+                    <li>App data such as Cardfile or Data Manager</li>
+                </ul>
+                <button class="task-btn reset-now-btn" style="width:180px;">Reset and Reload</button>
+                <div class="reset-status" aria-live="polite">No changes yet.</div>
+            </div>`;
+  }
+  getVmContent() {
+    return `<div class="vm-layout">
+                <div class="vm-toolbar">
+                    <div class="vm-actions">
+                        <button class="task-btn vm-boot">Boot VM</button>
+                        <button class="task-btn vm-reset" disabled>Power Off</button>
+                    </div>
+                    <div class="vm-status" aria-live="polite">VM is powered off. Click Boot to start Oriel inside Oriel.</div>
+                </div>
+                <div class="vm-note">Runs a fresh copy of Oriel in an isolated iframe. Try opening apps inside the VM for true desktop-ception.</div>
+                <div class="vm-view">
+                    <iframe class="vm-frame" title="Oriel Virtual Machine" src="about:blank"></iframe>
+                </div>
+            </div>`;
+  }
+  getNotepadContent(txt) {
+    const text = typeof txt === "string" ? txt : txt?.text;
+    const showToolbar = Boolean(txt?.nativeFileHandle);
+    const layout = document.createElement("div");
+    layout.classList.add("notepad-layout");
+
+    if (showToolbar) {
+      const toolbar = document.createElement("div");
+      toolbar.classList.add("notepad-toolbar");
+
+      const saveButton = document.createElement("button");
+      saveButton.classList.add("task-btn", "notepad-save");
+      saveButton.textContent = "Save";
+      toolbar.appendChild(saveButton);
+
+      const status = document.createElement("span");
+      status.classList.add("notepad-status");
+      toolbar.appendChild(status);
+
+      layout.appendChild(toolbar);
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.classList.add("notepad-area");
+    textarea.spellcheck = false;
+    textarea.value = text ?? "Welcome to Oriel 1.0!";
+    layout.appendChild(textarea);
+
+    return layout;
+  }
+  getCompilerContent() {
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" data-app-action="runCompiler">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
+  }
+  getPythonContent() {
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" data-app-action="runPython">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
+  }
+  getConsoleContent() {
+    return `<div class="console" data-app-action="focusConsole"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" data-app-keydown="handleConsoleKey" autocomplete="off"></div></div>`;
   }
   getNotepadContent(initData) {
     return this.getAppContent("notepad", initData);
   }
-  getMarkdownContent(initData) {
-    return this.getAppContent("markdown", initData);
+  getMinesContent() {
+    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" data-app-action="resetMines">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
   }
   getPdfReaderContent(initData) {
     return this.getAppContent("pdfreader", initData);
@@ -753,12 +1340,30 @@ export class WindowManager {
   getImageViewerContent(initData) {
     return this.getAppContent("imageviewer", initData);
   }
-  // Compatibility proxies for callers that still ask the manager for app content.
-  getProgramManagerContent() {
-    return getProgramManagerContent(this);
+  getTaskManContent() {
+    return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" data-app-action="switchTask">Switch To</button><button class="task-btn" data-app-action="endTask">End Task</button><button class="task-btn" data-app-action="closeWindow">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
   }
-  refreshProgramManagerContent() {
-    refreshProgramManagerContent(this);
+  getArtistContent() {
+    const defaultPrompt = "retro desktop art of a cozy computer lab";
+    return `
+                <div class="artist-app">
+                    <div class="artist-toolbar">
+                        <input class="artist-prompt" type="text" value="${defaultPrompt}" placeholder="Describe the image you want" spellcheck="false" />
+                        <button class="task-btn artist-generate">Generate</button>
+                        <span class="artist-status">Enter a prompt and click Generate.</span>
+                    </div>
+                    <div class="artist-body">
+                        <div class="artist-preview-wrap">
+                            <div class="artist-placeholder">Image will appear here</div>
+                            <img class="artist-preview" alt="AI generated art" />
+                        </div>
+                        <div class="artist-hint">Uses the free Pollinations image API. Right-click the result to save it.</div>
+                        <a class="artist-link" href="#" target="_blank" rel="noreferrer noopener">Open image directly</a>
+                    </div>
+                </div>`;
+  }
+  getDatabaseContent() {
+    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" data-app-action="addDbRecord">Add Record</button><button class="task-btn" data-app-action="exportDbToCsv">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 
 }

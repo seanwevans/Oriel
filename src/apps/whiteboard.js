@@ -511,14 +511,16 @@ export function initWhiteboard(win) {
 
   emit({ type: "state-request", from: clientId });
 
-  win.whiteboardCleanup = () => {
-    cleanupChannel?.();
-    unsubscribe();
-    clearInterval(cursorInterval);
-    window.removeEventListener("resize", resizeCanvas);
-    canvas.removeEventListener("pointerdown", handlePointerDown);
-    canvas.removeEventListener("pointermove", handlePointerMove);
-    canvas.removeEventListener("pointerup", handlePointerUp);
-    board.removeEventListener("pointermove", handlePointerMove);
+  return {
+    dispose() {
+      cleanupChannel?.();
+      unsubscribe();
+      clearInterval(cursorInterval);
+      window.removeEventListener("resize", resizeCanvas);
+      canvas.removeEventListener("pointerdown", handlePointerDown);
+      canvas.removeEventListener("pointermove", handlePointerMove);
+      canvas.removeEventListener("pointerup", handlePointerUp);
+      board.removeEventListener("pointermove", handlePointerMove);
+    }
   };
 }

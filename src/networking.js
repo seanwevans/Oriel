@@ -5,6 +5,10 @@ import { publish, subscribe } from "./eventBus.js";
 
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
 const NETWORK_ACTIVITY_EVENT = "network:activity";
+export const BROWSER_SANDBOX_TOKENS = ["allow-forms", "allow-popups"];
+export const BROWSER_SANDBOX_POLICY = BROWSER_SANDBOX_TOKENS.join(" ");
+const DANGEROUS_BROWSER_ELEMENTS =
+  "script,iframe,object,embed,base,meta[http-equiv],link[rel=import]";
 let networkEventCounter = 0;
 
 function nextNetworkEventId() {
@@ -428,6 +432,47 @@ export function initRssReader(win) {
   };
 }
 
+function stripDangerousBrowserMarkup(html = "") {
+  return String(html || "")
+    .replace(/<\/?(?:script|iframe|object|embed|base|meta|link)\b[^>]*>/gi, "")
+    .replace(/\s+on[a-z0-9:-]+\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>`]+)/gi, "")
+    .replace(/\s+(?:href|src|xlink:href|formaction)\s*=\s*("|')\s*javascript:[\s\S]*?\1/gi, "")
+    .replace(/\s+(?:href|src|xlink:href|formaction)\s*=\s*javascript:[^\s"'=<>`]+/gi, "");
+}
+
+export function sanitizeBrowserHtml(html = "") {
+  const strippedHtml = stripDangerousBrowserMarkup(html);
+  if (!globalThis.document?.createElement) return strippedHtml;
+
+  const template = document.createElement("template");
+  template.innerHTML = strippedHtml;
+  if (!template.content?.querySelectorAll) return strippedHtml;
+
+  template.content
+    .querySelectorAll(DANGEROUS_BROWSER_ELEMENTS)
+    .forEach((node) => node.remove());
+  template.content.querySelectorAll("*").forEach((node) => {
+    Array.from(node.attributes).forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.trim();
+      if (name.startsWith("on")) {
+        node.removeAttribute(attr.name);
+        return;
+      }
+      const isUrlAttribute =
+        name === "href" ||
+        name === "src" ||
+        name === "xlink:href" ||
+        name === "formaction";
+      if (isUrlAttribute && /^javascript:/i.test(value)) {
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  return template.innerHTML;
+}
+
 export function initBrowser(win, sessions = browserSessions) {
   const sessionStore =
     sessions && typeof sessions === "object" ? sessions : browserSessions;
@@ -501,7 +546,9 @@ export function initBrowser(win, sessions = browserSessions) {
         return;
       }
       const text = await res.text();
-      frame.srcdoc = text || `<p>Proxy returned an empty response for ${url}.</p>`;
+      frame.srcdoc = text
+        ? sanitizeBrowserHtml(text)
+        : `<p>Proxy returned an empty response for ${url}.</p>`;
       setStatus(`Loaded ${url}`);
     } catch (err) {
       console.error(err);

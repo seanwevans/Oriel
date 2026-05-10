@@ -220,6 +220,9 @@ globalThis.document = {
     const element = new FakeElement(id.includes("canvas") ? "canvas" : "div");
     element.id = id;
     return element;
+  },
+  querySelectorAll() {
+    return [];
   }
 };
 
@@ -234,6 +237,24 @@ test.after(() => {
 function createTestWindowManager() {
   const wm = Object.create(WindowManager.prototype);
   wm.windows = [];
+  wm.nextWindowSeq = 1;
+  wm.highestZ = 100;
+  wm.desktop = new FakeElement("div");
+  wm.appRegistry = {
+    resolve() {
+      return null;
+    },
+    getRuntimeInitializer() {
+      return null;
+    }
+  };
+  wm.appHost = {
+    mount() {
+      return null;
+    },
+    unmount() {}
+  };
+  wm.saveDesktopState = () => {};
   wm.addKeyboardActivation = WindowManager.prototype.addKeyboardActivation;
   wm.setupMenuBar = WindowManager.prototype.setupMenuBar;
   wm.startDrag = () => {};
@@ -248,6 +269,33 @@ function createTestWindowManager() {
   return wm;
 }
 
+test("openWindow generates unique ids when Date.now is fixed", () => {
+  const wm = createTestWindowManager();
+  const originalDateNow = Date.now;
+  const originalKernel = globalThis.kernel;
+  Date.now = () => 1234567890;
+  globalThis.kernel = {
+    registerProcess() {},
+    unregisterProcess() {}
+  };
+
+  try {
+    const first = wm.openWindow("unknown", "First", 320, 240);
+    const second = wm.openWindow("unknown", "Second", 320, 240);
+
+    assert.notEqual(first.id, second.id);
+    assert.match(first.id, /^win-1234567890-\d+$/);
+    assert.match(second.id, /^win-1234567890-\d+$/);
+  } finally {
+    Date.now = originalDateNow;
+    if (originalKernel === undefined) {
+      delete globalThis.kernel;
+    } else {
+      globalThis.kernel = originalKernel;
+    }
+  }
+});
+
 test("createWindowDOM renders a hostile title as text, not markup", () => {
   const wm = createTestWindowManager();
   const hostileTitle = "<img src=x onerror=alert(1)>";
@@ -258,6 +306,25 @@ test("createWindowDOM renders a hostile title as text, not markup", () => {
   assert.equal(win.querySelector("img"), null);
   assert.equal(win.dataset.title, hostileTitle);
   assert.equal(win.getAttribute("aria-label"), hostileTitle);
+});
+
+
+test("Write renders user-provided initial content as text", () => {
+  const wm = createTestWindowManager();
+  const hostileContent = "<img src=x onerror=alert(1)>";
+
+  const win = wm.createWindowDOM(
+    "write-id",
+    "write",
+    "Write",
+    320,
+    240,
+    wm.getWriteContent(hostileContent)
+  );
+
+  const editor = win.querySelector(".write-editor");
+  assert.equal(editor.textContent, hostileContent);
+  assert.equal(win.querySelector("img"), null);
 });
 
 test("createWindowDOM wires window controls with event listeners", () => {
@@ -378,6 +445,23 @@ test("Markdown file content remains textarea value text", () => {
   assert.equal(win.querySelector(".md-input").value, hostileText);
   assert.equal(win.querySelector(".md-preview").textContent, "");
   assert.equal(win.querySelector("img"), null);
+});
+
+test("browser sandbox omits script and pointer-lock capabilities", () => {
+  const wm = createTestWindowManager();
+  const originalGetBrowserPlaceholder = globalThis.getBrowserPlaceholder;
+  globalThis.getBrowserPlaceholder = () => "Enter URL";
+  let content;
+  try {
+    content = wm.getBrowserContent();
+  } finally {
+    if (originalGetBrowserPlaceholder === undefined) delete globalThis.getBrowserPlaceholder;
+    else globalThis.getBrowserPlaceholder = originalGetBrowserPlaceholder;
+  }
+
+  assert.match(content, /sandbox="allow-forms allow-popups"/);
+  assert.doesNotMatch(content, /allow-scripts/);
+  assert.doesNotMatch(content, /allow-pointer-lock/);
 });
 
 test("PDF reader file name and source are assigned without HTML interpolation", () => {

@@ -12,7 +12,14 @@ global.localStorage = {
 
 const { NETWORK_CONFIG } = await import("./config.js");
 const networking = await import("./networking.js");
-const { getNetworkDefaults, refreshNetworkedWindows, resetNetworkDefaults, updateNetworkDefaults } = networking;
+const {
+  BROWSER_SANDBOX_POLICY,
+  getNetworkDefaults,
+  refreshNetworkedWindows,
+  resetNetworkDefaults,
+  sanitizeBrowserHtml,
+  updateNetworkDefaults
+} = networking;
 
 
 test("refreshNetworkedWindows reloads browser windows once", () => {
@@ -116,4 +123,21 @@ test("RSS proxy JSON envelopes return their contents field", async () => {
   const text = await networking.readRssResponseText(response);
 
   assert.equal(text, xml);
+});
+
+test("browser HTML sanitizer removes active content before srcdoc rendering", () => {
+  const hostile = `<article onclick="alert(1)"><script>alert(1)</script><a href="javascript:alert(2)">bad</a><iframe src="https://evil.example"></iframe><p>Safe</p></article>`;
+
+  const sanitized = sanitizeBrowserHtml(hostile);
+
+  assert.doesNotMatch(sanitized, /<script/i);
+  assert.doesNotMatch(sanitized, /onclick=/i);
+  assert.doesNotMatch(sanitized, /javascript:/i);
+  assert.doesNotMatch(sanitized, /<iframe/i);
+  assert.match(sanitized, /<p>Safe<\/p>/);
+});
+
+test("browser sandbox policy keeps scripts disabled", () => {
+  assert.equal(BROWSER_SANDBOX_POLICY, "allow-forms allow-popups");
+  assert.doesNotMatch(BROWSER_SANDBOX_POLICY, /allow-scripts/);
 });

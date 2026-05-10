@@ -90,14 +90,14 @@ export function renderMarkdown(text) {
     }
 
     if (trimmed.startsWith("#")) {
-      const headingMatch = trimmed.match(/^#+/);
-      const level = Math.min(headingMatch ? headingMatch[0].length : 1, 6);
-      const content = applyInline(trimmed.replace(/^#+\s*/, ""));
-      output.push(`<h${level}>${content}</h${level}>`);
       if (inList) {
         output.push("</ul>");
         inList = false;
       }
+      const headingMatch = trimmed.match(/^#+/);
+      const level = Math.min(headingMatch ? headingMatch[0].length : 1, 6);
+      const content = applyInline(trimmed.replace(/^#+\s*/, ""));
+      output.push(`<h${level}>${content}</h${level}>`);
       return;
     }
 
@@ -108,6 +108,11 @@ export function renderMarkdown(text) {
       }
       output.push("<p></p>");
       return;
+    }
+
+    if (inList) {
+      output.push("</ul>");
+      inList = false;
     }
 
     output.push(`<p>${applyInline(line)}</p>`);

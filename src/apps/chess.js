@@ -276,7 +276,7 @@ function initChess(w) {
     alert("Invalid FEN string");
   };
 
-  w.chessCleanup = () => {
+  const dispose = () => {
     if (w.chessWorker) w.chessWorker.terminate();
     if (w.chessWorkerBlobUrl) {
       URL.revokeObjectURL(w.chessWorkerBlobUrl);
@@ -294,6 +294,8 @@ function initChess(w) {
       initStockfishEngine(w).catch(() => setStatus("Engine unavailable"));
     })
     .catch(() => setStatus("Failed to load chess.js"));
+
+  return { dispose };
 }
 
 export { initChess };

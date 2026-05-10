@@ -200,8 +200,8 @@ function openCPDesktop(context, el, containerOverride) {
                 <option value="fill">Fill</option>
             </select>
             <div style="display:flex; gap:6px; justify-content:flex-end;">
-                <button class="task-btn" onclick="applyWallpaperSettings('${DEFAULT_WALLPAPER}', 'cover', true)">Reset</button>
-                <button class="task-btn" onclick="setWallpaper()">Apply</button>
+                <button class="task-btn" data-cp-action="reset-wallpaper">Reset</button>
+                <button class="task-btn" data-cp-action="set-wallpaper">Apply</button>
             </div>
         </div>
         <div class="cp-section">
@@ -284,8 +284,8 @@ function openCPScreensaver(context, target, containerOverride) {
               </label>
             </div>
             <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:8px;">
-              <button class="task-btn" onclick="previewScreensaver()">Preview</button>
-              <button class="task-btn" onclick="applyScreensaver()">Apply</button>
+              <button class="task-btn" data-cp-action="preview-screensaver">Preview</button>
+              <button class="task-btn" data-cp-action="apply-screensaver">Apply</button>
             </div>
             <div class="cp-saver-note" id="cp-saver-status">Current saver: ${saverType}${
               saverRequire && saverPass ? " (Locked)" : ""
@@ -533,7 +533,7 @@ function openCPFonts(target, containerOverride) {
     .map((f) => `<option value="${f}">${f}</option>`)
     .join("");
 
-  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection()">Apply</button></div></div></div>`;
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" data-cp-action="apply-font">Apply</button></div></div></div>`;
 
   const select = body.querySelector("#cp-font-select");
   const custom = body.querySelector("#cp-font-custom");
@@ -700,11 +700,22 @@ function initControlPanel(context, w, _initData, windowManager) {
   };
 
   body.querySelectorAll(".cp-tab-btn").forEach((btn) => {
-    btn.onclick = () => switchView(btn.dataset.view);
+    btn.addEventListener("click", () => switchView(btn.dataset.view));
   });
 
   menu.querySelectorAll(".cp-menu-item").forEach((btn) => {
-    btn.onclick = () => switchView(btn.dataset.view);
+    btn.addEventListener("click", () => switchView(btn.dataset.view));
+  });
+
+  body.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-cp-action]");
+    if (!target || !body.contains(target)) return;
+    const action = target.dataset.cpAction;
+    if (action === "reset-wallpaper") applyWallpaperSettings(DEFAULT_WALLPAPER, "cover", true);
+    if (action === "set-wallpaper") setWallpaper();
+    if (action === "preview-screensaver") previewScreensaver(context);
+    if (action === "apply-screensaver") applyScreensaver(context);
+    if (action === "apply-font") applyFontSelection();
   });
 
   switchView("desktop");

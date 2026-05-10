@@ -94,7 +94,6 @@ export function initPacketLab(win) {
   };
 
   const unsubscribe = subscribeToNetworkEvents(onNetworkEvent);
-  win.packetLabCleanup = unsubscribe;
 
   filterInput.addEventListener("input", () => {
     state.filterText = filterInput.value || "";
@@ -118,6 +117,8 @@ export function initPacketLab(win) {
   });
 
   render();
+
+  return { dispose: unsubscribe };
 }
 
 export function getPacketLabContent() {

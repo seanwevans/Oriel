@@ -492,6 +492,12 @@ async function handleConsoleKey(e) {
   }
 }
 
+function replaceOutputPre(output, text) {
+  const pre = document.createElement("pre");
+  pre.textContent = text;
+  output.replaceChildren(pre);
+}
+
 async function runCompiler(e) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#compiler-out");
@@ -501,11 +507,11 @@ async function runCompiler(e) {
 
   const code = editor?.value || "";
   if (!code.trim()) {
-    output.innerHTML = `<pre>No source code provided.</pre>`;
+    replaceOutputPre(output, "No source code provided.");
     return;
   }
 
-  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+  replaceOutputPre(output, "Sending code to Compiler Explorer...");
 
   const payload = {
     source: code,
@@ -562,7 +568,7 @@ async function runCompiler(e) {
     lines.push(`Compilation failed: ${err.message}`);
   }
 
-  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+  replaceOutputPre(output, lines.join("\n"));
 }
 
 async function runPython(e) {

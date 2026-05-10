@@ -12,47 +12,15 @@ import {
   fileSystemReady
 } from "../filesystem.js";
 import { publish, subscribe } from "../eventBus.js";
-import { getNetworkDefaults, refreshNetworkedWindows } from "../networking.js";
-import {
-  endTask,
-  refreshAllProcessViews,
-  switchTask
-} from "../apps/taskman.js";
+import { refreshNetworkedWindows } from "../networking.js";
+import { refreshAllProcessViews } from "../apps/taskman.js";
 import { initScreensaver, hideUnlockPrompt, submitLockPassphrase } from "../apps/screensaver.js";
 import { installSelectionFromWindow, rFL, rFT, uninstallSelectionFromWindow } from "../apps/fileManager.js";
 import {
-  applyFontSelection,
   applySavedTheme,
-  applyScreensaver,
-  applyTheme,
-  openCPColor,
-  openCPDefaults,
-  openCPDesktop,
-  openCPFonts,
-  openCPScreensaver,
-  openCPSound,
-  previewScreensaver,
-  setWallpaper
+  openCPDesktop
 } from "../apps/controlPanel.js";
-import {
-  calcInput,
-  handleConsoleKey,
-  registerConsoleCommands,
-  runCompiler,
-  runPython
-} from "../apps/console.js";
-import { resetMines } from "../apps/minesweeper.js";
-import { selectPaintTool, clearPaint } from "../apps/paint.js";
-import { copyCharMap } from "../apps/charmap.js";
-import { addDbRecord, deleteDbRecord, exportDbToCsv } from "../apps/database.js";
-import {
-  psApplyFilter,
-  psExport,
-  psFillCanvas,
-  psNewDocument,
-  psTriggerOpen,
-  setPsTool
-} from "../apps/photoshop.js";
+import { registerConsoleCommands } from "../apps/console.js";
 import { controlPanelContext } from "../windowManager.js";
 import { bootstrapInstallations } from "../installer.js";
 
@@ -142,7 +110,7 @@ export class OrielApp {
       initialDesktopState.wallpaper?.mode || "cover"
     );
 
-    this.#registerWindowGlobals();
+    this.#registerApplicationHandlers();
 
     await this.fs.fileSystemReady.catch(() => {});
     await this.installerReady.catch(() => {});
@@ -497,7 +465,10 @@ export class OrielApp {
 
   #bootDesktop() {
     if (this.windowManager) return this.windowManager;
-    this.windowManager = new this.WindowManager(this.initialDesktopState);
+    this.windowManager = new this.WindowManager(this.initialDesktopState, {
+      appActions: this.#getWindowAppActions(),
+      kernel: this.kernel
+    });
     window.wm = this.windowManager;
     return this.windowManager;
   }
@@ -618,64 +589,26 @@ export class OrielApp {
     });
   }
 
-  #registerWindowGlobals() {
+  #registerApplicationHandlers() {
+    window.kernel = this.kernel;
     registerConsoleCommands();
 
-    window.createFolder = this.#createFolder.bind(this);
-    window.switchTask = switchTask;
-    window.endTask = endTask;
-    window.kernel = this.kernel;
+    document
+      .getElementById("unlock-submit")
+      ?.addEventListener("click", () => submitLockPassphrase());
+    document
+      .getElementById("unlock-keep-watching")
+      ?.addEventListener("click", () => hideUnlockPrompt());
+  }
 
-    window.handleConsoleKey = handleConsoleKey;
-    window.calcInput = calcInput;
-    window.resetMines = resetMines;
-    window.selectPaintTool = selectPaintTool;
-    window.clearPaint = clearPaint;
-    window.copyCharMap = copyCharMap;
-    window.runCompiler = runCompiler;
-    window.runPython = runPython;
-    window.exportFileSystem = this.#exportFileSystem.bind(this);
-    window.importFileSystem = this.#importFileSystem.bind(this);
-    window.installSelectedManifest = this.#installSelectedManifest.bind(this);
-    window.uninstallManifest = this.#uninstallManifest.bind(this);
-    window.mountLocalFolder = this.#mountLocalFolder.bind(this);
-
-    window.addDbRecord = addDbRecord;
-    window.exportDbToCsv = exportDbToCsv;
-    window.deleteDbRecord = deleteDbRecord;
-
-    window.psTriggerOpen = psTriggerOpen;
-    window.psNewDocument = psNewDocument;
-    window.psExport = psExport;
-    window.setPsTool = setPsTool;
-    window.psApplyFilter = psApplyFilter;
-    window.psFillCanvas = psFillCanvas;
-
-    const openCPDesktopWithContext = (target, override) =>
-      openCPDesktop(controlPanelContext, target, override);
-    const openCPScreensaverWithContext = (target, override) =>
-      openCPScreensaver(controlPanelContext, target, override);
-    const applyScreensaverWithContext = () => applyScreensaver(controlPanelContext);
-    const previewScreensaverWithContext = () => previewScreensaver(controlPanelContext);
-
-    window.openCPColor = openCPColor;
-    window.openCPDesktop = openCPDesktopWithContext;
-    window.openCPScreensaver = openCPScreensaverWithContext;
-    window.openCPSound = openCPSound;
-    window.openCPFonts = openCPFonts;
-    window.openCPDefaults = openCPDefaults;
-    window.applyTheme = applyTheme;
-    window.setWallpaper = setWallpaper;
-    window.previewScreensaver = previewScreensaverWithContext;
-    window.applyScreensaver = applyScreensaverWithContext;
-    window.applyFontSelection = applyFontSelection;
-    window.submitLockPassphrase = submitLockPassphrase;
-    window.hideUnlockPrompt = hideUnlockPrompt;
-
-    const getBrowserPlaceholder = () => {
-      const { browserHome } = getNetworkDefaults();
-      return browserHome || "https://example.com";
+  #getWindowAppActions() {
+    return {
+      createFolder: ({ target }) => this.#createFolder(target),
+      exportFileSystem: () => this.#exportFileSystem(),
+      importFileSystem: ({ event }) => this.#importFileSystem(event),
+      installSelectedManifest: ({ target }) => this.#installSelectedManifest(target),
+      uninstallManifest: ({ target }) => this.#uninstallManifest(target),
+      mountLocalFolder: ({ target }) => this.#mountLocalFolder(target)
     };
-    window.getBrowserPlaceholder = getBrowserPlaceholder;
   }
 }
