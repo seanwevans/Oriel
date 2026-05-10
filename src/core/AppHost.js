@@ -64,16 +64,13 @@ export class AppHost {
   mount({ initializer, winEl, winObj, initData = null, wmInstance = null, type = "unknown" }) {
     if (!initializer) return null;
     try {
-      if (appInstance) assignAppInstance({ appInstance, winEl, winObj });
-
-      const mountResult = appInstance
-        ? appInstance.mount?.()
-        : initializer(winEl, initData, wmInstance);
+      // Execute the legacy initializer safely
+      const mountResult = initializer(winEl, initData, wmInstance);
 
       if (isPromiseLike(mountResult)) {
         const pendingMountPromise = Promise.resolve(mountResult)
           .then((resolvedAppInstance) => {
-            const mountedAppInstance = appInstance || resolvedAppInstance || null;
+            const mountedAppInstance = resolvedAppInstance || null;
             assignAppInstance({ appInstance: mountedAppInstance, winEl, winObj });
             assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
             return mountedAppInstance;
@@ -88,7 +85,7 @@ export class AppHost {
         return pendingMountPromise;
       }
 
-      const mountedAppInstance = appInstance || mountResult || null;
+      const mountedAppInstance = mountResult || null;
       assignAppInstance({ appInstance: mountedAppInstance, winEl, winObj });
       return mountedAppInstance;
     } catch (err) {
