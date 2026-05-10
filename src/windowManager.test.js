@@ -447,6 +447,23 @@ test("Markdown file content remains textarea value text", () => {
   assert.equal(win.querySelector("img"), null);
 });
 
+test("browser sandbox omits script and pointer-lock capabilities", () => {
+  const wm = createTestWindowManager();
+  const originalGetBrowserPlaceholder = globalThis.getBrowserPlaceholder;
+  globalThis.getBrowserPlaceholder = () => "Enter URL";
+  let content;
+  try {
+    content = wm.getBrowserContent();
+  } finally {
+    if (originalGetBrowserPlaceholder === undefined) delete globalThis.getBrowserPlaceholder;
+    else globalThis.getBrowserPlaceholder = originalGetBrowserPlaceholder;
+  }
+
+  assert.match(content, /sandbox="allow-forms allow-popups"/);
+  assert.doesNotMatch(content, /allow-scripts/);
+  assert.doesNotMatch(content, /allow-pointer-lock/);
+});
+
 test("PDF reader file name and source are assigned without HTML interpolation", () => {
   const wm = createTestWindowManager();
   const hostileName = "manual </textarea> \"quoted\" <img src=x onerror=alert(1)>.pdf";
