@@ -38,6 +38,7 @@ export const DEFAULT_FS = {
           "LINERIDR.EXE": { type: "file", app: "linerider" },
           "SIMCITY.EXE": { type: "file", app: "simcity" },
           "WINFILE.EXE": { type: "file", app: "winfile" },
+          "CODEPEN.EXE": { type: "file", app: "codepen" },
           "TASKMAN.EXE": { type: "file", app: "taskman" },
           "CLIPBRD.EXE": { type: "file", app: "clipbrd" },
           "DATAMGR.EXE": { type: "file", app: "database" },

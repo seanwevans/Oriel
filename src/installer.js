@@ -23,11 +23,10 @@ export const MANIFEST_SCHEMA = {
 
 const runtimeRegistry = new Map();
 
-function normalizeFsPath(rawPath, basePath = "C\\") {
+function normalizeFsPath(rawPath, basePath = "C:\\") {
   if (!rawPath) return null;
-  const trimmed = rawPath.trim();
-  const driveMatch = trimmed.match(/^([A-Za-z]):/);
-  const cleaned = trimmed.replace(/\//g, "\\");
+  const cleaned = rawPath.trim().replace(/\//g, "\\");
+  const driveMatch = cleaned.match(/^([A-Za-z]):?\\/);
 
   if (driveMatch) {
     const drive = driveMatch[1].toUpperCase();
@@ -35,8 +34,8 @@ function normalizeFsPath(rawPath, basePath = "C\\") {
     return `${drive}:\\${remainder}`.replace(/\\+/g, "\\");
   }
 
-  const base = basePath?.replace(/\//g, "\\") || "C\\";
-  const baseDir = base.endsWith("\\") ? base : base + "\\";
+  const base = normalizeFsPath(basePath || "C:\\");
+  const baseDir = base.endsWith("\\") ? base : `${base}\\`;
   const relative = cleaned.replace(/^\\*/, "");
   return `${baseDir}${relative}`.replace(/\\+/g, "\\");
 }

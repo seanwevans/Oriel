@@ -15,6 +15,15 @@ export const PROGRAMS = [
     icon: "write",
     label: "Write"
   },
+
+  {
+    type: "codepen",
+    title: "CodePen Runner",
+    width: 900,
+    height: 640,
+    icon: "codepen",
+    label: "CodePen"
+  },
   {
     type: "winfile",
     title: "File Manager",

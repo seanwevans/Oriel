@@ -17,6 +17,7 @@ Oriel is a small retro desktop simulation built with vanilla HTML, CSS, and Java
 - Chess – Play a game of chess against a built-in opponent.
 - Chip Studio – Tracker-style music maker for chiptune sequences.
 - Clipboard – View and manage copied clipboard entries inside the OS.
+- CodePen Runner – Run CodePen pens in isolated iframe windows and install them as Oriel apps.
 - Clock – Desktop clock with both analog and digital faces.
 - Control Panel – Adjust system preferences like themes and behavior.
 - Data Manager – Lightweight database-style table for entering records.

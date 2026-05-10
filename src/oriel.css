@@ -6597,3 +6597,105 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.codepen-runner,
+.codepen-viewer,
+.codepen-installed-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.codepen-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(180px, 260px);
+  gap: 8px;
+  padding: 8px;
+  background: #c0c0c0;
+  color: #000;
+  border-bottom: 2px solid #808080;
+}
+
+.codepen-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.codepen-field input {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 2px inset #fff;
+  font: inherit;
+}
+
+.codepen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.codepen-actions button {
+  padding: 4px 8px;
+}
+
+.codepen-status {
+  grid-column: 1 / -1;
+  min-height: 18px;
+  font-size: 12px;
+}
+
+.codepen-status.error,
+.codepen-message.error {
+  color: #b91c1c;
+}
+
+.codepen-preview-shell {
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  background: #111827;
+}
+
+.codepen-preview,
+.codepen-viewer iframe,
+.codepen-installed-app iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}
+
+.codepen-installed-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #111827;
+  border-bottom: 1px solid #374151;
+  color: #f9fafb;
+  font-size: 12px;
+}
+
+.codepen-installed-toolbar a {
+  color: #93c5fd;
+}
+
+.codepen-message {
+  padding: 12px;
+  background: #c0c0c0;
+}
+
+@media (max-width: 720px) {
+  .codepen-form {
+    grid-template-columns: 1fr;
+  }
+}
