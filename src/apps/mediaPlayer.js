@@ -1,6 +1,6 @@
 import { getMediaPlayerTracks, registerMediaElement } from "../audio.js";
 
-export async function initMediaPlayer(w) {
+export function initMediaPlayer(w) {
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
   const video = w.querySelector(".mplayer-video");
@@ -30,6 +30,8 @@ export async function initMediaPlayer(w) {
   let dx = 2;
   let dy = 2;
   let currentTrack = 0;
+  let disposed = false;
+  const localObjectUrls = new Set();
 
   const formatTime = (seconds) => {
     if (!isFinite(seconds)) return "0:00";
@@ -133,6 +135,7 @@ export async function initMediaPlayer(w) {
     let startIndex = tracks.length;
     Array.from(fileInput.files).forEach((file) => {
       const url = URL.createObjectURL(file);
+      localObjectUrls.add(url);
       const entry = { name: file.name, url, type: file.type };
       tracks.push(entry);
       addOption(entry, tracks.length - 1, "Local: ");
@@ -155,5 +158,20 @@ export async function initMediaPlayer(w) {
 
   video.addEventListener("pause", stopVisual);
 
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    stopVisual();
+    video.pause();
+    video.removeAttribute("src");
+    video.load?.();
+    localObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    localObjectUrls.clear();
+  };
+
+  w.mediaPlayerCleanup = dispose;
+
   loadTrack(0);
+
+  return { dispose };
 }
