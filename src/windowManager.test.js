@@ -255,3 +255,13 @@ test("renderRuntimeError renders hostile error messages as text", () => {
   assert.equal(errorEl.textContent, `Unable to start app: ${hostileMessage}`);
   assert.equal(win.querySelector("img"), null);
 });
+
+test("Cardfile content exposes the controls its initializer wires", () => {
+  const wm = createTestWindowManager();
+  const content = wm.getCardfileContent();
+
+  assert.match(content, /id="card-add"/);
+  assert.match(content, /id="card-del"/);
+  assert.doesNotMatch(content, /id="card-add-btn"/);
+  assert.doesNotMatch(content, /id="card-del-btn"/);
+});
