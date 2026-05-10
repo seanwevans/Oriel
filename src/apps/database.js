@@ -3,7 +3,20 @@ function renderDbTable(w) {
   t.innerHTML = "";
   w.dbData.forEach((r, i) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.name}</td><td>${r.phone}</td><td>${r.email}</td><td><button onclick="deleteDbRecord(this,${i})">X</button></td>`;
+
+    [r.name, r.phone, r.email].forEach((value) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+
+    const actionTd = document.createElement("td");
+    const button = document.createElement("button");
+    button.textContent = "X";
+    button.addEventListener("click", () => deleteDbRecord(button, i));
+    actionTd.appendChild(button);
+    tr.appendChild(actionTd);
+
     t.appendChild(tr);
   });
 }
