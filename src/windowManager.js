@@ -121,6 +121,7 @@ export class WindowManager {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
+    this.nextWindowSeq = 1;
     this.highestZ = 100;
     this.isRestoring = false;
     this.dragState = {
@@ -177,6 +178,31 @@ export class WindowManager {
     }
     if (this.windows.length === 0)
       this.openWindow("progman", "Program Manager", 500, 480);
+  }
+  createAutoWindowId() {
+    if (!Number.isInteger(this.nextWindowSeq) || this.nextWindowSeq < 1) {
+      this.nextWindowSeq = 1;
+    }
+
+    let id;
+    do {
+      id = `win-${Date.now()}-${this.nextWindowSeq++}`;
+    } while (this.windows.some((w) => w.id === id));
+
+    return id;
+  }
+  resolveWindowId(stateOverrides = {}) {
+    if (stateOverrides.id) {
+      if (!this.windows.some((w) => w.id === stateOverrides.id)) {
+        return stateOverrides.id;
+      }
+
+      console.warn(
+        `Restored window id '${stateOverrides.id}' already exists; generated a new id instead.`
+      );
+    }
+
+    return this.createAutoWindowId();
   }
   addKeyboardActivation(el, handler) {
     if (!el) return;
@@ -361,7 +387,7 @@ export class WindowManager {
     return win;
   }
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
-    const id = stateOverrides.id || "win-" + Date.now();
+    const id = this.resolveWindowId(stateOverrides);
     let content = "";
     const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
