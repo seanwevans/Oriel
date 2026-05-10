@@ -34,6 +34,7 @@ function initStockfishEngine(w) {
         const blobUrl = URL.createObjectURL(blob);
         const worker = new Worker(blobUrl);
         w.chessWorker = worker;
+        w.chessWorkerBlobUrl = blobUrl;
 
         const onMsg = (event) => {
           const msg = String(event.data || "");
@@ -267,6 +268,10 @@ function initChess(w) {
 
   w.chessCleanup = () => {
     if (w.chessWorker) w.chessWorker.terminate();
+    if (w.chessWorkerBlobUrl) {
+      URL.revokeObjectURL(w.chessWorkerBlobUrl);
+      w.chessWorkerBlobUrl = null;
+    }
   };
 
   loadChessLibrary()

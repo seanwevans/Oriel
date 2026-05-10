@@ -8,7 +8,9 @@ const LEGACY_CLEANUP_KEYS = [
   "shaderLabCleanup",
   "whiteboardCleanup",
   "packetLabCleanup",
-  "ircCleanup"
+  "ircCleanup",
+  "mediaPlayerCleanup",
+  "soundRecorderCleanup"
 ];
 
 function isPromiseLike(value) {

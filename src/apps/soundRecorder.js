@@ -15,7 +15,14 @@ export function initSoundRecorder(w) {
   let source;
   let streamRef;
   let animationId;
+  let playbackAudio = null;
   let disposed = false;
+
+  const revokeAudioUrl = () => {
+    if (!audioUrl) return;
+    URL.revokeObjectURL(audioUrl);
+    audioUrl = null;
+  };
 
   function draw() {
     if (!analyser) return;
@@ -56,6 +63,8 @@ export function initSoundRecorder(w) {
       audioChunks = [];
       mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
       mediaRecorder.onstop = () => {
+        if (disposed) return;
+        revokeAudioUrl();
         audioBlob = new Blob(audioChunks, { type: "audio/wav" });
         if (audioUrl) URL.revokeObjectURL(audioUrl);
         audioUrl = disposed ? null : URL.createObjectURL(audioBlob);
@@ -83,37 +92,36 @@ export function initSoundRecorder(w) {
 
   w.querySelector("#btn-play").onclick = () => {
     if (audioUrl) {
+      if (playbackAudio) playbackAudio.pause();
       const audio = new Audio(audioUrl);
+      playbackAudio = audio;
       registerMediaElement(audio);
       audio.play();
       status.innerText = "Playing...";
       audio.onended = () => {
         status.innerText = "Ready";
+        if (playbackAudio === audio) playbackAudio = null;
       };
     }
   };
 
-  return {
-    dispose() {
-      disposed = true;
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-      }
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-      }
-      if (streamRef) {
-        streamRef.getTracks().forEach((track) => track.stop());
-        streamRef = null;
-      }
-      source?.disconnect?.();
-      analyser?.disconnect?.();
-      audioCtx?.close?.();
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-        audioUrl = null;
-      }
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    if (streamRef) streamRef.getTracks().forEach((track) => track.stop());
+    if (playbackAudio) {
+      playbackAudio.pause();
+      playbackAudio.src = "";
+      playbackAudio = null;
     }
+    cancelAnimationFrame(animationId);
+    if (source) source.disconnect();
+    if (audioCtx) audioCtx.close?.();
+    revokeAudioUrl();
   };
+
+  w.soundRecorderCleanup = dispose;
+
+  return { dispose };
 }
