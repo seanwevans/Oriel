@@ -12,7 +12,39 @@ global.localStorage = {
 
 const { NETWORK_CONFIG } = await import("./config.js");
 const networking = await import("./networking.js");
-const { getNetworkDefaults, resetNetworkDefaults, updateNetworkDefaults } = networking;
+const { getNetworkDefaults, refreshNetworkedWindows, resetNetworkDefaults, updateNetworkDefaults } = networking;
+
+
+test("refreshNetworkedWindows reloads browser windows once", () => {
+  const previousWindow = global.window;
+  let reloadCount = 0;
+
+  global.window = {
+    wm: {
+      windows: [
+        {
+          type: "browser",
+          el: {
+            browserReload: () => {
+              reloadCount += 1;
+            }
+          }
+        }
+      ]
+    }
+  };
+
+  try {
+    refreshNetworkedWindows();
+    assert.equal(reloadCount, 1);
+  } finally {
+    if (previousWindow === undefined) {
+      delete global.window;
+    } else {
+      global.window = previousWindow;
+    }
+  }
+});
 
 test("partial overrides do not clear defaults", () => {
   resetNetworkDefaults();
