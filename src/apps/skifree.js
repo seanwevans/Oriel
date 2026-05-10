@@ -177,14 +177,15 @@ export function initSkiFree(win) {
       statusEl.textContent = "The snow beast feasts...";
     }
 
-    if (playing || monster) requestAnimationFrame(update);
+    if (playing || monster) raf = requestAnimationFrame(update);
   };
 
   const resetGame = () => {
     resetCourse();
     playing = true;
     statusEl.style.color = "#222";
-    requestAnimationFrame(update);
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(update);
   };
 
   resetBtn.addEventListener("click", resetGame);
@@ -192,6 +193,10 @@ export function initSkiFree(win) {
   resetGame();
 
   win.skifreeCleanup = () => {
+    playing = false;
+    monster = null;
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
     layout.removeEventListener("keydown", onKeyDown);
     layout.removeEventListener("keyup", onKeyUp);
     resetBtn.removeEventListener("click", resetGame);

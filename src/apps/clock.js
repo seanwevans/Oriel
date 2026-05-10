@@ -80,5 +80,11 @@ export function initClock(w) {
   });
 
   render();
-  setInterval(render, 1000);
+  const timer = setInterval(render, 1000);
+
+  return {
+    dispose() {
+      clearInterval(timer);
+    }
+  };
 }

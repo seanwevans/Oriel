@@ -10,6 +10,12 @@ let mineFlags = 0;
 
 export function initMinesweeper(w) {
   resetMines(w);
+
+  return {
+    dispose() {
+      stopMinesTimer();
+    }
+  };
 }
 
 export function resetMines(w) {

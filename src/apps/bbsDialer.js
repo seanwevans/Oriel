@@ -110,7 +110,7 @@ function playModemSound() {
   });
 }
 
-function simulateTransfer(progressEl, terminal, direction = "download") {
+function simulateTransfer(progressEl, terminal, direction = "download", onTimer = () => {}) {
   if (!progressEl) return;
   progressEl.style.width = "0%";
   progressEl.classList.add("active");
@@ -128,6 +128,7 @@ function simulateTransfer(progressEl, terminal, direction = "download") {
       appendLine(terminal, `\x1b[32m${stamp} complete:\x1b[0m checksum OK.`);
     }
   }, 450);
+  onTimer(timer);
 }
 
 function runDoorScript(terminal, doorKey) {
@@ -202,6 +203,18 @@ export function initBbs(win) {
   if (!terminal || !statusEl || !dialBtn || !input) return;
 
   let connected = false;
+  const timers = new Set();
+  const timeouts = new Set();
+
+  const trackTimer = (timer) => timers.add(timer);
+  const setTrackedTimeout = (callback, delay) => {
+    const timeout = setTimeout(() => {
+      timeouts.delete(timeout);
+      callback();
+    }, delay);
+    timeouts.add(timeout);
+    return timeout;
+  };
 
   const loginSplash = () => {
     appendLine(terminal, "\x1b[32mCONNECT 9600/ARQ/V42BIS\x1b[0m");
@@ -224,9 +237,9 @@ export function initBbs(win) {
     playModemSound();
     appendLine(terminal, `\x1b[37mATDT ${target}\x1b[0m`);
 
-    setTimeout(() => appendLine(terminal, "\x1b[33mRING...\x1b[0m"), 350);
-    setTimeout(() => appendLine(terminal, "\x1b[32mCONNECT HANDSHAKE...\x1b[0m"), 850);
-    setTimeout(() => {
+    setTrackedTimeout(() => appendLine(terminal, "\x1b[33mRING...\x1b[0m"), 350);
+    setTrackedTimeout(() => appendLine(terminal, "\x1b[32mCONNECT HANDSHAKE...\x1b[0m"), 850);
+    setTrackedTimeout(() => {
       connected = true;
       setStatus(statusEl, `Connected to ${target} (${baud}bps)`, true);
       dialBtn.disabled = false;
@@ -271,7 +284,7 @@ export function initBbs(win) {
       return;
     }
     if (lc === "transfer") {
-      simulateTransfer(progressFill, terminal, "download");
+      simulateTransfer(progressFill, terminal, "download", trackTimer);
       return;
     }
     if (lc === "door") {
@@ -302,11 +315,29 @@ export function initBbs(win) {
     if (e.key === "Enter") handleSend();
   });
   doorBtn?.addEventListener("click", handleDoor);
-  downloadBtn?.addEventListener("click", () => simulateTransfer(progressFill, terminal, "download"));
-  uploadBtn?.addEventListener("click", () => simulateTransfer(progressFill, terminal, "upload"));
+  const handleDownload = () => simulateTransfer(progressFill, terminal, "download", trackTimer);
+  const handleUpload = () => simulateTransfer(progressFill, terminal, "upload", trackTimer);
+
+  downloadBtn?.addEventListener("click", handleDownload);
+  uploadBtn?.addEventListener("click", handleUpload);
 
   hangupBtn.disabled = true;
   setStatus(statusEl, "Ready to dial.", false);
   appendLine(terminal, "\x1b[37mHayes-compatible modem detected.\x1b[0m");
   appendLine(terminal, "Type ATDT <number> to dial or HELP for local shortcuts.\n");
+
+  return {
+    dispose() {
+      timers.forEach((timer) => clearInterval(timer));
+      timers.clear();
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+      timeouts.clear();
+      dialBtn.removeEventListener("click", handleDial);
+      hangupBtn.removeEventListener("click", handleHangup);
+      sendBtn?.removeEventListener("click", handleSend);
+      doorBtn?.removeEventListener("click", handleDoor);
+      downloadBtn?.removeEventListener("click", handleDownload);
+      uploadBtn?.removeEventListener("click", handleUpload);
+    }
+  };
 }

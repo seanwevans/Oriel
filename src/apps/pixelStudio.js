@@ -325,6 +325,10 @@ function bindPalette(win) {
 function bindCanvas(win) {
   const canvas = win.querySelector(".pixel-canvas");
   const { size, scale } = win.pixelStudio;
+  const handleMouseUp = () => {
+    win.pixelStudio.drawing = false;
+  };
+
   const updatePixel = (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / scale);
@@ -346,9 +350,10 @@ function bindCanvas(win) {
     if (!win.pixelStudio.drawing) return;
     updatePixel(e);
   });
-  window.addEventListener("mouseup", () => {
-    win.pixelStudio.drawing = false;
-  });
+  window.addEventListener("mouseup", handleMouseUp);
+  win.pixelStudio.cleanupCanvas = () => {
+    window.removeEventListener("mouseup", handleMouseUp);
+  };
 }
 
 export function initPixelStudio(win) {
@@ -371,7 +376,8 @@ export function initPixelStudio(win) {
     tool: "draw",
     drawing: false,
     playbackTimer: null,
-    savedPalette: null
+    savedPalette: null,
+    cleanupCanvas: null
   };
 
   renderPalette(win);
@@ -383,4 +389,14 @@ export function initPixelStudio(win) {
   bindFrameControls(win);
   bindPalette(win);
   bindCanvas(win);
+
+  return {
+    dispose() {
+      if (win.pixelStudio.playbackTimer) {
+        clearInterval(win.pixelStudio.playbackTimer);
+        win.pixelStudio.playbackTimer = null;
+      }
+      win.pixelStudio.cleanupCanvas?.();
+    }
+  };
 }

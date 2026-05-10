@@ -308,7 +308,7 @@ export function initAngryBirds(win) {
   canvas.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   resetBtn?.addEventListener("click", resetLevel);
-  hud.addEventListener("keydown", (e) => {
+  const onHudKeyDown = (e) => {
     if (e.key === " " && !dragging && activeBird && !activeBird.launched) {
       e.preventDefault();
       activeBird.vx = -120;
@@ -316,7 +316,9 @@ export function initAngryBirds(win) {
       activeBird.launched = true;
       setStatus("Quick launch!");
     }
-  });
+  };
+
+  hud.addEventListener("keydown", onHudKeyDown);
 
   resetLevel();
   raf = requestAnimationFrame(update);
@@ -327,7 +329,8 @@ export function initAngryBirds(win) {
     canvas.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", onPointerUp);
     resetBtn?.removeEventListener("click", resetLevel);
+    hud.removeEventListener("keydown", onHudKeyDown);
   };
 
-  return cleanup;
+  return { dispose: cleanup };
 }
