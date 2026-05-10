@@ -192,13 +192,15 @@ export function initSkiFree(win) {
   layout.addEventListener("click", () => layout.focus());
   resetGame();
 
-  win.skifreeCleanup = () => {
-    playing = false;
-    monster = null;
-    if (raf) cancelAnimationFrame(raf);
-    raf = null;
-    layout.removeEventListener("keydown", onKeyDown);
-    layout.removeEventListener("keyup", onKeyUp);
-    resetBtn.removeEventListener("click", resetGame);
+  return {
+    dispose() {
+      playing = false;
+      monster = null;
+      if (raf) cancelAnimationFrame(raf);
+      raf = null;
+      layout.removeEventListener("keydown", onKeyDown);
+      layout.removeEventListener("keyup", onKeyUp);
+      resetBtn.removeEventListener("click", resetGame);
+    }
   };
 }

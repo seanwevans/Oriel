@@ -320,10 +320,12 @@ export async function initShaderLab(win) {
   loadBtn?.addEventListener("click", () => loadPreset(presetSelect?.value));
   presetSelect?.addEventListener("change", () => loadPreset(presetSelect.value));
 
-  win.shaderLabCleanup = () => {
-    cancelAnimationFrame(animationId);
-    material.dispose();
-    geometry.dispose();
-    renderer.dispose();
+  return {
+    dispose() {
+      cancelAnimationFrame(animationId);
+      material.dispose();
+      geometry.dispose();
+      renderer.dispose();
+    }
   };
 }

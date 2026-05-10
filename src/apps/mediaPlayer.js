@@ -169,8 +169,6 @@ export function initMediaPlayer(w) {
     localObjectUrls.clear();
   };
 
-  w.mediaPlayerCleanup = dispose;
-
   loadTrack(0);
 
   return { dispose };

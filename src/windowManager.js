@@ -100,20 +100,41 @@ class LegacyFunctionApp extends BaseApp {
   constructor({ initializer, ...args }) {
     super(args);
     this.initializer = initializer;
+    this.mountedAppInstance = null;
+    this.disposed = false;
   }
 
   mount() {
-    return this.initializer(
+    const mountResult = this.initializer(
       this.windowEl,
       this.initData,
       this.services.windowManager
     );
-  }
-}
 
-function createLegacyAppAdapter(initializer) {
-  return ({ windowEl, initData, services }) =>
-    new LegacyFunctionApp({ windowEl, initData, services, initializer });
+    if (mountResult && typeof mountResult.then === "function") {
+      return mountResult.then((mountedAppInstance) => {
+        this.mountedAppInstance = mountedAppInstance || null;
+        if (this.disposed) this.disposeMountedAppInstance();
+        return this;
+      });
+    }
+
+    this.mountedAppInstance = mountResult || null;
+    if (this.disposed) this.disposeMountedAppInstance();
+    return this;
+  }
+
+  disposeMountedAppInstance() {
+    if (typeof this.mountedAppInstance?.dispose === "function") {
+      this.mountedAppInstance.dispose();
+    }
+    this.mountedAppInstance = null;
+  }
+
+  dispose() {
+    this.disposed = true;
+    this.disposeMountedAppInstance();
+  }
 }
 
 export class WindowManager {
@@ -481,7 +502,8 @@ export class WindowManager {
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
     if (initializer) {
-      const mountResult = this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+      const appInstance = this.instantiateApp(initializer, winEl, initData);
+      const mountResult = this.appHost.mount({ appInstance, winEl, winObj, type });
       if (mountResult && typeof mountResult.then === "function") {
         winObj.pendingMountPromise = mountResult;
         winEl.pendingMountPromise = mountResult;
@@ -636,10 +658,6 @@ export class WindowManager {
     if (typeof appDefinition !== "function") return null;
     if (appDefinition.prototype instanceof BaseApp) {
       return new appDefinition(appParams);
-    }
-    const maybeInstance = appDefinition(appParams);
-    if (maybeInstance && typeof maybeInstance.mount === "function") {
-      return maybeInstance;
     }
     return new LegacyFunctionApp({
       windowEl,

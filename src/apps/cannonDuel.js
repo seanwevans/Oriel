@@ -296,5 +296,5 @@ export function initCannonDuel(win) {
   regenTerrain();
   draw(0);
 
-  win.cannonduelCleanup = cleanup;
+  return { dispose: cleanup };
 }

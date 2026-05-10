@@ -121,7 +121,5 @@ export function initSoundRecorder(w) {
     revokeAudioUrl();
   };
 
-  w.soundRecorderCleanup = dispose;
-
   return { dispose };
 }
