@@ -42,6 +42,7 @@ import { getCannonDuelContent } from "./apps/cannonDuel.js";
 import { getRssReaderContent } from "./apps/rss.js";
 import { getPacketLabContent } from "./apps/packetLab.js";
 import { getApiClientContent } from "./apps/apiClient.js";
+import { getCodePenContent } from "./apps/codepen.js";
 import { getTi83Root } from "./apps/ti83.js";
 import { getTrackerContent } from "./apps/tracker.js";
 import { applyFontSelection, applySavedTheme, applyScreensaver, applyTheme, getCurrentThemeCustom, handleThemeInputChange, openCPColor, openCPDefaults, openCPDesktop, openCPFonts, openCPScreensaver, openCPSound, previewScreensaver, setWallpaper } from "./apps/controlPanel.js";
@@ -392,6 +393,7 @@ export class WindowManager {
     if (type === "rss") content = getRssReaderContent();
     if (type === "netnews") content = getNetNewsContent();
     if (type === "browser") content = this.getBrowserContent();
+    if (type === "codepen") content = initData?.mode === "viewer" ? "" : getCodePenContent();
     if (type === "radiogarden") content = this.getRadioGardenContent();
     if (type === "celeryman") content = getCeleryManContent();
     if (type === "discord") content = getDiscordContent();
