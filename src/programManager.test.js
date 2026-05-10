@@ -16,7 +16,7 @@ class FakeElement {
     this.listeners = new Map();
   }
 
-  get() {
+  get constructorName() {
     return `HTML${this.tagName[0]}${this.tagName.slice(1).toLowerCase()}Element`;
   }
 
@@ -39,65 +39,6 @@ class FakeElement {
 
   appendChild(child) {
     this.children.push(child);
-    return child;
-  }
-
-  setAttribute(name, value) {
-    this.attributes.set(name, value);
-  }
-
-  addEventListener(name, listener) {
-    this.listeners.set(name, listener);
-  }
-}
-
-function withFakeDocument(callback) {
-  const originalDocument = globalThis.document;
-  globalThis.document = {
-    createElement(tagName) {
-      if (tagName === "template") {
-        return {
-          content: { firstElementChild: null },
-          set innerHTML(value) {
-            this.content.firstElementChild = { markup: value };
-          }
-        };
-      }
-      return new FakeElement(tagName);
-    },
-    createTextNode(text) {
-      return { text };
-    }
-  };
-
-  try {
-    return callback();
-  } finally {
-    globalThis.document = originalDocument;
-  }
-}
-
-function findProgramIcon(grid, labelText) {
-  return grid.children.find((iconButton) =>
-    iconButton.children.some((child) => child.className === "prog-label" && child.textContent === labelText)
-  );
-}
-
-test("getIconForType uses program default icon keys before falling back to type keys", () => {
-  assert.equal(getIconForType("clipbrd"), ICONS.clipboard);
-  assert.equal(getIconForType("compiler"), ICONS.ccompiler);
-});
-
-test("program manager renders default icons for programs whose type differs from icon key", () => {
-  withFakeDocument(() => {
-    const grid = getProgramManagerContent({ openWindow() {} });
-
-    const clipboardIcon = findProgramIcon(grid, "Clipboard");
-    const compilerIcon = findProgramIcon(grid, "Tiny C");
-
-    assert.equal(clipboardIcon.children[0].markup, ICONS.clipboard.trim());
-    assert.equal(compilerIcon.children[0].markup, ICONS.ccompiler.trim());
-  });
     child.parentNode = this;
     this._innerHTML = "";
     return child;
@@ -142,7 +83,9 @@ class FakeTemplateElement extends FakeElement {
   set innerHTML(value) {
     this._innerHTML = String(value);
     const tagMatch = this._innerHTML.match(/^<\s*([a-z0-9-]+)/i);
-    this.content.firstElementChild = new FakeElement(tagMatch?.[1] || "span");
+    const icon = new FakeElement(tagMatch?.[1] || "span");
+    icon.markup = this._innerHTML;
+    this.content.firstElementChild = icon;
   }
 }
 
@@ -160,12 +103,69 @@ function createFakeDocument() {
   };
 }
 
+function createFakeStorage() {
+  const entries = new Map();
+  return {
+    getItem(key) {
+      return entries.has(key) ? entries.get(key) : null;
+    },
+    setItem(key, value) {
+      entries.set(key, String(value));
+    },
+    removeItem(key) {
+      entries.delete(key);
+    },
+    clear() {
+      entries.clear();
+    }
+  };
+}
+
+function withFakeDocument(callback) {
+  const originalDocument = globalThis.document;
+  const originalLocalStorage = globalThis.localStorage;
+  globalThis.document = createFakeDocument();
+  globalThis.localStorage = createFakeStorage();
+
+  try {
+    return callback();
+  } finally {
+    globalThis.document = originalDocument;
+    globalThis.localStorage = originalLocalStorage;
+  }
+}
+
+function findProgramIcon(grid, labelText) {
+  return grid.children.find((iconButton) =>
+    iconButton.children.some((child) => child.className === "prog-label" && child.textContent === labelText)
+  );
+}
+
+test("getIconForType uses program default icon keys before falling back to type keys", () => {
+  assert.equal(getIconForType("clipbrd"), ICONS.clipboard);
+  assert.equal(getIconForType("compiler"), ICONS.ccompiler);
+});
+
+test("program manager renders default icons for programs whose type differs from icon key", () => {
+  withFakeDocument(() => {
+    const grid = getProgramManagerContent({ openWindow() {} });
+
+    const clipboardIcon = findProgramIcon(grid, "Clipboard");
+    const compilerIcon = findProgramIcon(grid, "Tiny C");
+
+    assert.equal(clipboardIcon.children[0].markup, ICONS.clipboard.trim());
+    assert.equal(compilerIcon.children[0].markup, ICONS.ccompiler.trim());
+  });
+});
+
 test("refreshProgramManagerContent appends the Program Manager DOM node", () => {
   const originalDocument = globalThis.document;
   const originalWindow = globalThis.window;
+  const originalLocalStorage = globalThis.localStorage;
 
   globalThis.document = createFakeDocument();
   globalThis.window = { location: { origin: "https://example.test" } };
+  globalThis.localStorage = createFakeStorage();
 
   try {
     const contentArea = document.createElement("div");
@@ -185,5 +185,6 @@ test("refreshProgramManagerContent appends the Program Manager DOM node", () => 
   } finally {
     globalThis.document = originalDocument;
     globalThis.window = originalWindow;
+    globalThis.localStorage = originalLocalStorage;
   }
 });
