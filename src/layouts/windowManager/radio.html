@@ -1,0 +1,31 @@
+<div class="radio-layout">
+  <div class="radio-toolbar">
+    <div class="radio-search">
+      <input
+        type="text"
+        class="radio-query"
+        placeholder="Search stations or genres..."
+        spellcheck="false"
+      />
+      <button class="task-btn radio-search-btn">Search</button>
+      <button class="task-btn radio-top-btn" title="Load popular stations">
+        Top
+      </button>
+    </div>
+    <div class="radio-status">
+      Find and play live internet radio via the free Radio Browser API.
+    </div>
+  </div>
+  <div class="radio-body">
+    <div class="radio-list" role="listbox" aria-label="Radio stations"></div>
+    <div class="radio-player">
+      <div class="radio-now">No station selected.</div>
+      <audio class="radio-audio" controls></audio>
+      <div class="radio-actions">
+        <button class="task-btn radio-play">Play</button>
+        <button class="task-btn radio-stop">Stop</button>
+      </div>
+      <div class="radio-meta">Use search or Top to load stations.</div>
+    </div>
+  </div>
+</div>

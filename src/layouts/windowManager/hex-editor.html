@@ -1,0 +1,30 @@
+<div class="hex-layout">
+  <div class="hex-toolbar">
+    <button class="task-btn hex-new">New</button>
+    <label class="task-btn file-btn"
+      >Open File<input type="file" class="hex-file" accept="*/*"
+    /></label>
+    <button class="task-btn hex-parse">Parse Hex</button>
+    <button class="task-btn hex-from-ascii">From ASCII</button>
+    <div class="hex-status">Ready</div>
+  </div>
+  <div class="hex-body">
+    <textarea class="hex-offsets" readonly aria-label="Offsets"></textarea>
+    <textarea
+      class="hex-area"
+      spellcheck="false"
+      aria-label="Hex bytes"
+    ></textarea>
+    <textarea
+      class="hex-ascii"
+      spellcheck="false"
+      aria-label="ASCII view"
+    ></textarea>
+  </div>
+  <div class="hex-footer">
+    <div class="hex-summary">0 bytes</div>
+    <div class="hex-hint">
+      Edit hex pairs, then click Parse Hex to refresh the ASCII view.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+<div class="browser-layout">
+  <div class="browser-toolbar">
+    <button class="browser-btn" data-action="back" title="Back">◀</button>
+    <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+    <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+    <button class="browser-btn" data-action="home" title="Home">⌂</button>
+    <input
+      class="browser-url"
+      type="text"
+      placeholder="{{BROWSER_PLACEHOLDER}}"
+      spellcheck="false"
+    />
+    <button class="browser-btn go-btn" data-action="go">Go</button>
+  </div>
+  <div class="browser-view">
+    <iframe
+      class="browser-frame"
+      src="about:blank"
+      sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"
+    ></iframe>
+    <div class="browser-status">Enter a URL to begin browsing.</div>
+  </div>
+</div>

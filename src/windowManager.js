@@ -91,10 +91,57 @@ import {
 } from "./apps/screensaver.js";
 import { BaseApp } from "./apps/base/BaseApp.js";
 import { getWindowBodyContainer } from "./windowContent.js";
+import artistLayout from "./layouts/windowManager/artist.html?raw";
+import browserLayout from "./layouts/windowManager/browser.html?raw";
+import cardfileLayout from "./layouts/windowManager/cardfile.html?raw";
+import charMapLayout from "./layouts/windowManager/char-map.html?raw";
+import chessLayout from "./layouts/windowManager/chess.html?raw";
+import clockLayout from "./layouts/windowManager/clock.html?raw";
+import compilerLayout from "./layouts/windowManager/compiler.html?raw";
+import consoleLayout from "./layouts/windowManager/console.html?raw";
+import controlPanelLayout from "./layouts/windowManager/control-panel.html?raw";
+import databaseLayout from "./layouts/windowManager/database.html?raw";
+import doomLayout from "./layouts/windowManager/doom.html?raw";
+import hexEditorLayout from "./layouts/windowManager/hex-editor.html?raw";
+import kakuroLayout from "./layouts/windowManager/kakuro.html?raw";
+import mafiaLayout from "./layouts/windowManager/mafia.html?raw";
+import mediaPlayerLayout from "./layouts/windowManager/media-player.html?raw";
+import minesLayout from "./layouts/windowManager/mines.html?raw";
+import papersLayout from "./layouts/windowManager/papers.html?raw";
+import pythonLayout from "./layouts/windowManager/python.html?raw";
+import radioGardenLayout from "./layouts/windowManager/radio-garden.html?raw";
+import radioLayout from "./layouts/windowManager/radio.html?raw";
+import resetLayout from "./layouts/windowManager/reset.html?raw";
+import reversiLayout from "./layouts/windowManager/reversi.html?raw";
+import solitaireLayout from "./layouts/windowManager/solitaire.html?raw";
+import soundRecLayout from "./layouts/windowManager/sound-rec.html?raw";
+import sudokuLayout from "./layouts/windowManager/sudoku.html?raw";
+import taskManagerLayout from "./layouts/windowManager/task-manager.html?raw";
+import vmLayout from "./layouts/windowManager/vm.html?raw";
+import writeLayout from "./layouts/windowManager/write.html?raw";
 
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
+function renderTemplate(template, values = {}) {
+  return Object.entries(values).reduce(
+    (html, [token, value]) => html.replaceAll(`{{${token}}}`, String(value)),
+    template
+  );
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[char];
+  });
+}
 
 class LegacyFunctionApp extends BaseApp {
   constructor({ initializer, ...args }) {
@@ -898,77 +945,13 @@ export class WindowManager {
     refreshProgramManagerContent(this);
   }
   getPapersContent() {
-    return `
-                <div class="papers-layout">
-                    <div class="papers-header">
-                        <div class="papers-title">Checkpoint Alpha</div>
-                        <div class="papers-subtitle">"Glory to Orielstotzka"</div>
-                    </div>
-                    <div class="papers-stats">Day <span class="papers-day">1</span> · Credits: <span class="papers-credits">20</span> · Citations: <span class="papers-mistakes">0</span></div>
-                    <div class="papers-body">
-                        <div class="papers-docs">
-                            <div class="papers-photo"></div>
-                            <div class="papers-fields">
-                                <div class="papers-field"><span class="papers-label">Name:</span> <span class="papers-name">---</span></div>
-                                <div class="papers-field"><span class="papers-label">Nation:</span> <span class="papers-nation">---</span></div>
-                                <div class="papers-field"><span class="papers-label">ID:</span> <span class="papers-id">---</span></div>
-                                <div class="papers-field"><span class="papers-label">Expires:</span> <span class="papers-expiry">---</span></div>
-                                <div class="papers-field"><span class="papers-label">Purpose:</span> <span class="papers-purpose">---</span></div>
-                            </div>
-                        </div>
-                        <div class="papers-reason">Review documents and choose to approve or deny.</div>
-                        <div class="papers-actions">
-                            <button class="task-btn papers-approve">Approve</button>
-                            <button class="task-btn papers-deny">Deny</button>
-                            <button class="task-btn papers-next">Next Traveler</button>
-                        </div>
-                        <div class="papers-log" tabindex="0">Checkpoint initialized.</div>
-                    </div>
-                </div>
-            `;
+    return papersLayout;
   }
   getBrowserContent() {
-    return `<div class="browser-layout">
-              <div class="browser-toolbar">
-                <button class="browser-btn" data-action="back" title="Back">◀</button>
-                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
-                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
-                <button class="browser-btn" data-action="home" title="Home">⌂</button>
-                <input class="browser-url" type="text" placeholder="${getBrowserPlaceholder()}" spellcheck="false">
-                <button class="browser-btn go-btn" data-action="go">Go</button>
-              </div>
-              <div class="browser-view">
-                <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
-                <div class="browser-status">Enter a URL to begin browsing.</div>
-              </div>
-            </div>`;
+    return renderTemplate(browserLayout, { BROWSER_PLACEHOLDER: getBrowserPlaceholder() });
   }
   getRadioGardenContent() {
-    return `<div class="radio-garden">
-              <div class="radio-header">
-                <div>
-                  <div class="radio-title">Radio Garden</div>
-                  <div class="radio-subtitle">Search the globe and jump to a live station.</div>
-                </div>
-                <button class="task-btn radio-open-site">Open radio.garden</button>
-              </div>
-              <div class="radio-search-row">
-                <input class="radio-search-input" type="text" placeholder="Search by city, country, or station name" spellcheck="false">
-                <button class="task-btn radio-search-btn">Search</button>
-              </div>
-              <div class="radio-quick-row">
-                <span class="radio-quick-label">Quick picks:</span>
-                <div class="radio-quick-list">
-                  <button class="radio-chip" data-query="Tokyo">Tokyo</button>
-                  <button class="radio-chip" data-query="London">London</button>
-                  <button class="radio-chip" data-query="São Paulo">São Paulo</button>
-                  <button class="radio-chip" data-query="Sydney">Sydney</button>
-                  <button class="radio-chip" data-query="Lagos">Lagos</button>
-                </div>
-              </div>
-              <div class="radio-status">Type a query to load stations via the Radio Garden directory.</div>
-              <div class="radio-results" role="list"></div>
-            </div>`;
+    return radioGardenLayout;
   }
 
   getMinecraftContent() {
@@ -989,205 +972,57 @@ export class WindowManager {
     return getSandspiel3DRoot();
   }
   getRadioContent() {
-    return `<div class="radio-layout">
-              <div class="radio-toolbar">
-                <div class="radio-search">
-                  <input type="text" class="radio-query" placeholder="Search stations or genres..." spellcheck="false" />
-                  <button class="task-btn radio-search-btn">Search</button>
-                  <button class="task-btn radio-top-btn" title="Load popular stations">Top</button>
-                </div>
-                <div class="radio-status">Find and play live internet radio via the free Radio Browser API.</div>
-              </div>
-              <div class="radio-body">
-                <div class="radio-list" role="listbox" aria-label="Radio stations"></div>
-                <div class="radio-player">
-                  <div class="radio-now">No station selected.</div>
-                  <audio class="radio-audio" controls></audio>
-                  <div class="radio-actions">
-                    <button class="task-btn radio-play">Play</button>
-                    <button class="task-btn radio-stop">Stop</button>
-                  </div>
-                  <div class="radio-meta">Use search or Top to load stations.</div>
-                </div>
-              </div>
-            </div>`;
+    return radioLayout;
   }
   getDoomContent() {
-    return `
-      <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
-        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></canvas>
-      </div>
-    `;
+    return doomLayout;
   }
-  getTaskManContent() {
-    return `
-                <div class="task-mgr-layout">
-                    <div class="task-list" id="task-list">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div class="task-btns">
-                        <button class="task-btn" onclick="switchTask(event)">Switch To</button>
-                        <button class="task-btn" onclick="endTask(event)">End Task</button>
-                        <button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button>
-                    </div>
-                    <div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div>
-                    <div class="task-queue-view" id="task-queue-view">
-                        <!-- Queue Data -->
-                    </div>
-                </div>
-            `;
-  }
-  // ... [Previous Content Methods] ...
   getReversiContent() {
-    return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
+    return reversiLayout;
   }
   getChessContent() {
-    return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
+    return chessLayout;
   }
   getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
+    return mediaPlayerLayout;
   }
   getSolitaireContent() {
-    return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
+    return solitaireLayout;
   }
   getSudokuContent() {
-    return `
-      <div class="sudoku-layout">
-        <div class="sudoku-toolbar">
-          <label class="sudoku-field">Difficulty
-            <select class="sudoku-difficulty">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </label>
-          <button class="task-btn sudoku-new">New Puzzle</button>
-          <button class="task-btn sudoku-check">Check</button>
-          <button class="task-btn sudoku-reset">Reset</button>
-        </div>
-        <div class="sudoku-status">Choose a difficulty to start.</div>
-        <div class="sudoku-grid" aria-label="Sudoku board" role="grid"></div>
-      </div>
-    `;
+    return sudokuLayout;
   }
   getMafiaContent() {
-    return `
-      <div class="mafia-layout">
-        <div class="mafia-sidebar">
-          <div class="mafia-section">
-            <label class="mafia-field">Players
-              <input type="number" min="6" max="12" value="8" class="mafia-count" aria-label="Number of players">
-            </label>
-            <label class="mafia-field">AI Provider
-              <select class="mafia-provider" aria-label="AI provider">
-                <option value="local">Local improv</option>
-                <option value="openai">OpenAI</option>
-                <option value="google">Google Gemini</option>
-                <option value="anthropic">Anthropic</option>
-              </select>
-            </label>
-            <label class="mafia-field">API Key
-              <input type="password" class="mafia-api-key" placeholder="Optional for cloud" aria-label="API key">
-            </label>
-            <label class="mafia-field">Model (optional)
-              <input type="text" class="mafia-model" placeholder="gpt-4o-mini / gemini-1.5-flash" aria-label="Model override">
-            </label>
-            <div class="mafia-hint">Keys stay in-browser. Choose "Local improv" for an offline story.</div>
-            <button class="task-btn mafia-start">New Mystery</button>
-          </div>
-          <div class="mafia-section">
-            <div class="mafia-section-title">Roster</div>
-            <div class="mafia-roster" aria-label="Player roster"></div>
-          </div>
-        </div>
-        <div class="mafia-main">
-          <div class="mafia-status" aria-live="polite">Build your table and begin.</div>
-          <div class="mafia-controls">
-            <label>Accuse
-              <select class="mafia-suspect" aria-label="Pick a suspect"></select>
-            </label>
-            <button class="task-btn mafia-next">Run Night & Vote</button>
-          </div>
-          <div class="mafia-log" aria-live="polite"></div>
-        </div>
-      </div>
-    `;
+    return mafiaLayout;
   }
   getWriteContent(txt) {
-    return `<div class="write-layout"><div class="write-toolbar"><select class="write-select write-font" title="Font Family"><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Courier New">Courier New</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option></select><select class="write-select write-size" title="Font Size"><option value="2">10</option><option value="3">12</option><option value="4" selected>14</option><option value="5">18</option><option value="6">24</option><option value="7">32</option></select><button class="fmt-btn" data-cmd="bold" title="Bold">B</button><button class="fmt-btn" data-cmd="italic" title="Italic">I</button><button class="fmt-btn" data-cmd="underline" title="Underline">U</button></div><div class="write-editor" contenteditable="true" spellcheck="false">${
-      txt || "Welcome to Oriel Write."
-    }</div></div>`;
+    return renderTemplate(writeLayout, { WRITE_CONTENT: escapeHtml(txt || "Welcome to Oriel Write.") });
   }
   getCardfileContent() {
-    return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add">Add</button><button class="task-btn" id="card-del">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
+    return cardfileLayout;
   }
   getSoundRecContent() {
-    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
+    return soundRecLayout;
   }
   getCharMapContent() {
-    return `<div class="char-map-layout">
-              <div class="char-map-toolbar">
-                <div class="char-preview" aria-live="polite">A</div>
-                <div class="char-meta">
-                  <div class="char-code" id="char-code-label">U+0041 · Dec 65</div>
-                  <div class="char-font-row">
-                    <label for="char-font-select">Font:</label>
-                    <select class="char-font" id="char-font-select">
-                      <option value="'Times New Roman', serif">Times New Roman</option>
-                      <option value="'Arial', sans-serif">Arial</option>
-                      <option value="'Courier New', monospace">Courier New</option>
-                      <option value="'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif">Symbols</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="char-grid" id="char-grid"></div>
-              <div class="char-controls">
-                <label>Characters to copy:</label>
-                <div class="copy-row">
-                  <input type="text" class="char-input" id="char-copy-input" readonly>
-                  <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
-                </div>
-                <button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button>
-              </div>
-            </div>`;
+    return charMapLayout;
   }
   getClockContent() {
-    return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
+    return clockLayout;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPSound(this)">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return renderTemplate(controlPanelLayout, {
+      ICON_CP_COLOR: ICONS.cp_color,
+      ICON_DESKTOP_CP: ICONS.desktop_cp,
+      ICON_SCREENSAVER: ICONS.screensaver,
+      ICON_VOLUME: ICONS.volume
+    });
   }
   getResetContent() {
-    return `<div class="reset-layout" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
-                <div class="reset-warning" style="background:#fff3cd; border:1px solid #e0c25c; padding:10px;">
-                    <strong>Reset Oriel</strong>
-                    <div>This will clear all saved desktop windows, wallpaper, volume, network defaults, and file or app data.</div>
-                </div>
-                <ul style="margin:0 0 4px 20px; padding:0; line-height:1.4;">
-                    <li>Desktop layout & wallpaper</li>
-                    <li>File system changes</li>
-                    <li>Sound levels & network presets</li>
-                    <li>App data such as Cardfile or Data Manager</li>
-                </ul>
-                <button class="task-btn reset-now-btn" style="width:180px;">Reset and Reload</button>
-                <div class="reset-status" aria-live="polite">No changes yet.</div>
-            </div>`;
+    return resetLayout;
   }
   getVmContent() {
-    return `<div class="vm-layout">
-                <div class="vm-toolbar">
-                    <div class="vm-actions">
-                        <button class="task-btn vm-boot">Boot VM</button>
-                        <button class="task-btn vm-reset" disabled>Power Off</button>
-                    </div>
-                    <div class="vm-status" aria-live="polite">VM is powered off. Click Boot to start Oriel inside Oriel.</div>
-                </div>
-                <div class="vm-note">Runs a fresh copy of Oriel in an isolated iframe. Try opening apps inside the VM for true desktop-ception.</div>
-                <div class="vm-view">
-                    <iframe class="vm-frame" title="Oriel Virtual Machine" src="about:blank"></iframe>
-                </div>
-            </div>`;
+    return vmLayout;
   }
   getNotepadContent(txt) {
     const text = typeof txt === "string" ? txt : txt?.text;
@@ -1220,34 +1055,22 @@ export class WindowManager {
     return layout;
   }
   getCompilerContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runCompiler(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
+    return compilerLayout;
   }
   getPythonContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
+    return pythonLayout;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
+    return consoleLayout;
   }
   getKakuroContent() {
     const keypadButtons = Array.from({ length: 9 }, (_, i) =>
       `<button class="task-btn kakuro-key" data-num="${i + 1}">${i + 1}</button>`
     ).join("");
-
-    return `<div class="kakuro-root">
-                <div class="kakuro-toolbar">
-                    <div class="kakuro-keypad" role="group" aria-label="Number pad">${keypadButtons}<button class="task-btn kakuro-clear" aria-label="Clear cell">Clear</button></div>
-                    <div class="kakuro-actions">
-                        <button class="task-btn kakuro-check">Check</button>
-                        <button class="task-btn kakuro-reset">Reset</button>
-                    </div>
-                </div>
-                <div class="kakuro-board" role="grid" aria-label="Kakuro board"></div>
-                <div class="kakuro-status" aria-live="polite">Fill every run without repeating numbers.</div>
-                <div class="kakuro-help">Each clue shows the sum for the across or down run starting beside it.</div>
-            </div>`;
+    return renderTemplate(kakuroLayout, { KEYPAD_BUTTONS: keypadButtons });
   }
   getMinesContent() {
-    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
+    return minesLayout;
   }
   getPdfReaderContent(initData) {
     const src = initData?.src || DEFAULT_PDF_DATA_URI;
@@ -1423,48 +1246,15 @@ export class WindowManager {
     return root;
   }
   getHexEditorContent() {
-    return `<div class="hex-layout">
-                <div class="hex-toolbar">
-                    <button class="task-btn hex-new">New</button>
-                    <label class="task-btn file-btn">Open File<input type="file" class="hex-file" accept="*/*"></label>
-                    <button class="task-btn hex-parse">Parse Hex</button>
-                    <button class="task-btn hex-from-ascii">From ASCII</button>
-                    <div class="hex-status">Ready</div>
-                </div>
-                <div class="hex-body">
-                    <textarea class="hex-offsets" readonly aria-label="Offsets"></textarea>
-                    <textarea class="hex-area" spellcheck="false" aria-label="Hex bytes"></textarea>
-                    <textarea class="hex-ascii" spellcheck="false" aria-label="ASCII view"></textarea>
-                </div>
-                <div class="hex-footer">
-                    <div class="hex-summary">0 bytes</div>
-                    <div class="hex-hint">Edit hex pairs, then click Parse Hex to refresh the ASCII view.</div>
-                </div>
-            </div>`;
+    return hexEditorLayout;
   }
   getTaskManContent() {
-    return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
+    return taskManagerLayout;
   }
   getArtistContent() {
-    const defaultPrompt = "retro desktop art of a cozy computer lab";
-    return `
-                <div class="artist-app">
-                    <div class="artist-toolbar">
-                        <input class="artist-prompt" type="text" value="${defaultPrompt}" placeholder="Describe the image you want" spellcheck="false" />
-                        <button class="task-btn artist-generate">Generate</button>
-                        <span class="artist-status">Enter a prompt and click Generate.</span>
-                    </div>
-                    <div class="artist-body">
-                        <div class="artist-preview-wrap">
-                            <div class="artist-placeholder">Image will appear here</div>
-                            <img class="artist-preview" alt="AI generated art" />
-                        </div>
-                        <div class="artist-hint">Uses the free Pollinations image API. Right-click the result to save it.</div>
-                        <a class="artist-link" href="#" target="_blank" rel="noreferrer noopener">Open image directly</a>
-                    </div>
-                </div>`;
+    return artistLayout;
   }
   getDatabaseContent() {
-    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
+    return databaseLayout;
   }
 }

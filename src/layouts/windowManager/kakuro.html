@@ -1,0 +1,23 @@
+<div class="kakuro-root">
+  <div class="kakuro-toolbar">
+    <div class="kakuro-keypad" role="group" aria-label="Number pad">
+      {{KEYPAD_BUTTONS}}<button
+        class="task-btn kakuro-clear"
+        aria-label="Clear cell"
+      >
+        Clear
+      </button>
+    </div>
+    <div class="kakuro-actions">
+      <button class="task-btn kakuro-check">Check</button>
+      <button class="task-btn kakuro-reset">Reset</button>
+    </div>
+  </div>
+  <div class="kakuro-board" role="grid" aria-label="Kakuro board"></div>
+  <div class="kakuro-status" aria-live="polite">
+    Fill every run without repeating numbers.
+  </div>
+  <div class="kakuro-help">
+    Each clue shows the sum for the across or down run starting beside it.
+  </div>
+</div>
