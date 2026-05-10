@@ -13,6 +13,24 @@ const LEGACY_CLEANUP_KEYS = [
   "soundRecorderCleanup"
 ];
 
+function isPromiseLike(value) {
+  return (
+    value !== null &&
+    (typeof value === "object" || typeof value === "function") &&
+    typeof value.then === "function"
+  );
+}
+
+function assignAppInstance({ appInstance, winEl, winObj }) {
+  if (winObj) winObj.appInstance = appInstance;
+  if (winEl) winEl.appInstance = appInstance;
+}
+
+function assignPendingMountPromise({ pendingMountPromise, winEl, winObj }) {
+  if (winObj) winObj.pendingMountPromise = pendingMountPromise;
+  if (winEl) winEl.pendingMountPromise = pendingMountPromise;
+}
+
 export class AppHost {
   constructor({ onMountError } = {}) {
     this.onMountError = onMountError;
@@ -21,9 +39,28 @@ export class AppHost {
   mount({ initializer, winEl, winObj, initData = null, wmInstance = null, type = "unknown" }) {
     if (!initializer) return null;
     try {
-      const appInstance = initializer(winEl, initData, wmInstance) || null;
-      if (winObj) winObj.appInstance = appInstance;
-      if (winEl) winEl.appInstance = appInstance;
+      const initializerResult = initializer(winEl, initData, wmInstance);
+
+      if (isPromiseLike(initializerResult)) {
+        const pendingMountPromise = Promise.resolve(initializerResult)
+          .then((resolvedAppInstance) => {
+            const appInstance = resolvedAppInstance || null;
+            assignAppInstance({ appInstance, winEl, winObj });
+            assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
+            return appInstance;
+          })
+          .catch((err) => {
+            assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
+            this.onMountError?.({ err, winEl, type });
+            return null;
+          });
+
+        assignPendingMountPromise({ pendingMountPromise, winEl, winObj });
+        return pendingMountPromise;
+      }
+
+      const appInstance = initializerResult || null;
+      assignAppInstance({ appInstance, winEl, winObj });
       return appInstance;
     } catch (err) {
       this.onMountError?.({ err, winEl, type });

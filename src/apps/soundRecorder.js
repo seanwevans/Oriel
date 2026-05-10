@@ -66,8 +66,9 @@ export function initSoundRecorder(w) {
         if (disposed) return;
         revokeAudioUrl();
         audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-        audioUrl = URL.createObjectURL(audioBlob);
-        status.innerText = "Stopped. Ready to play.";
+        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        audioUrl = disposed ? null : URL.createObjectURL(audioBlob);
+        status.innerText = disposed ? "Ready" : "Stopped. Ready to play.";
         cancelAnimationFrame(animationId);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
