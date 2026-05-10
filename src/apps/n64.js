@@ -5,7 +5,7 @@ export function getN64Root() {
     <div class="n64-layout" style="display:flex;flex-direction:column;height:100%;background:#000;">
       <div class="n64-toolbar" style="padding:6px;background:#dcdcdc;border-bottom:1px solid #808080;display:flex;gap:10px;align-items:center;">
         <div class="n64-status" style="font-size:12px;flex:1;">N64Wasm - Drag & Drop ROMs supported</div>
-        <button class="task-btn" onclick="document.querySelector('.window.active iframe').src = document.querySelector('.window.active iframe').src">Reload</button>
+        <button class="task-btn" data-app-action="reloadN64">Reload</button>
       </div>
       <iframe
         class="n64-iframe"
