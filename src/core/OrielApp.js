@@ -537,6 +537,16 @@ export class OrielApp {
     if (viewArea) openCPDesktop(controlPanelContext, viewArea);
   }
 
+  #openProgramManager() {
+    if (!this.windowManager) return;
+    const existing = this.windowManager.windows.find((win) => win.type === "progman");
+    const programManagerWin =
+      existing || this.windowManager.openWindow("progman", "Program Manager", 500, 480);
+    if (!programManagerWin) return;
+    if (programManagerWin.minimized) this.windowManager.restoreWindow(programManagerWin.id);
+    else this.windowManager.focusWindow(programManagerWin.id);
+  }
+
   #initDesktopContextMenu() {
     const desktop = this.dom.desktop;
     const menu = this.dom.contextMenu;
@@ -579,6 +589,7 @@ export class OrielApp {
       hideMenu();
       const action = item.dataset.action;
       if (action === "new-folder") this.#createDesktopFolder();
+      if (action === "program-manager") this.#openProgramManager();
       if (action === "properties") this.#openDesktopProperties();
     });
   }
