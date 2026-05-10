@@ -15,6 +15,7 @@ export function initSoundRecorder(w) {
   let source;
   let streamRef;
   let animationId;
+  let disposed = false;
 
   function draw() {
     if (!analyser) return;
@@ -56,8 +57,9 @@ export function initSoundRecorder(w) {
       mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
       mediaRecorder.onstop = () => {
         audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-        audioUrl = URL.createObjectURL(audioBlob);
-        status.innerText = "Stopped. Ready to play.";
+        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        audioUrl = disposed ? null : URL.createObjectURL(audioBlob);
+        status.innerText = disposed ? "Ready" : "Stopped. Ready to play.";
         cancelAnimationFrame(animationId);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -88,6 +90,30 @@ export function initSoundRecorder(w) {
       audio.onended = () => {
         status.innerText = "Ready";
       };
+    }
+  };
+
+  return {
+    dispose() {
+      disposed = true;
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      if (streamRef) {
+        streamRef.getTracks().forEach((track) => track.stop());
+        streamRef = null;
+      }
+      source?.disconnect?.();
+      analyser?.disconnect?.();
+      audioCtx?.close?.();
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        audioUrl = null;
+      }
     }
   };
 }
