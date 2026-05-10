@@ -453,10 +453,10 @@ export class WindowManager {
     // Register Process
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
-    // Initialize app logic if needed
+    // Initialize app logic when an app has behavior beyond its rendered content.
     if (initializer) {
       this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
-    } else {
+    } else if (!content) {
       this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
     }
     // Refresh logic
