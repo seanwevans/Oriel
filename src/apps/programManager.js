@@ -7,6 +7,8 @@ import { getAppState, updateAppState } from "../state.js";
 
 const ALLOWED_ICON_PROTOCOLS = new Set(["https:", "data:"]);
 const PROGRAM_RENAMES_STATE_KEY = "program-manager-renames";
+const PROGRAM_VIEW_STATE_KEY = "program-manager-view";
+const PROGRAM_MANAGER_VIEWS = new Set(["icons", "details"]);
 const MAX_APP_NAME_LENGTH = 64;
 
 
@@ -27,6 +29,17 @@ function isSafeIconUrl(rawUrl) {
   }
 }
 
+
+function getProgramManagerView() {
+  const stored = getAppState(PROGRAM_VIEW_STATE_KEY);
+  return PROGRAM_MANAGER_VIEWS.has(stored?.view) ? stored.view : "icons";
+}
+
+function setProgramManagerView(view, wm) {
+  if (!PROGRAM_MANAGER_VIEWS.has(view) || view === getProgramManagerView()) return;
+  updateAppState(PROGRAM_VIEW_STATE_KEY, { view });
+  refreshProgramManagerContent(wm);
+}
 
 function getProgramRenames() {
   const stored = getAppState(PROGRAM_RENAMES_STATE_KEY);
@@ -201,58 +214,149 @@ export function getProgramDefaults(type) {
   return getAvailablePrograms().find((prog) => prog.type === type) || null;
 }
 
+function getProgramDetails(prog) {
+  const width = prog.width || 500;
+  const height = prog.height || 400;
+  const permissions = Array.isArray(prog.permissions) && prog.permissions.length
+    ? `Permissions: ${prog.permissions.join(", ")}`
+    : "Built-in application";
+
+  return {
+    title: getProgramDisplayTitle(prog),
+    type: prog.type || "unknown",
+    windowSize: `${width} × ${height}`,
+    permissions
+  };
+}
+
+function attachProgramLaunchHandlers(element, prog, wm) {
+  const openProgram = () => {
+    const width = prog.width || 500;
+    const height = prog.height || 400;
+    wm.openWindow(prog.type, getProgramDisplayTitle(prog), width, height);
+  };
+
+  element.addEventListener("click", openProgram);
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openProgram();
+    }
+    if (event.key === "F2") {
+      event.preventDefault();
+      promptForProgramRename(prog);
+    }
+  });
+  element.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    showProgramIconMenu(prog, event.clientX, event.clientY);
+  });
+}
+
+function createProgramIconButton(prog, wm) {
+  const iconButton = document.createElement("div");
+  iconButton.className = "prog-icon";
+  iconButton.setAttribute("role", "button");
+  iconButton.setAttribute("aria-label", `Open ${getProgramDisplayTitle(prog)}`);
+  iconButton.tabIndex = 0;
+  attachProgramLaunchHandlers(iconButton, prog, wm);
+
+  iconButton.appendChild(createIconElementForProgram(prog));
+
+  const label = document.createElement("div");
+  label.className = "prog-label";
+  label.textContent = getProgramDisplayLabel(prog);
+  iconButton.appendChild(label);
+
+  return iconButton;
+}
+
+function createProgramDetailRow(prog, wm) {
+  const details = getProgramDetails(prog);
+  const row = document.createElement("div");
+  row.className = "prog-detail-row";
+  row.setAttribute("role", "button");
+  row.setAttribute("aria-label", `Open ${details.title}`);
+  row.tabIndex = 0;
+  attachProgramLaunchHandlers(row, prog, wm);
+
+  const iconWrap = document.createElement("div");
+  iconWrap.className = "prog-detail-icon";
+  iconWrap.appendChild(createIconElementForProgram(prog));
+  row.appendChild(iconWrap);
+
+  const main = document.createElement("div");
+  main.className = "prog-detail-main";
+
+  const name = document.createElement("div");
+  name.className = "prog-detail-name";
+  name.textContent = getProgramDisplayLabel(prog);
+  main.appendChild(name);
+
+  const meta = document.createElement("div");
+  meta.className = "prog-detail-meta";
+  meta.textContent = `${details.title} · ${details.type} · ${details.windowSize}`;
+  main.appendChild(meta);
+
+  const permissions = document.createElement("div");
+  permissions.className = "prog-detail-permissions";
+  permissions.textContent = details.permissions;
+  main.appendChild(permissions);
+
+  row.appendChild(main);
+  return row;
+}
+
+function createProgramViewToggle(activeView, wm) {
+  const toolbar = document.createElement("div");
+  toolbar.className = "prog-man-toolbar";
+  toolbar.setAttribute("role", "toolbar");
+  toolbar.setAttribute("aria-label", "Program Manager view");
+
+  [
+    ["icons", "Default"],
+    ["details", "Detailed"]
+  ].forEach(([view, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = view === activeView ? "prog-view-button active" : "prog-view-button";
+    button.setAttribute("aria-pressed", view === activeView ? "true" : "false");
+    button.textContent = label;
+    button.addEventListener("click", () => setProgramManagerView(view, wm));
+    toolbar.appendChild(button);
+  });
+
+  return toolbar;
+}
+
 export function getProgramManagerContent(wm) {
-  const grid = document.createElement("div");
-  grid.className = "prog-man-grid";
+  const activeView = getProgramManagerView();
+  const container = document.createElement("div");
+  container.className = "prog-man-container";
+  container.appendChild(createProgramViewToggle(activeView, wm));
 
   const programs = getAvailablePrograms();
+  const list = document.createElement("div");
+  list.className = activeView === "details" ? "prog-man-list" : "prog-man-grid";
+
   if (!programs.length) {
     const emptyLabel = document.createElement("div");
     emptyLabel.className = "prog-label";
     emptyLabel.textContent = "No applications available.";
-    grid.appendChild(emptyLabel);
-    return grid;
+    list.appendChild(emptyLabel);
+    container.appendChild(list);
+    return container;
   }
 
   programs.forEach((prog) => {
-    const iconButton = document.createElement("div");
-    iconButton.className = "prog-icon";
-    iconButton.setAttribute("role", "button");
-    iconButton.setAttribute("aria-label", `Open ${getProgramDisplayTitle(prog)}`);
-    iconButton.tabIndex = 0;
-    const openProgram = () => {
-      const width = prog.width || 500;
-      const height = prog.height || 400;
-      wm.openWindow(prog.type, getProgramDisplayTitle(prog), width, height);
-    };
-    iconButton.addEventListener("click", openProgram);
-    iconButton.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openProgram();
-      }
-      if (event.key === "F2") {
-        event.preventDefault();
-        promptForProgramRename(prog);
-      }
-    });
-    iconButton.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      showProgramIconMenu(prog, event.clientX, event.clientY);
-    });
-
-    iconButton.appendChild(createIconElementForProgram(prog));
-
-    const label = document.createElement("div");
-    label.className = "prog-label";
-    label.textContent = getProgramDisplayLabel(prog);
-    iconButton.appendChild(label);
-
-    grid.appendChild(iconButton);
+    list.appendChild(
+      activeView === "details" ? createProgramDetailRow(prog, wm) : createProgramIconButton(prog, wm)
+    );
   });
 
-  return grid;
+  container.appendChild(list);
+  return container;
 }
 
 export function setupProgramManagerMenu(wm, win) {

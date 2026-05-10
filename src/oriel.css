@@ -337,11 +337,58 @@ body {
   user-select: text;
 }
 
+.prog-man-container {
+  min-height: 100%;
+}
+
+.prog-man-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 8px;
+  background-color: var(--win-gray);
+  border-bottom: 1px solid var(--win-gray-shadow);
+  box-shadow: inset 0 1px 0 var(--win-gray-light);
+}
+
+.prog-view-button {
+  min-width: 72px;
+  padding: 3px 8px;
+  color: var(--win-gray-dark);
+  background-color: var(--win-gray);
+  border: 1px solid var(--win-gray-dark);
+  box-shadow: inset 1px 1px 0 var(--win-gray-light), inset -1px -1px 0 var(--win-gray-shadow);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.prog-view-button.active {
+  color: white;
+  background-color: var(--win-blue);
+  box-shadow: inset 1px 1px 0 var(--win-gray-dark), inset -1px -1px 0 var(--win-gray-light);
+}
+
+.prog-view-button:focus {
+  outline: 1px dotted var(--win-gray-dark);
+  outline-offset: -4px;
+}
+
 .prog-man-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 10px;
   padding: 10px;
+}
+
+.prog-man-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
 }
 
 .prog-icon {
@@ -363,6 +410,60 @@ body {
   margin-bottom: 4px;
   image-rendering: pixelated;
 }
+.prog-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 3px 6px;
+  color: var(--win-gray-dark);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.prog-detail-row:hover,
+.prog-detail-row:focus {
+  outline: none;
+  color: white;
+  background-color: var(--win-blue);
+  border-color: var(--win-blue);
+}
+
+.prog-detail-icon {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prog-detail-icon img,
+.prog-detail-icon svg {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  image-rendering: pixelated;
+}
+
+.prog-detail-main {
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.prog-detail-name {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.prog-detail-meta,
+.prog-detail-permissions {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .runtime-icon {
   width: 100%;
   height: 100%;

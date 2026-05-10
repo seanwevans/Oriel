@@ -135,10 +135,16 @@ function withFakeDocument(callback) {
   }
 }
 
-function findProgramIcon(grid, labelText) {
-  return grid.children.find((iconButton) =>
-    iconButton.children.some((child) => child.className === "prog-label" && child.textContent === labelText)
-  );
+function findProgramIcon(root, labelText) {
+  if (!root?.children) return null;
+  for (const child of root.children) {
+    if (child.children?.some((grandchild) => grandchild.className === "prog-label" && grandchild.textContent === labelText)) {
+      return child;
+    }
+    const found = findProgramIcon(child, labelText);
+    if (found) return found;
+  }
+  return null;
 }
 
 test("getIconForType uses program default icon keys before falling back to type keys", () => {
@@ -155,6 +161,31 @@ test("program manager renders default icons for programs whose type differs from
 
     assert.equal(clipboardIcon.children[0].markup, ICONS.clipboard.trim());
     assert.equal(compilerIcon.children[0].markup, ICONS.ccompiler.trim());
+  });
+});
+
+
+test("program manager can switch to a detailed app list", () => {
+  withFakeDocument(() => {
+    const wm = {
+      windows: [],
+      openWindow() {}
+    };
+    const initial = getProgramManagerContent(wm);
+    const detailedButton = initial.children[0].children.find((child) => child.textContent === "Detailed");
+
+    detailedButton.listeners.get("click")();
+
+    const detailed = getProgramManagerContent(wm);
+    const list = detailed.querySelector(".prog-man-list");
+    const notepadRow = list.children.find((row) =>
+      row.children.some((child) => child.className === "prog-detail-main" &&
+        child.children.some((grandchild) => grandchild.className === "prog-detail-name" && grandchild.textContent === "Notepad"))
+    );
+
+    assert.ok(list);
+    assert.ok(notepadRow);
+    assert.equal(notepadRow.children[1].children[1].textContent, "Notepad · notepad · 300 × 200");
   });
 });
 
