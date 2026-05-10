@@ -1,9 +1,6 @@
 let chessLibPromise = null;
 
 function loadChessLibrary() {
-  if (!window.Chess) {
-    window.Chess = Chess;
-  }
   if (!chessLibPromise) {
     chessLibPromise = new Promise((resolve, reject) => {
       if (window.Chess) {
@@ -79,6 +76,19 @@ function initChess(w) {
     q: "♛",
     k: "♚"
   };
+  if (
+    !boardEl ||
+    !statusEl ||
+    !movesEl ||
+    !fenInput ||
+    !newBtn ||
+    !copyBtn ||
+    !pasteBtn ||
+    !loadBtn
+  ) {
+    throw new Error("Chess UI failed to render");
+  }
+
   let game = null;
   let selected = null;
   let legalTargets = [];
