@@ -1,3 +1,4 @@
+import "../test-setup.js";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -166,7 +167,7 @@ class FakeElement {
   }
 
   querySelectorAll(selector) {
-    const nthChildMatch = selector.match(/^(\.[\w-]+):nth-child\((\d+)\)$/);
+    const nthChildMatch = selector.match(/^(\.[-\w]+):nth-child\((\d+)\)$/);
     const matchesSelector = (element) => {
       if (nthChildMatch) {
         const [, classSelector, index] = nthChildMatch;
