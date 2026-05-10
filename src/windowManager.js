@@ -465,6 +465,7 @@ export class WindowManager {
       type,
       title,
       appInstance: null,
+      pendingMountPromise: null,
       minimized: false,
       maximized: false,
       prevRect: stateOverrides.prevRect || null,
@@ -480,7 +481,14 @@ export class WindowManager {
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
     if (initializer) {
-      this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+      const mountResult = this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+      if (mountResult && typeof mountResult.then === "function") {
+        winObj.pendingMountPromise = mountResult;
+        winEl.pendingMountPromise = mountResult;
+        mountResult.finally(() => {
+          if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
+        });
+      }
     } else if (!content) {
       this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
     }
