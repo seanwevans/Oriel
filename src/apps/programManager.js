@@ -2,8 +2,13 @@ import { PROGRAMS } from "../programs.js";
 import { ICONS } from "../icons.js";
 import { getInstalledPrograms, getManifestForApp } from "../installer.js";
 import { getWindowBodyContainer } from "../windowContent.js";
+import { publish } from "../eventBus.js";
+import { getAppState, updateAppState } from "../state.js";
 
 const ALLOWED_ICON_PROTOCOLS = new Set(["https:", "data:"]);
+const PROGRAM_RENAMES_STATE_KEY = "program-manager-renames";
+const MAX_APP_NAME_LENGTH = 64;
+
 
 function isSafeIconUrl(rawUrl) {
   if (typeof rawUrl !== "string") return false;
@@ -20,6 +25,117 @@ function isSafeIconUrl(rawUrl) {
   } catch {
     return false;
   }
+}
+
+
+function getProgramRenames() {
+  const stored = getAppState(PROGRAM_RENAMES_STATE_KEY);
+  return stored?.labels && typeof stored.labels === "object" ? stored.labels : {};
+}
+
+function getProgramRename(type) {
+  const renamed = getProgramRenames()[type];
+  return typeof renamed === "string" && renamed.trim() ? renamed : null;
+}
+
+function getDefaultProgramLabel(prog) {
+  return prog?.label || prog?.title || prog?.type || "Application";
+}
+
+function getDefaultProgramTitle(prog) {
+  return prog?.title || prog?.label || prog?.type || "Application";
+}
+
+export function getProgramDisplayLabel(prog) {
+  return getProgramRename(prog?.type) || getDefaultProgramLabel(prog);
+}
+
+export function getProgramDisplayTitle(prog) {
+  return getProgramRename(prog?.type) || getDefaultProgramTitle(prog);
+}
+
+export function renameProgram(type, nextName) {
+  if (!type) return null;
+  const renames = { ...getProgramRenames() };
+  const trimmedName = typeof nextName === "string" ? nextName.trim() : "";
+
+  if (trimmedName) {
+    renames[type] = trimmedName.slice(0, MAX_APP_NAME_LENGTH);
+  } else {
+    delete renames[type];
+  }
+
+  updateAppState(PROGRAM_RENAMES_STATE_KEY, { labels: renames });
+  publish("apps:change");
+  return renames[type] || null;
+}
+
+function promptForProgramRename(prog) {
+  const currentName = getProgramDisplayLabel(prog);
+  const nextName = window.prompt(
+    `Rename ${currentName}. Leave blank to restore the default name.`,
+    currentName
+  );
+  if (nextName === null) return;
+  renameProgram(prog.type, nextName);
+}
+
+function getProgramIconMenu() {
+  let menu = document.getElementById("program-icon-context-menu");
+  if (menu) return menu;
+
+  menu = document.createElement("div");
+  menu.id = "program-icon-context-menu";
+  menu.className = "program-icon-context-menu";
+  menu.setAttribute("role", "menu");
+  menu.innerHTML = `<div class="context-menu-item" data-action="rename" role="menuitem" tabindex="0">Rename</div>`;
+  document.body.appendChild(menu);
+
+  const hideMenu = () => {
+    menu.style.display = "none";
+    menu.activeProgram = null;
+  };
+
+  window.addEventListener("click", (event) => {
+    if (!menu.contains(event.target)) hideMenu();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hideMenu();
+  });
+  window.addEventListener("resize", hideMenu);
+
+  menu.addEventListener("click", (event) => {
+    const item = event.target.closest(".context-menu-item");
+    if (!item || item.dataset.action !== "rename") return;
+    const prog = menu.activeProgram;
+    hideMenu();
+    if (prog) promptForProgramRename(prog);
+  });
+
+  menu.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const item = event.target.closest(".context-menu-item");
+    if (!item) return;
+    event.preventDefault();
+    item.click();
+  });
+
+  return menu;
+}
+
+function showProgramIconMenu(prog, x, y) {
+  const menu = getProgramIconMenu();
+  menu.activeProgram = prog;
+  menu.style.display = "block";
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  const rect = menu.getBoundingClientRect();
+  const adjustedLeft = Math.min(x, window.innerWidth - rect.width - 4);
+  const adjustedTop = Math.min(y, window.innerHeight - rect.height - 4);
+  menu.style.left = `${Math.max(0, adjustedLeft)}px`;
+  menu.style.top = `${Math.max(0, adjustedTop)}px`;
+  menu.querySelector(".context-menu-item")?.focus();
 }
 
 function createIconElementFromMarkup(markup) {
@@ -102,12 +218,12 @@ export function getProgramManagerContent(wm) {
     const iconButton = document.createElement("div");
     iconButton.className = "prog-icon";
     iconButton.setAttribute("role", "button");
-    iconButton.setAttribute("aria-label", `Open ${prog.title || prog.label || prog.type}`);
+    iconButton.setAttribute("aria-label", `Open ${getProgramDisplayTitle(prog)}`);
     iconButton.tabIndex = 0;
     const openProgram = () => {
       const width = prog.width || 500;
       const height = prog.height || 400;
-      wm.openWindow(prog.type, prog.title, width, height);
+      wm.openWindow(prog.type, getProgramDisplayTitle(prog), width, height);
     };
     iconButton.addEventListener("click", openProgram);
     iconButton.addEventListener("keydown", (event) => {
@@ -115,13 +231,22 @@ export function getProgramManagerContent(wm) {
         event.preventDefault();
         openProgram();
       }
+      if (event.key === "F2") {
+        event.preventDefault();
+        promptForProgramRename(prog);
+      }
+    });
+    iconButton.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      showProgramIconMenu(prog, event.clientX, event.clientY);
     });
 
     iconButton.appendChild(createIconElementForProgram(prog));
 
     const label = document.createElement("div");
     label.className = "prog-label";
-    label.textContent = prog.label || "";
+    label.textContent = getProgramDisplayLabel(prog);
     iconButton.appendChild(label);
 
     grid.appendChild(iconButton);
@@ -155,6 +280,6 @@ export function refreshProgramManagerContent(wm) {
     .filter((win) => win.type === "progman")
     .forEach((win) => {
       const contentArea = getWindowBodyContainer(win.el);
-      if (contentArea) contentArea.innerHTML = getProgramManagerContent(wm);
+      if (contentArea) contentArea.replaceChildren(getProgramManagerContent(wm));
     });
 }

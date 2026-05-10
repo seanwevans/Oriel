@@ -469,4 +469,11 @@ export function initTracker(win) {
   win.addEventListener("keydown", handleKeyDown);
 
   renderPattern();
+
+  return {
+    dispose() {
+      stopPlayback();
+      audioCtx?.close?.();
+    }
+  };
 }

@@ -236,4 +236,11 @@ export function initBeatMaker(win) {
   };
 
   renderPattern();
+
+  return {
+    dispose() {
+      stopPlayback();
+      audioCtx?.close?.();
+    }
+  };
 }

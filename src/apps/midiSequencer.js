@@ -371,4 +371,11 @@ export function initMidiSequencer(win) {
   renderTrackList();
   updateTempoLabel();
   rebuildGrid();
+
+  return {
+    dispose() {
+      stopPlayback();
+      audioCtx?.close?.();
+    }
+  };
 }

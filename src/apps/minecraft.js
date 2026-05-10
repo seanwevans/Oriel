@@ -99,15 +99,25 @@ export function initMinecraft(win) {
     failLoad("Failed to load Minecraft Classic. Check your connection or open it in a new tab.");
   });
 
-  retryBtn?.addEventListener("click", () => {
+  const handleRetry = () => {
     clearTimers();
     iframe.src = "";
     startLoading();
-  });
+  };
+
+  retryBtn?.addEventListener("click", handleRetry);
 
   const iframeSrcAttr = iframe.getAttribute("src");
 
   if (!iframeSrcAttr) {
     startLoading();
   }
+
+  return {
+    dispose() {
+      clearTimers();
+      retryBtn?.removeEventListener("click", handleRetry);
+      iframe.src = "";
+    }
+  };
 }

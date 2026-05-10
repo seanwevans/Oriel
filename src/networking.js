@@ -201,6 +201,29 @@ export function parseRssXml(xmlText) {
   return { title: feedTitle, items };
 }
 
+export async function readRssResponseText(res) {
+  const fallbackRes = res.clone();
+  const contentType = res.headers?.get?.("content-type") || "";
+
+  if (contentType.includes("json")) {
+    try {
+      const data = await res.json();
+      return data?.contents || data?.body || data?.data || "";
+    } catch (jsonErr) {
+      console.warn("RSS proxy JSON response could not be parsed, falling back to text", jsonErr);
+      return fallbackRes.text();
+    }
+  }
+
+  try {
+    return await fallbackRes.text();
+  } catch (textErr) {
+    console.warn("RSS proxy text response could not be read, trying JSON envelope", textErr);
+    const data = await res.json();
+    return data?.contents || data?.body || data?.data || "";
+  }
+}
+
 export async function fetchRssFeed(rawUrl, options = {}) {
   const normalized = normalizeHttpUrl(rawUrl);
   if (!normalized) throw new Error("Feed URL is required");
@@ -208,14 +231,7 @@ export async function fetchRssFeed(rawUrl, options = {}) {
   const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
   const res = await fetch(proxyUrl, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  let text;
-  try {
-    const data = await res.json();
-    text = data?.contents || "";
-  } catch (jsonErr) {
-    console.warn("RSS proxy did not return JSON, falling back to text", jsonErr);
-    text = await res.text();
-  }
+  const text = await readRssResponseText(res);
   const parsed = parseRssXml(text);
   return { ...parsed, sourceUrl: normalized };
 }
@@ -356,17 +372,8 @@ export function initRssReader(win) {
     try {
       const proxyUrl = `${RSS_PROXY_ROOT}${encodeURIComponent(normalized)}`;
       const res = await trackedFetch(proxyUrl, { signal });
-      const fallbackRes = res.clone();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      let text;
-
-      try {
-        const data = await res.json();
-        text = data?.contents || "";
-      } catch (jsonErr) {
-        console.warn("RSS proxy did not return JSON, falling back to text", jsonErr);
-        text = await fallbackRes.text();
-      }
+      const text = await readRssResponseText(res);
 
       const parsed = parseRssXml(text).items;
       if (token !== rssLoadToken) return;

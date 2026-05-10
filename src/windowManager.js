@@ -263,41 +263,69 @@ export class WindowManager {
     win.dataset.id = id;
     win.dataset.appType = type;
     win.dataset.title = title;
-    // HTML Structure with Resize Handles
-    win.innerHTML = `
-                <div class="resizer n" data-resize="n"></div>
-                <div class="resizer s" data-resize="s"></div>
-                <div class="resizer e" data-resize="e"></div>
-                <div class="resizer w" data-resize="w"></div>
-                <div class="resizer ne" data-resize="ne"></div>
-                <div class="resizer nw" data-resize="nw"></div>
-                <div class="resizer se" data-resize="se"></div>
-                <div class="resizer sw" data-resize="sw"></div>
-                <div class="title-bar">
-                    <div class="sys-box" onclick="wm.closeWindow('${id}')">-</div>
-                    <div class="title-bar-text">${title}</div>
-                    <div class="win-controls-right">
-                        <div class="win-btn" onclick="wm.minimizeWindow('${id}')">▼</div>
-                        <div class="win-btn" onclick="wm.maximizeWindow('${id}')">▲</div>
-                    </div>
-                </div>
-                <div class="menu-bar">
-                    <div class="menu-item">File</div>
-                    <div class="menu-item">Edit</div>
-                    <div class="menu-item">Help</div>
-                </div>
-                <div class="window-body"></div>
-            `;
-    const windowBody = getWindowBodyContainer(win);
-    if (windowBody) {
+
+    const resizeHandles = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
+    resizeHandles.forEach((handleType) => {
+      const resizer = document.createElement("div");
+      resizer.classList.add("resizer", handleType);
+      resizer.dataset.resize = handleType;
+      win.appendChild(resizer);
+    });
+
+    const titleBar = document.createElement("div");
+    titleBar.classList.add("title-bar");
+
+    const closeBtn = document.createElement("div");
+    closeBtn.classList.add("sys-box");
+    closeBtn.textContent = "-";
+    closeBtn.addEventListener("click", () => this.closeWindow(id));
+    titleBar.appendChild(closeBtn);
+
+    const titleText = document.createElement("div");
+    titleText.classList.add("title-bar-text");
+    titleText.textContent = title;
+    titleBar.appendChild(titleText);
+
+    const controls = document.createElement("div");
+    controls.classList.add("win-controls-right");
+
+    const minimizeBtn = document.createElement("div");
+    minimizeBtn.classList.add("win-btn");
+    minimizeBtn.textContent = "▼";
+    minimizeBtn.addEventListener("click", () => this.minimizeWindow(id));
+    controls.appendChild(minimizeBtn);
+
+    const maximizeBtn = document.createElement("div");
+    maximizeBtn.classList.add("win-btn");
+    maximizeBtn.textContent = "▲";
+    maximizeBtn.addEventListener("click", () => this.maximizeWindow(id));
+    controls.appendChild(maximizeBtn);
+
+    titleBar.appendChild(controls);
+    win.appendChild(titleBar);
+
+    const menuBar = document.createElement("div");
+    menuBar.classList.add("menu-bar");
+    ["File", "Edit", "Help"].forEach((label) => {
+      const menuItem = document.createElement("div");
+      menuItem.classList.add("menu-item");
+      menuItem.textContent = label;
+      menuBar.appendChild(menuItem);
+    });
+    win.appendChild(menuBar);
+
+    const windowBody = document.createElement("div");
+    windowBody.classList.add("window-body");
+    win.appendChild(windowBody);
+    const contentArea = getWindowBodyContainer(win);
+    if (contentArea) {
       if (typeof content === "string") {
-        windowBody.innerHTML = content;
+        contentArea.innerHTML = content;
       } else if (content instanceof Node) {
-        windowBody.appendChild(content);
+        contentArea.appendChild(content);
       }
     }
     // Drag Start
-    const titleBar = win.querySelector(".title-bar");
     titleBar.addEventListener("mousedown", (e) => {
       if (
         e.target.classList.contains("sys-box") ||
@@ -307,19 +335,16 @@ export class WindowManager {
       this.startDrag(e, win);
     });
     // Accessibility: make window controls keyboard operable
-    const closeBtn = win.querySelector(".sys-box");
     closeBtn.setAttribute("role", "button");
     closeBtn.setAttribute("aria-label", `Close ${title}`);
     closeBtn.tabIndex = 0;
     this.addKeyboardActivation(closeBtn, () => this.closeWindow(id));
 
-    const minimizeBtn = win.querySelector(".win-btn:nth-child(1)");
     minimizeBtn.setAttribute("role", "button");
     minimizeBtn.setAttribute("aria-label", `Minimize ${title}`);
     minimizeBtn.tabIndex = 0;
     this.addKeyboardActivation(minimizeBtn, () => this.minimizeWindow(id));
 
-    const maximizeBtn = win.querySelector(".win-btn:nth-child(2)");
     maximizeBtn.setAttribute("role", "button");
     maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
     maximizeBtn.tabIndex = 0;
@@ -440,6 +465,7 @@ export class WindowManager {
       type,
       title,
       appInstance: null,
+      pendingMountPromise: null,
       minimized: false,
       maximized: false,
       prevRect: stateOverrides.prevRect || null,
@@ -455,7 +481,14 @@ export class WindowManager {
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
     if (initializer) {
-      this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+      const mountResult = this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
+      if (mountResult && typeof mountResult.then === "function") {
+        winObj.pendingMountPromise = mountResult;
+        winEl.pendingMountPromise = mountResult;
+        mountResult.finally(() => {
+          if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
+        });
+      }
     } else if (!content) {
       this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
     }
@@ -502,13 +535,17 @@ export class WindowManager {
       `Restore ${win.el.querySelector(".title-bar-text").innerText} window`
     );
     icon.tabIndex = 0;
-    icon.innerHTML = `
-                <div class="icon-img">${this.getIconForType(win.type)}</div>
-                <div class="icon-label">${
-                  win.el.querySelector(".title-bar-text").innerText
-                }</div>
-            `;
-    icon.onclick = () => this.restoreWindow(id);
+    const iconImage = document.createElement("div");
+    iconImage.classList.add("icon-img");
+    iconImage.innerHTML = this.getIconForType(win.type);
+    icon.appendChild(iconImage);
+
+    const iconLabel = document.createElement("div");
+    iconLabel.classList.add("icon-label");
+    iconLabel.textContent = win.el.querySelector(".title-bar-text").innerText;
+    icon.appendChild(iconLabel);
+
+    icon.addEventListener("click", () => this.restoreWindow(id));
     this.addKeyboardActivation(icon, () => this.restoreWindow(id));
     this.minimizedContainer.appendChild(icon);
     this.saveDesktopState();
@@ -826,7 +863,11 @@ export class WindowManager {
   renderRuntimeError(winEl, err) {
     const contentArea = getWindowBodyContainer(winEl);
     if (!contentArea) return;
-    contentArea.innerHTML = `<div class="runtime-error">Unable to start app: ${err.message}</div>`;
+    contentArea.replaceChildren();
+    const errorEl = document.createElement("div");
+    errorEl.classList.add("runtime-error");
+    errorEl.textContent = `Unable to start app: ${err.message}`;
+    contentArea.appendChild(errorEl);
   }
   setupProgramManagerMenu(win) {
     setupProgramManagerMenu(this, win);
