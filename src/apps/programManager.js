@@ -50,6 +50,10 @@ function createIconElementForProgram(prog) {
     return createIconElementFromMarkup(ICONS[dynamic.icon]);
   }
 
+  if (prog?.icon && ICONS[prog.icon]) {
+    return createIconElementFromMarkup(ICONS[prog.icon]);
+  }
+
   return createIconElementFromMarkup(ICONS[type] || ICONS.help);
 }
 
@@ -72,6 +76,8 @@ export function getIconForType(type) {
   }
   const dynamic = getInstalledPrograms().find((app) => app.type === type);
   if (dynamic?.icon && ICONS[dynamic.icon]) return ICONS[dynamic.icon];
+  const prog = getAvailablePrograms().find((app) => app.type === type);
+  if (prog?.icon && ICONS[prog.icon]) return ICONS[prog.icon];
   return ICONS[type] || ICONS["help"];
 }
 
