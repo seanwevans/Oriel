@@ -249,11 +249,13 @@ export async function initSandspiel3d(win) {
 
   let animationId = requestAnimationFrame(render);
 
-  win.sandspiel3dCleanup = () => {
-    cancelAnimationFrame(animationId);
-    clearWorld();
-    renderer.dispose();
-    floorGeo.dispose();
-    floorMat.dispose();
+  return {
+    dispose() {
+      cancelAnimationFrame(animationId);
+      clearWorld();
+      renderer.dispose();
+      floorGeo.dispose();
+      floorMat.dispose();
+    }
   };
 }

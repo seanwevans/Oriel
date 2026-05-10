@@ -53,3 +53,56 @@ test("mount assigns resolved asynchronous app instances to window state and elem
   assert.equal(winObj.pendingMountPromise, null);
   assert.equal(winEl.pendingMountPromise, null);
 });
+
+test("mount accepts a standard app instance and stores it before mounting", () => {
+  const winEl = {};
+  const winObj = {};
+  const events = [];
+  const appInstance = {
+    mount() {
+      events.push(
+        winObj.appInstance === appInstance
+          ? "assigned-before-mount"
+          : "missing-before-mount"
+      );
+    },
+    dispose() {
+      events.push("disposed");
+    }
+  };
+  const appHost = new AppHost();
+
+  const mountedAppInstance = appHost.mount({
+    appInstance,
+    winEl,
+    winObj,
+    type: "standard-app"
+  });
+  appHost.unmount(winObj);
+
+  assert.equal(mountedAppInstance, appInstance);
+  assert.equal(winObj.appInstance, appInstance);
+  assert.equal(winEl.appInstance, appInstance);
+  assert.deepEqual(events, ["assigned-before-mount", "disposed"]);
+});
+
+test("unmount relies on app dispose instead of legacy window cleanup keys", () => {
+  const cleanupCalls = [];
+  const appHost = new AppHost();
+  const winObj = {
+    el: {
+      chessCleanup() {
+        cleanupCalls.push("legacy cleanup");
+      }
+    },
+    appInstance: {
+      dispose() {
+        cleanupCalls.push("dispose");
+      }
+    }
+  };
+
+  appHost.unmount(winObj);
+
+  assert.deepEqual(cleanupCalls, ["dispose"]);
+});

@@ -354,10 +354,12 @@ export function initPinball(win) {
 
   newGame();
 
-  win.pinballCleanup = () => {
-    cancelAnimationFrame(raf);
-    layout.removeEventListener("keydown", onKeyDown);
-    layout.removeEventListener("keyup", onKeyUp);
-    resetBtn?.removeEventListener("click", newGame);
+  return {
+    dispose() {
+      cancelAnimationFrame(raf);
+      layout.removeEventListener("keydown", onKeyDown);
+      layout.removeEventListener("keyup", onKeyUp);
+      resetBtn?.removeEventListener("click", newGame);
+    }
   };
 }

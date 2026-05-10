@@ -248,11 +248,13 @@ export function initLineRider(win) {
   setMode(mode);
   resetSled();
 
-  win.lineRiderCleanup = () => {
-    stopRide();
-    canvas.removeEventListener("mousedown", onPointerDown);
-    canvas.removeEventListener("mousemove", onPointerMove);
-    canvas.removeEventListener("mouseup", endDraw);
-    canvas.removeEventListener("mouseleave", endDraw);
+  return {
+    dispose() {
+      stopRide();
+      canvas.removeEventListener("mousedown", onPointerDown);
+      canvas.removeEventListener("mousemove", onPointerMove);
+      canvas.removeEventListener("mouseup", endDraw);
+      canvas.removeEventListener("mouseleave", endDraw);
+    }
   };
 }

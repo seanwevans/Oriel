@@ -296,11 +296,12 @@ export function initIRC(win) {
     }
   });
 
-  // Cleanup
-  win.ircCleanup = () => {
-    if (client) {
-      client.quit();
-      client = null;
+  return {
+    dispose() {
+      if (client) {
+        client.quit();
+        client = null;
+      }
     }
   };
 }
