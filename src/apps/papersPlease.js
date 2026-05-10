@@ -136,3 +136,35 @@ function initPapersPlease(win) {
 }
 
 export { initPapersPlease };
+
+export function getPapersContent() {
+    return `
+                <div class="papers-layout">
+                    <div class="papers-header">
+                        <div class="papers-title">Checkpoint Alpha</div>
+                        <div class="papers-subtitle">"Glory to Orielstotzka"</div>
+                    </div>
+                    <div class="papers-stats">Day <span class="papers-day">1</span> · Credits: <span class="papers-credits">20</span> · Citations: <span class="papers-mistakes">0</span></div>
+                    <div class="papers-body">
+                        <div class="papers-docs">
+                            <div class="papers-photo"></div>
+                            <div class="papers-fields">
+                                <div class="papers-field"><span class="papers-label">Name:</span> <span class="papers-name">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Nation:</span> <span class="papers-nation">---</span></div>
+                                <div class="papers-field"><span class="papers-label">ID:</span> <span class="papers-id">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Expires:</span> <span class="papers-expiry">---</span></div>
+                                <div class="papers-field"><span class="papers-label">Purpose:</span> <span class="papers-purpose">---</span></div>
+                            </div>
+                        </div>
+                        <div class="papers-reason">Review documents and choose to approve or deny.</div>
+                        <div class="papers-actions">
+                            <button class="task-btn papers-approve">Approve</button>
+                            <button class="task-btn papers-deny">Deny</button>
+                            <button class="task-btn papers-next">Next Traveler</button>
+                        </div>
+                        <div class="papers-log" tabindex="0">Checkpoint initialized.</div>
+                    </div>
+                </div>
+            `;
+
+}

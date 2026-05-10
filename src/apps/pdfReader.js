@@ -40,3 +40,57 @@ export function initPdfReader(win, initData) {
     }
   });
 }
+
+export function getPdfReaderContent(initData) {
+    const src = initData?.src || DEFAULT_PDF_DATA_URI;
+    const name = initData?.name || "Sample.pdf";
+
+    const root = document.createElement("div");
+    root.classList.add("pdf-reader");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("pdf-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open File";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "application/pdf";
+    fileInput.classList.add("pdf-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.classList.add("pdf-url-input");
+    urlInput.placeholder = "Paste PDF URL and click Load";
+    urlInput.value = "";
+    toolbar.appendChild(urlInput);
+
+    const loadButton = document.createElement("button");
+    loadButton.classList.add("task-btn", "pdf-load-btn");
+    loadButton.textContent = "Load";
+    toolbar.appendChild(loadButton);
+
+    const status = document.createElement("div");
+    status.classList.add("pdf-status");
+    status.textContent = `Loaded ${name}`;
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const viewer = document.createElement("div");
+    viewer.classList.add("pdf-viewer");
+    const frame = document.createElement("iframe");
+    frame.classList.add("pdf-frame");
+    frame.title = "PDF Viewer";
+    frame.src = src;
+    viewer.appendChild(frame);
+    root.appendChild(viewer);
+
+    return root;
+
+}

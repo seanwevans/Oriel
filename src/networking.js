@@ -1039,3 +1039,76 @@ export async function initRadio(win) {
     fetchStations(url, description);
   };
 }
+
+export function getBrowserContent() {
+    return `<div class="browser-layout">
+              <div class="browser-toolbar">
+                <button class="browser-btn" data-action="back" title="Back">◀</button>
+                <button class="browser-btn" data-action="forward" title="Forward">▶</button>
+                <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
+                <button class="browser-btn" data-action="home" title="Home">⌂</button>
+                <input class="browser-url" type="text" placeholder="${getBrowserPlaceholder()}" spellcheck="false">
+                <button class="browser-btn go-btn" data-action="go">Go</button>
+              </div>
+              <div class="browser-view">
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <div class="browser-status">Enter a URL to begin browsing.</div>
+              </div>
+            </div>`;
+
+}
+
+export function getRadioGardenContent() {
+    return `<div class="radio-garden">
+              <div class="radio-header">
+                <div>
+                  <div class="radio-title">Radio Garden</div>
+                  <div class="radio-subtitle">Search the globe and jump to a live station.</div>
+                </div>
+                <button class="task-btn radio-open-site">Open radio.garden</button>
+              </div>
+              <div class="radio-search-row">
+                <input class="radio-search-input" type="text" placeholder="Search by city, country, or station name" spellcheck="false">
+                <button class="task-btn radio-search-btn">Search</button>
+              </div>
+              <div class="radio-quick-row">
+                <span class="radio-quick-label">Quick picks:</span>
+                <div class="radio-quick-list">
+                  <button class="radio-chip" data-query="Tokyo">Tokyo</button>
+                  <button class="radio-chip" data-query="London">London</button>
+                  <button class="radio-chip" data-query="São Paulo">São Paulo</button>
+                  <button class="radio-chip" data-query="Sydney">Sydney</button>
+                  <button class="radio-chip" data-query="Lagos">Lagos</button>
+                </div>
+              </div>
+              <div class="radio-status">Type a query to load stations via the Radio Garden directory.</div>
+              <div class="radio-results" role="list"></div>
+            </div>`;
+
+}
+
+export function getRadioContent() {
+    return `<div class="radio-layout">
+              <div class="radio-toolbar">
+                <div class="radio-search">
+                  <input type="text" class="radio-query" placeholder="Search stations or genres..." spellcheck="false" />
+                  <button class="task-btn radio-search-btn">Search</button>
+                  <button class="task-btn radio-top-btn" title="Load popular stations">Top</button>
+                </div>
+                <div class="radio-status">Find and play live internet radio via the free Radio Browser API.</div>
+              </div>
+              <div class="radio-body">
+                <div class="radio-list" role="listbox" aria-label="Radio stations"></div>
+                <div class="radio-player">
+                  <div class="radio-now">No station selected.</div>
+                  <audio class="radio-audio" controls></audio>
+                  <div class="radio-actions">
+                    <button class="task-btn radio-play">Play</button>
+                    <button class="task-btn radio-stop">Stop</button>
+                  </div>
+                  <div class="radio-meta">Use search or Top to load stations.</div>
+                </div>
+              </div>
+            </div>`;
+
+}

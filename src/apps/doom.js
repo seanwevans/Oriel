@@ -46,3 +46,12 @@ export function initDoom(win) {
         '<div style="color:#f44;font-family:var(--font-main);padding:8px;">Failed to load DOOM (js-dos load error).</div>';
     });
 }
+
+export function getDoomContent() {
+    return `
+      <div style="width:100%;height:100%;background:black;display:flex;justify-content:center;align-items:center;">
+        <canvas id="doom-container" style="width:640px;height:400px;background:#111;"></canvas>
+      </div>
+    `;
+
+}

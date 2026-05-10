@@ -36,3 +36,20 @@ export function initVm(win) {
 
   resetVm();
 }
+
+export function getVmContent() {
+    return `<div class="vm-layout">
+                <div class="vm-toolbar">
+                    <div class="vm-actions">
+                        <button class="task-btn vm-boot">Boot VM</button>
+                        <button class="task-btn vm-reset" disabled>Power Off</button>
+                    </div>
+                    <div class="vm-status" aria-live="polite">VM is powered off. Click Boot to start Oriel inside Oriel.</div>
+                </div>
+                <div class="vm-note">Runs a fresh copy of Oriel in an isolated iframe. Try opening apps inside the VM for true desktop-ception.</div>
+                <div class="vm-view">
+                    <iframe class="vm-frame" title="Oriel Virtual Machine" src="about:blank"></iframe>
+                </div>
+            </div>`;
+
+}

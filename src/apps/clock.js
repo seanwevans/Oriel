@@ -88,3 +88,8 @@ export function initClock(w) {
     }
   };
 }
+
+export function getClockContent() {
+    return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
+
+}

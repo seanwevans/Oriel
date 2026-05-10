@@ -61,3 +61,69 @@ export function initImageViewer(win, initData) {
     }
   });
 }
+
+export function getImageViewerContent(initData) {
+    const name = initData?.name || "";
+    const src = initData?.src || "";
+
+    const root = document.createElement("div");
+    root.classList.add("img-viewer");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("img-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open Image";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.classList.add("img-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.classList.add("img-url-input");
+    urlInput.placeholder = "Paste image URL and click Load";
+    urlInput.value = src || "";
+    toolbar.appendChild(urlInput);
+
+    const loadButton = document.createElement("button");
+    loadButton.classList.add("task-btn", "img-load-btn");
+    loadButton.textContent = "Load";
+    toolbar.appendChild(loadButton);
+
+    const status = document.createElement("div");
+    status.classList.add("img-status");
+    status.textContent = src ? `Loaded ${name || "image"}` : "No image loaded";
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const display = document.createElement("div");
+    display.classList.add("img-display");
+
+    const placeholder = document.createElement("div");
+    placeholder.classList.add("img-placeholder");
+    placeholder.textContent = "Drop an image or click Open";
+    if (src) placeholder.style.display = "none";
+    display.appendChild(placeholder);
+
+    const preview = document.createElement("img");
+    preview.classList.add("img-preview");
+    preview.alt = name || "Image preview";
+    if (src) {
+      preview.src = src;
+    } else {
+      preview.style.display = "none";
+    }
+    display.appendChild(preview);
+
+    root.appendChild(display);
+
+    return root;
+
+}

@@ -1,11 +1,3 @@
-import { ICONS } from "./icons.js";
-import {
-  DEFAULT_MD_SAMPLE,
-  DEFAULT_PDF_DATA_URI,
-  DEFAULT_SPLASH_IMAGE,
-  DEFAULT_WALLPAPER,
-  IRC_BOT_MESSAGES
-} from "./defaults.js";
 import { loadDesktopState, persistDesktopState } from "./state.js";
 import { applyWallpaperSettings, getWallpaperSettings } from "./wallpaper.js";
 import { getDiscordContent } from "./apps/discord.js";
@@ -57,31 +49,7 @@ import { bootstrapInstallations } from "./installer.js";
 import { getShaderLabRoot } from "./apps/shaderLab.js";
 import { AppRegistry } from "./core/AppRegistry.js";
 import { AppHost } from "./core/AppHost.js";
-import { getMinecraftRoot } from "./apps/minecraft.js";
-import { getN64Root } from "./apps/n64.js";
-import {
-  MOCK_FS,
-  exportFileSystemAsJson,
-  hydrateNativeDirectory,
-  isNativeFsSupported,
-  mountNativeFolder,
-  replaceFileSystem,
-  saveFileSystem,
-  fileSystemReady
-} from "./filesystem.js";
 import { publish, subscribe } from "./eventBus.js";
-import {
-  getLastNonZeroVolume,
-  getMediaPlayerTracks,
-  getSystemVolume,
-  playVolumeTest,
-  registerMediaElement,
-  setSystemVolume
-} from "./audio.js";
-import { SimulatedKernel } from "./kernel.js";
-import { getCalcContent } from "./apps/calc.js";
-import { getReadmeContent } from "./apps/readme.js";
-import { getClipboardContent } from "./apps/clipboard.js";
 import {
   getAvailablePrograms as getProgramManagerApps,
   getIconForType as getProgramManagerIcon,
@@ -90,13 +58,7 @@ import {
   refreshProgramManagerContent,
   setupProgramManagerMenu
 } from "./apps/programManager.js";
-import {
-  hideUnlockPrompt,
-  initScreensaver,
-  screensaverContext,
-  submitLockPassphrase
-} from "./apps/screensaver.js";
-import { BaseApp } from "./apps/base/BaseApp.js";
+import { screensaverContext } from "./apps/screensaver.js";
 import { getWindowBodyContainer } from "./windowContent.js";
 
 export const controlPanelContext = {};
@@ -489,78 +451,22 @@ export class WindowManager {
     const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;
-    // Generate App Content
-    if (type === "progman") content = getProgramManagerContent(this);
-    if (type === "notepad") content = this.getNotepadContent(initData);
-    if (type === "write") content = this.getWriteContent(initData);
-    if (type === "cardfile") content = this.getCardfileContent();
-    if (type === "calc") content = getCalcContent();
-    if (type === "mines") content = this.getMinesContent();
-    if (type === "kakuro") content = this.getKakuroContent();
-    if (type === "solitaire") content = this.getSolitaireContent();
-    if (type === "reversi") content = this.getReversiContent();
-    if (type === "sudoku") content = this.getSudokuContent();
-    if (type === "mafia") content = this.getMafiaContent();
-    if (type === "photoshop") content = getPhotoshopContent();
-    if (type === "artist") content = this.getArtistContent();
-    if (type === "shaderlab") content = getShaderLabRoot();
-    if (type === "compiler") content = this.getCompilerContent();
-    if (type === "python") content = this.getPythonContent();
-    if (type === "console") content = this.getConsoleContent();
-    if (type === "packetlab") content = getPacketLabContent();
-    if (type === "apiclient") content = getApiClientContent();
-    if (type === "retroai") content = getRetroAIContent();
-    if (type === "taskman") content = this.getTaskManContent();
-    if (type === "chess") content = this.getChessContent();
-    if (type === "paint") content = getPaintRoot(initData);
-    if (type === "pixelstudio") content = getPixelStudioContent();
-    if (type === "mplayer") content = this.getMediaPlayerContent();
-    if (type === "simcity") content = getSimCityContent();
-    if (type === "skifree") content = getSkiFreeContent();
-    if (type === "angrybirds") content = getAngryBirdsContent();
-    if (type === "cannonduel") content = getCannonDuelContent();
-    if (type === "pinball") content = getPinballContent();
-    if (type === "linerider") content = getLineRiderContent();
-    if (type === "database") content = this.getDatabaseContent();
-    if (type === "postgres") content = getPostgresContent();
-    if (type === "soundrec") content = this.getSoundRecContent();
-    if (type === "radio") content = this.getRadioContent();
-    if (type === "beatmaker") content = getBeatMakerContent();
-    if (type === "tracker") content = getTrackerContent();
-    if (type === "midisequencer") content = getMidiSequencerContent();
-    if (type === "charmap") content = this.getCharMapContent();
-    if (type === "winfile") content = getWinFileContent();
-    if (type === "clock") content = this.getClockContent();
-    if (type === "control") content = this.getControlPanelContent();
-    if (type === "clipbrd") content = getClipboardContent();
-    if (type === "readme") content = getReadmeContent();
-    if (type === "pdfreader") content = this.getPdfReaderContent(initData);
-    if (type === "imageviewer") content = this.getImageViewerContent(initData);
-    if (type === "markdown") content = this.getMarkdownContent(initData);
-    if (type === "reset") content = this.getResetContent();
-    if (type === "rss") content = getRssReaderContent();
-    if (type === "netnews") content = getNetNewsContent();
-    if (type === "browser") content = this.getBrowserContent();
-    if (type === "codepen") content = initData?.mode === "viewer" ? "" : getCodePenContent();
-    if (type === "radiogarden") content = this.getRadioGardenContent();
-    if (type === "celeryman") content = getCeleryManContent();
-    if (type === "discord") content = getDiscordContent();
-    if (type === "bbs") content = getBbsContent();
-    if (type === "spotify") content = getSpotifyContent();
-    if (type === "messenger") content = getMessengerContent();
-    if (type === "irc") content = getIRCContent();
-    if (type === "email") content = getEmailContent();
-    if (type === "vm") content = this.getVmContent();
-    if (type === "doom") content = this.getDoomContent();
-    if (type === "minecraft") content = this.getMinecraftContent();
-    if (type === "n64") content = this.getN64Content();
-    if (type === "ti83") content = this.getTi83Content();
-    if (type === "sandspiel") content = this.getSandspielContent();
-    if (type === "sandspiel3d") content = this.getSandspiel3DContent();
-    if (type === "papers") content = this.getPapersContent();
-    if (type === "whiteboard") content = getWhiteboardRoot();
-    if (type === "hexedit") content = this.getHexEditorContent();
-    const initializer = this.appRegistry.resolve(type);
+    const services = {
+      windowManager: this,
+      kernel,
+      publish,
+      subscribe
+    };
+    const appInstance = this.appRegistry.createApp(type, {
+      windowEl: null,
+      initData,
+      services
+    });
+    let content =
+      typeof appInstance?.getWindowContent === "function"
+        ? appInstance.getWindowContent()
+        : "";
+    const initializer = appInstance ? null : this.appRegistry.resolve(type);
     if (!content && this.appRegistry.getRuntimeInitializer(type)) {
       content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
     }
@@ -1422,219 +1328,17 @@ export class WindowManager {
   getConsoleContent() {
     return `<div class="console" data-app-action="focusConsole"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" data-app-keydown="handleConsoleKey" autocomplete="off"></div></div>`;
   }
-  getKakuroContent() {
-    const keypadButtons = Array.from({ length: 9 }, (_, i) =>
-      `<button class="task-btn kakuro-key" data-num="${i + 1}">${i + 1}</button>`
-    ).join("");
-
-    return `<div class="kakuro-root">
-                <div class="kakuro-toolbar">
-                    <div class="kakuro-keypad" role="group" aria-label="Number pad">${keypadButtons}<button class="task-btn kakuro-clear" aria-label="Clear cell">Clear</button></div>
-                    <div class="kakuro-actions">
-                        <button class="task-btn kakuro-check">Check</button>
-                        <button class="task-btn kakuro-reset">Reset</button>
-                    </div>
-                </div>
-                <div class="kakuro-board" role="grid" aria-label="Kakuro board"></div>
-                <div class="kakuro-status" aria-live="polite">Fill every run without repeating numbers.</div>
-                <div class="kakuro-help">Each clue shows the sum for the across or down run starting beside it.</div>
-            </div>`;
+  getNotepadContent(initData) {
+    return this.getAppContent("notepad", initData);
   }
   getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" data-app-action="resetMines">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
   }
   getPdfReaderContent(initData) {
-    const src = initData?.src || DEFAULT_PDF_DATA_URI;
-    const name = initData?.name || "Sample.pdf";
-
-    const root = document.createElement("div");
-    root.classList.add("pdf-reader");
-
-    const toolbar = document.createElement("div");
-    toolbar.classList.add("pdf-toolbar");
-
-    const fileLabel = document.createElement("label");
-    fileLabel.classList.add("task-btn", "file-btn");
-    const fileLabelText = document.createElement("span");
-    fileLabelText.textContent = "Open File";
-    fileLabel.appendChild(fileLabelText);
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "application/pdf";
-    fileInput.classList.add("pdf-file-input");
-    fileLabel.appendChild(fileInput);
-    toolbar.appendChild(fileLabel);
-
-    const urlInput = document.createElement("input");
-    urlInput.type = "text";
-    urlInput.classList.add("pdf-url-input");
-    urlInput.placeholder = "Paste PDF URL and click Load";
-    urlInput.value = "";
-    toolbar.appendChild(urlInput);
-
-    const loadButton = document.createElement("button");
-    loadButton.classList.add("task-btn", "pdf-load-btn");
-    loadButton.textContent = "Load";
-    toolbar.appendChild(loadButton);
-
-    const status = document.createElement("div");
-    status.classList.add("pdf-status");
-    status.textContent = `Loaded ${name}`;
-    toolbar.appendChild(status);
-
-    root.appendChild(toolbar);
-
-    const viewer = document.createElement("div");
-    viewer.classList.add("pdf-viewer");
-    const frame = document.createElement("iframe");
-    frame.classList.add("pdf-frame");
-    frame.title = "PDF Viewer";
-    frame.src = src;
-    viewer.appendChild(frame);
-    root.appendChild(viewer);
-
-    return root;
+    return this.getAppContent("pdfreader", initData);
   }
   getImageViewerContent(initData) {
-    const name = initData?.name || "";
-    const src = initData?.src || "";
-
-    const root = document.createElement("div");
-    root.classList.add("img-viewer");
-
-    const toolbar = document.createElement("div");
-    toolbar.classList.add("img-toolbar");
-
-    const fileLabel = document.createElement("label");
-    fileLabel.classList.add("task-btn", "file-btn");
-    const fileLabelText = document.createElement("span");
-    fileLabelText.textContent = "Open Image";
-    fileLabel.appendChild(fileLabelText);
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.classList.add("img-file-input");
-    fileLabel.appendChild(fileInput);
-    toolbar.appendChild(fileLabel);
-
-    const urlInput = document.createElement("input");
-    urlInput.type = "text";
-    urlInput.classList.add("img-url-input");
-    urlInput.placeholder = "Paste image URL and click Load";
-    urlInput.value = src || "";
-    toolbar.appendChild(urlInput);
-
-    const loadButton = document.createElement("button");
-    loadButton.classList.add("task-btn", "img-load-btn");
-    loadButton.textContent = "Load";
-    toolbar.appendChild(loadButton);
-
-    const status = document.createElement("div");
-    status.classList.add("img-status");
-    status.textContent = src ? `Loaded ${name || "image"}` : "No image loaded";
-    toolbar.appendChild(status);
-
-    root.appendChild(toolbar);
-
-    const display = document.createElement("div");
-    display.classList.add("img-display");
-
-    const placeholder = document.createElement("div");
-    placeholder.classList.add("img-placeholder");
-    placeholder.textContent = "Drop an image or click Open";
-    if (src) placeholder.style.display = "none";
-    display.appendChild(placeholder);
-
-    const preview = document.createElement("img");
-    preview.classList.add("img-preview");
-    preview.alt = name || "Image preview";
-    if (src) {
-      preview.src = src;
-    } else {
-      preview.style.display = "none";
-    }
-    display.appendChild(preview);
-
-    root.appendChild(display);
-
-    return root;
-  }
-  getMarkdownContent(initData) {
-    const initialText =
-      typeof initData === "string"
-        ? initData
-        : typeof initData?.text === "string"
-        ? initData.text
-        : DEFAULT_MD_SAMPLE;
-
-    const root = document.createElement("div");
-    root.classList.add("md-viewer");
-
-    const toolbar = document.createElement("div");
-    toolbar.classList.add("md-toolbar");
-
-    const fileLabel = document.createElement("label");
-    fileLabel.classList.add("task-btn", "file-btn");
-    const fileLabelText = document.createElement("span");
-    fileLabelText.textContent = "Open .md";
-    fileLabel.appendChild(fileLabelText);
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = ".md,text/markdown";
-    fileInput.classList.add("md-file-input");
-    fileLabel.appendChild(fileInput);
-    toolbar.appendChild(fileLabel);
-
-    const sampleButton = document.createElement("button");
-    sampleButton.classList.add("task-btn", "md-sample-btn");
-    sampleButton.textContent = "Sample";
-    toolbar.appendChild(sampleButton);
-
-    const status = document.createElement("div");
-    status.classList.add("md-status");
-    status.textContent = "Ready";
-    toolbar.appendChild(status);
-
-    root.appendChild(toolbar);
-
-    const body = document.createElement("div");
-    body.classList.add("md-body");
-
-    const textarea = document.createElement("textarea");
-    textarea.classList.add("md-input");
-    textarea.spellcheck = false;
-    textarea.placeholder = "Paste Markdown here";
-    textarea.value = initialText;
-    body.appendChild(textarea);
-
-    const preview = document.createElement("div");
-    preview.classList.add("md-preview");
-    preview.setAttribute("aria-live", "polite");
-    body.appendChild(preview);
-
-    root.appendChild(body);
-
-    return root;
-  }
-  getHexEditorContent() {
-    return `<div class="hex-layout">
-                <div class="hex-toolbar">
-                    <button class="task-btn hex-new">New</button>
-                    <label class="task-btn file-btn">Open File<input type="file" class="hex-file" accept="*/*"></label>
-                    <button class="task-btn hex-parse">Parse Hex</button>
-                    <button class="task-btn hex-from-ascii">From ASCII</button>
-                    <div class="hex-status">Ready</div>
-                </div>
-                <div class="hex-body">
-                    <textarea class="hex-offsets" readonly aria-label="Offsets"></textarea>
-                    <textarea class="hex-area" spellcheck="false" aria-label="Hex bytes"></textarea>
-                    <textarea class="hex-ascii" spellcheck="false" aria-label="ASCII view"></textarea>
-                </div>
-                <div class="hex-footer">
-                    <div class="hex-summary">0 bytes</div>
-                    <div class="hex-hint">Edit hex pairs, then click Parse Hex to refresh the ASCII view.</div>
-                </div>
-            </div>`;
+    return this.getAppContent("imageviewer", initData);
   }
   getTaskManContent() {
     return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" data-app-action="switchTask">Switch To</button><button class="task-btn" data-app-action="endTask">End Task</button><button class="task-btn" data-app-action="closeWindow">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
@@ -1661,4 +1365,5 @@ export class WindowManager {
   getDatabaseContent() {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" data-app-action="addDbRecord">Add Record</button><button class="task-btn" data-app-action="exportDbToCsv">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
+
 }

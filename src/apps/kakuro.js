@@ -170,3 +170,23 @@ export function initKakuro(win) {
     activeCell.classList.add("active");
   }
 }
+
+export function getKakuroContent() {
+    const keypadButtons = Array.from({ length: 9 }, (_, i) =>
+      `<button class="task-btn kakuro-key" data-num="${i + 1}">${i + 1}</button>`
+    ).join("");
+
+    return `<div class="kakuro-root">
+                <div class="kakuro-toolbar">
+                    <div class="kakuro-keypad" role="group" aria-label="Number pad">${keypadButtons}<button class="task-btn kakuro-clear" aria-label="Clear cell">Clear</button></div>
+                    <div class="kakuro-actions">
+                        <button class="task-btn kakuro-check">Check</button>
+                        <button class="task-btn kakuro-reset">Reset</button>
+                    </div>
+                </div>
+                <div class="kakuro-board" role="grid" aria-label="Kakuro board"></div>
+                <div class="kakuro-status" aria-live="polite">Fill every run without repeating numbers.</div>
+                <div class="kakuro-help">Each clue shows the sum for the across or down run starting beside it.</div>
+            </div>`;
+
+}

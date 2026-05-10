@@ -114,3 +114,8 @@ export function initReversi(w) {
 
   render();
 }
+
+export function getReversiContent() {
+    return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
+
+}

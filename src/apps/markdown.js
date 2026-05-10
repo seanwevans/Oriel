@@ -165,3 +165,62 @@ export function initMarkdownViewer(win, initData) {
     updatePreview("Sample");
   });
 }
+
+export function getMarkdownContent(initData) {
+    const initialText =
+      typeof initData === "string"
+        ? initData
+        : typeof initData?.text === "string"
+        ? initData.text
+        : DEFAULT_MD_SAMPLE;
+
+    const root = document.createElement("div");
+    root.classList.add("md-viewer");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("md-toolbar");
+
+    const fileLabel = document.createElement("label");
+    fileLabel.classList.add("task-btn", "file-btn");
+    const fileLabelText = document.createElement("span");
+    fileLabelText.textContent = "Open .md";
+    fileLabel.appendChild(fileLabelText);
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".md,text/markdown";
+    fileInput.classList.add("md-file-input");
+    fileLabel.appendChild(fileInput);
+    toolbar.appendChild(fileLabel);
+
+    const sampleButton = document.createElement("button");
+    sampleButton.classList.add("task-btn", "md-sample-btn");
+    sampleButton.textContent = "Sample";
+    toolbar.appendChild(sampleButton);
+
+    const status = document.createElement("div");
+    status.classList.add("md-status");
+    status.textContent = "Ready";
+    toolbar.appendChild(status);
+
+    root.appendChild(toolbar);
+
+    const body = document.createElement("div");
+    body.classList.add("md-body");
+
+    const textarea = document.createElement("textarea");
+    textarea.classList.add("md-input");
+    textarea.spellcheck = false;
+    textarea.placeholder = "Paste Markdown here";
+    textarea.value = initialText;
+    body.appendChild(textarea);
+
+    const preview = document.createElement("div");
+    preview.classList.add("md-preview");
+    preview.setAttribute("aria-live", "polite");
+    body.appendChild(preview);
+
+    root.appendChild(body);
+
+    return root;
+
+}

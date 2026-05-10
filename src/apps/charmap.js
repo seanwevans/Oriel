@@ -46,3 +46,33 @@ export function copyCharMap(b) {
   b.closest(".window").querySelector("#char-copy-input").select();
   document.execCommand("copy");
 }
+
+export function getCharMapContent() {
+    return `<div class="char-map-layout">
+              <div class="char-map-toolbar">
+                <div class="char-preview" aria-live="polite">A</div>
+                <div class="char-meta">
+                  <div class="char-code" id="char-code-label">U+0041 · Dec 65</div>
+                  <div class="char-font-row">
+                    <label for="char-font-select">Font:</label>
+                    <select class="char-font" id="char-font-select">
+                      <option value="'Times New Roman', serif">Times New Roman</option>
+                      <option value="'Arial', sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                      <option value="'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif">Symbols</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="char-grid" id="char-grid"></div>
+              <div class="char-controls">
+                <label>Characters to copy:</label>
+                <div class="copy-row">
+                  <input type="text" class="char-input" id="char-copy-input" readonly>
+                  <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
+                </div>
+                <button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button>
+              </div>
+            </div>`;
+
+}
