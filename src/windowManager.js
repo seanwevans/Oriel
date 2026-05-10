@@ -1114,9 +1114,78 @@ export class WindowManager {
     `;
   }
   getWriteContent(txt) {
-    return `<div class="write-layout"><div class="write-toolbar"><select class="write-select write-font" title="Font Family"><option value="Times New Roman">Times New Roman</option><option value="Arial">Arial</option><option value="Courier New">Courier New</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option></select><select class="write-select write-size" title="Font Size"><option value="2">10</option><option value="3">12</option><option value="4" selected>14</option><option value="5">18</option><option value="6">24</option><option value="7">32</option></select><button class="fmt-btn" data-cmd="bold" title="Bold">B</button><button class="fmt-btn" data-cmd="italic" title="Italic">I</button><button class="fmt-btn" data-cmd="underline" title="Underline">U</button></div><div class="write-editor" contenteditable="true" spellcheck="false">${
-      txt || "Welcome to Oriel Write."
-    }</div></div>`;
+    const layout = document.createElement("div");
+    layout.classList.add("write-layout");
+
+    const toolbar = document.createElement("div");
+    toolbar.classList.add("write-toolbar");
+
+    const createSelect = ({ className, title, options, selectedValue }) => {
+      const select = document.createElement("select");
+      select.classList.add("write-select", className);
+      select.title = title;
+      options.forEach(({ value, label }) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        if (value === selectedValue) option.selected = true;
+        select.appendChild(option);
+      });
+      return select;
+    };
+
+    toolbar.appendChild(
+      createSelect({
+        className: "write-font",
+        title: "Font Family",
+        options: [
+          { value: "Times New Roman", label: "Times New Roman" },
+          { value: "Arial", label: "Arial" },
+          { value: "Courier New", label: "Courier New" },
+          { value: "Georgia", label: "Georgia" },
+          { value: "Verdana", label: "Verdana" }
+        ],
+        selectedValue: "Times New Roman"
+      })
+    );
+    toolbar.appendChild(
+      createSelect({
+        className: "write-size",
+        title: "Font Size",
+        options: [
+          { value: "2", label: "10" },
+          { value: "3", label: "12" },
+          { value: "4", label: "14" },
+          { value: "5", label: "18" },
+          { value: "6", label: "24" },
+          { value: "7", label: "32" }
+        ],
+        selectedValue: "4"
+      })
+    );
+
+    [
+      { cmd: "bold", title: "Bold", label: "B" },
+      { cmd: "italic", title: "Italic", label: "I" },
+      { cmd: "underline", title: "Underline", label: "U" }
+    ].forEach(({ cmd, title, label }) => {
+      const button = document.createElement("button");
+      button.classList.add("fmt-btn");
+      button.dataset.cmd = cmd;
+      button.title = title;
+      button.textContent = label;
+      toolbar.appendChild(button);
+    });
+
+    const editor = document.createElement("div");
+    editor.classList.add("write-editor");
+    editor.setAttribute("contenteditable", "true");
+    editor.setAttribute("spellcheck", "false");
+    editor.textContent = txt || "Welcome to Oriel Write.";
+
+    layout.appendChild(toolbar);
+    layout.appendChild(editor);
+    return layout;
   }
   getCardfileContent() {
     return `<div class="cardfile-layout"><div class="cardfile-menu"><button class="task-btn" id="card-add">Add</button><button class="task-btn" id="card-del">Delete</button></div><div class="card-container"><div class="card-index-list" id="card-index-list"></div><div class="card-body-view"><div class="card-header-bar" id="card-header-display"></div><textarea class="card-content-area" id="card-content-edit"></textarea></div></div></div>`;
