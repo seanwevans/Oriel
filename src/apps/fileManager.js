@@ -19,15 +19,15 @@ function getWinFileContent() {
                 style="width:80px;height:18px;font-size:11px;"
                 placeholder="Folder Name"
               >
-              <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
-              <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
+              <button class="task-btn" data-app-action="createFolder" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
+              <button class="task-btn" data-app-action="exportFileSystem" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
               <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
                 Import
-                <input type="file" accept="application/json" onchange="importFileSystem(event)">
+                <input type="file" accept="application/json" data-app-change="importFileSystem">
               </label>
-              <button class="task-btn" onclick="installSelectedManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Install</button>
-              <button class="task-btn" onclick="uninstallManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Uninstall</button>
-              <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
+              <button class="task-btn" data-app-action="installSelectedManifest" style="height:20px;font-size:11px;padding:0 4px;">Install</button>
+              <button class="task-btn" data-app-action="uninstallManifest" style="height:20px;font-size:11px;padding:0 4px;">Uninstall</button>
+              <button class="task-btn" data-app-action="mountLocalFolder" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
               <span>C\\</span>
             </div>
           </div>

@@ -117,7 +117,7 @@ function createLegacyAppAdapter(initializer) {
 }
 
 export class WindowManager {
-  constructor(initialState = null) {
+  constructor(initialState = null, { appActions = {}, kernel: kernelService = null } = {}) {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
@@ -141,6 +141,45 @@ export class WindowManager {
       initialH: 0,
       initialL: 0,
       initialT: 0
+    };
+    this.kernel = kernelService || window.kernel;
+    this.appActions = {
+      switchTask: ({ event }) => switchTask(event),
+      endTask: ({ event }) => endTask(event),
+      closeWindow: ({ windowEl }) => this.closeWindow(windowEl.dataset.id),
+      mediaPlay: ({ windowEl }) => windowEl.querySelector(".mplayer-video")?.play(),
+      mediaPause: ({ windowEl }) => windowEl.querySelector(".mplayer-video")?.pause(),
+      mediaStop: ({ windowEl }) => {
+        const video = windowEl.querySelector(".mplayer-video");
+        if (!video) return;
+        video.pause();
+        video.currentTime = 0;
+      },
+      calcInput: ({ event, target }) => calcInput(event, target.dataset.calcValue),
+      handleConsoleKey: ({ event }) => handleConsoleKey(event),
+      selectPaintTool: ({ target }) => selectPaintTool(target, target.dataset.paintTool),
+      clearPaint: ({ target }) => clearPaint(target),
+      reloadN64: ({ windowEl }) => {
+        const iframe = windowEl.querySelector("iframe");
+        if (iframe) iframe.src = iframe.src;
+      },
+      copyCharMap: ({ target }) => copyCharMap(target),
+      clearCharMap: ({ windowEl }) => {
+        const input = windowEl.querySelector("#char-copy-input");
+        if (input) input.value = "";
+      },
+      openCPColor: ({ target }) => openCPColor(target),
+      openCPDesktop: ({ target }) => openCPDesktop(controlPanelContext, target),
+      openCPScreensaver: ({ target }) => openCPScreensaver(controlPanelContext, target),
+      openCPSound: ({ target }) => openCPSound(target),
+      openCPFonts: ({ target }) => openCPFonts(target),
+      runCompiler: ({ event }) => runCompiler(event),
+      runPython: ({ event }) => runPython(event),
+      focusConsole: ({ windowEl }) => windowEl.querySelector(".console-input")?.focus(),
+      resetMines: ({ windowEl }) => resetMines(windowEl),
+      addDbRecord: ({ target }) => addDbRecord(target),
+      exportDbToCsv: ({ target }) => exportDbToCsv(target),
+      ...appActions
     };
     this.appRegistry = new AppRegistry({ controlPanelContext });
     this.appHost = new AppHost({
@@ -325,6 +364,7 @@ export class WindowManager {
         contentArea.appendChild(content);
       }
     }
+    this.attachDelegatedAppEvents(win);
     // Drag Start
     titleBar.addEventListener("mousedown", (e) => {
       if (
@@ -359,6 +399,35 @@ export class WindowManager {
     // Focus on click
     win.addEventListener("mousedown", () => this.focusWindow(id));
     return win;
+  }
+
+  attachDelegatedAppEvents(win) {
+    win.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-app-action]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appAction];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
+
+    win.addEventListener("change", (event) => {
+      const target = event.target.closest("[data-app-change]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appChange];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
+
+    win.addEventListener("keydown", (event) => {
+      const target = event.target.closest("[data-app-keydown]");
+      if (!target || !win.contains(target)) return;
+      const handler = this.appActions[target.dataset.appKeydown];
+      if (typeof handler === "function") {
+        handler({ event, target, windowEl: win, windowManager: this });
+      }
+    });
   }
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
     const id = stateOverrides.id || "win-" + Date.now();
@@ -477,7 +546,7 @@ export class WindowManager {
     }
     this.windows.push(winObj);
     // Register Process
-    kernel.registerProcess(id, title);
+    this.kernel?.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
     if (initializer) {
@@ -511,7 +580,7 @@ export class WindowManager {
       this.windows.splice(index, 1);
       delete browserSessions[id];
       // Kill Process
-      kernel.unregisterProcess(id);
+      this.kernel?.unregisterProcess(id);
       refreshAllTaskManagers(this);
       this.saveDesktopState();
     }
@@ -628,7 +697,7 @@ export class WindowManager {
   instantiateApp(appDefinition, windowEl, initData) {
     const services = {
       windowManager: this,
-      kernel,
+      kernel: this.kernel,
       publish,
       subscribe
     };
@@ -934,7 +1003,7 @@ export class WindowManager {
                 <button class="browser-btn" data-action="forward" title="Forward">▶</button>
                 <button class="browser-btn" data-action="refresh" title="Refresh">⟳</button>
                 <button class="browser-btn" data-action="home" title="Home">⌂</button>
-                <input class="browser-url" type="text" placeholder="${getBrowserPlaceholder()}" spellcheck="false">
+                <input class="browser-url" type="text" placeholder="${this.getBrowserPlaceholder()}" spellcheck="false">
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
@@ -943,6 +1012,11 @@ export class WindowManager {
               </div>
             </div>`;
   }
+  getBrowserPlaceholder() {
+    const { browserHome } = getNetworkDefaults();
+    return browserHome || "https://example.com";
+  }
+
   getRadioGardenContent() {
     return `<div class="radio-garden">
               <div class="radio-header">
@@ -1026,9 +1100,9 @@ export class WindowManager {
                         <!-- Populated by JS -->
                     </div>
                     <div class="task-btns">
-                        <button class="task-btn" onclick="switchTask(event)">Switch To</button>
-                        <button class="task-btn" onclick="endTask(event)">End Task</button>
-                        <button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button>
+                        <button class="task-btn" data-app-action="switchTask">Switch To</button>
+                        <button class="task-btn" data-app-action="endTask">End Task</button>
+                        <button class="task-btn" data-app-action="closeWindow">Cancel</button>
                     </div>
                     <div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div>
                     <div class="task-queue-view" id="task-queue-view">
@@ -1045,7 +1119,7 @@ export class WindowManager {
     return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
   }
   getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" data-app-action="mediaPlay">▶</div><div class="mplayer-btn" data-app-action="mediaPause">||</div><div class="mplayer-btn" data-app-action="mediaStop">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
   }
   getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
@@ -1146,9 +1220,9 @@ export class WindowManager {
                 <label>Characters to copy:</label>
                 <div class="copy-row">
                   <input type="text" class="char-input" id="char-copy-input" readonly>
-                  <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
+                  <button class="task-btn" data-app-action="copyCharMap" style="width:60px">Copy</button>
                 </div>
-                <button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button>
+                <button class="task-btn" data-app-action="clearCharMap">Clear</button>
               </div>
             </div>`;
   }
@@ -1156,7 +1230,7 @@ export class WindowManager {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
   }
   getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPSound(this)">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" data-app-action="openCPColor">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" data-app-action="openCPDesktop">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" data-app-action="openCPScreensaver">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" data-app-action="openCPSound">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" data-app-action="openCPFonts"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
   }
   getResetContent() {
     return `<div class="reset-layout" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
@@ -1220,13 +1294,13 @@ export class WindowManager {
     return layout;
   }
   getCompilerContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runCompiler(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" data-app-action="runCompiler">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
   }
   getPythonContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" data-app-action="runPython">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
   }
   getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
+    return `<div class="console" data-app-action="focusConsole"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" data-app-keydown="handleConsoleKey" autocomplete="off"></div></div>`;
   }
   getKakuroContent() {
     const keypadButtons = Array.from({ length: 9 }, (_, i) =>
@@ -1247,7 +1321,7 @@ export class WindowManager {
             </div>`;
   }
   getMinesContent() {
-    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
+    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" data-app-action="resetMines">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
   }
   getPdfReaderContent(initData) {
     const src = initData?.src || DEFAULT_PDF_DATA_URI;
@@ -1443,7 +1517,7 @@ export class WindowManager {
             </div>`;
   }
   getTaskManContent() {
-    return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
+    return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" data-app-action="switchTask">Switch To</button><button class="task-btn" data-app-action="endTask">End Task</button><button class="task-btn" data-app-action="closeWindow">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
   }
   getArtistContent() {
     const defaultPrompt = "retro desktop art of a cozy computer lab";
@@ -1465,6 +1539,6 @@ export class WindowManager {
                 </div>`;
   }
   getDatabaseContent() {
-    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
+    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" data-app-action="addDbRecord">Add Record</button><button class="task-btn" data-app-action="exportDbToCsv">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
   }
 }

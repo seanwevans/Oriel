@@ -3,9 +3,9 @@ export function getPaintRoot(options = {}) {
     <div class="paint-layout">
       <div class="paint-main">
         <div class="paint-tools">
-          <button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button>
-          <button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button>
-          <button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button>
+          <button type="button" class="tool-btn active" data-tool="brush" data-app-action="selectPaintTool" data-paint-tool="brush" aria-label="Brush tool">✎</button>
+          <button type="button" class="tool-btn" data-tool="eraser" data-app-action="selectPaintTool" data-paint-tool="eraser" aria-label="Eraser tool">E</button>
+          <button type="button" class="tool-btn" style="color:red; font-size:12px;" data-app-action="clearPaint" aria-label="Clear canvas">CLR</button>
         </div>
         <div class="paint-canvas-container">
           <canvas class="paint-canvas" width="600" height="400"></canvas>
