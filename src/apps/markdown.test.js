@@ -47,3 +47,21 @@ test("markdown preview renders javascript link destinations as plain text", () =
   assert.doesNotMatch(html, /href\s*=\s*["']javascript:/i);
   assert.match(html, /\[x\]\(javascript:alert\(1\)\)/);
 });
+
+test("renderMarkdown closes a list before rendering a heading", () => {
+  const html = renderMarkdown("- item\n# Heading");
+
+  assert.equal(html, "<ul>\n<li>item</li>\n</ul>\n<h1>Heading</h1>");
+});
+
+test("renderMarkdown closes a list before rendering a paragraph", () => {
+  const html = renderMarkdown("- item\nparagraph");
+
+  assert.equal(html, "<ul>\n<li>item</li>\n</ul>\n<p>paragraph</p>");
+});
+
+test("renderMarkdown keeps consecutive list items in the same list", () => {
+  const html = renderMarkdown("- first\n- second");
+
+  assert.equal(html, "<ul>\n<li>first</li>\n<li>second</li>\n</ul>");
+});
