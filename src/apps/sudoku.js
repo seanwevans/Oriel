@@ -148,3 +148,25 @@ export function initSudoku(w) {
   buildGrid();
   loadPuzzle(diffSelect.value || "easy");
 }
+
+export function getSudokuContent() {
+    return `
+      <div class="sudoku-layout">
+        <div class="sudoku-toolbar">
+          <label class="sudoku-field">Difficulty
+            <select class="sudoku-difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+          <button class="task-btn sudoku-new">New Puzzle</button>
+          <button class="task-btn sudoku-check">Check</button>
+          <button class="task-btn sudoku-reset">Reset</button>
+        </div>
+        <div class="sudoku-status">Choose a difficulty to start.</div>
+        <div class="sudoku-grid" aria-label="Sudoku board" role="grid"></div>
+      </div>
+    `;
+
+}

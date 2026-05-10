@@ -295,7 +295,7 @@ export function initBbs(win) {
     const canned = [
       "\x1b[33m[SysOp]\x1b[0m Checking node status...",
       "\x1b[32m[OK]\x1b[0m Buffered message stored in mail slot.",
-      "\x1b[36m[Tip]\x1b[0m Try DOOR to launch a game or TRANSFER for XMODEM." 
+      "\x1b[36m[Tip]\x1b[0m Try DOOR to launch a game or TRANSFER for XMODEM."
     ];
     appendLine(terminal, canned[Math.floor(Math.random() * canned.length)]);
   };

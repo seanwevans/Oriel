@@ -5,6 +5,14 @@ export class BaseApp {
     this.services = services;
   }
 
+  getWindowContent() {
+    return "";
+  }
+
+  setWindowElement(windowEl) {
+    this.windowEl = windowEl;
+  }
+
   mount() {}
 
   onFocus() {}
@@ -12,4 +20,26 @@ export class BaseApp {
   onBlur() {}
 
   dispose() {}
+}
+
+export class LegacyFunctionApp extends BaseApp {
+  constructor({ initializer, contentProvider = null, ...args }) {
+    super(args);
+    this.initializer = initializer;
+    this.contentProvider = contentProvider;
+  }
+
+  getWindowContent() {
+    if (!this.contentProvider) return "";
+    return this.contentProvider(this.initData, this.services);
+  }
+
+  mount() {
+    if (!this.initializer) return null;
+    return this.initializer(
+      this.windowEl,
+      this.initData,
+      this.services.windowManager
+    );
+  }
 }

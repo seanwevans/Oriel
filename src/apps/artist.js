@@ -70,3 +70,24 @@ export function initArtist(win) {
   // Kick off an initial render using the default prompt
   requestImage();
 }
+
+export function getArtistContent() {
+    const defaultPrompt = "retro desktop art of a cozy computer lab";
+    return `
+                <div class="artist-app">
+                    <div class="artist-toolbar">
+                        <input class="artist-prompt" type="text" value="${defaultPrompt}" placeholder="Describe the image you want" spellcheck="false" />
+                        <button class="task-btn artist-generate">Generate</button>
+                        <span class="artist-status">Enter a prompt and click Generate.</span>
+                    </div>
+                    <div class="artist-body">
+                        <div class="artist-preview-wrap">
+                            <div class="artist-placeholder">Image will appear here</div>
+                            <img class="artist-preview" alt="AI generated art" />
+                        </div>
+                        <div class="artist-hint">Uses the free Pollinations image API. Right-click the result to save it.</div>
+                        <a class="artist-link" href="#" target="_blank" rel="noreferrer noopener">Open image directly</a>
+                    </div>
+                </div>`;
+
+}
