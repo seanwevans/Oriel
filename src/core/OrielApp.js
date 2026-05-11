@@ -43,7 +43,7 @@ import {
 } from "../apps/console.js";
 import { resetMines } from "../apps/minesweeper.js";
 import { selectPaintTool, clearPaint } from "../apps/paint.js";
-import { copyCharMap } from "../apps/charmap.js";
+import { clearCharMap, copyCharMap } from "../apps/charmap.js";
 import { addDbRecord, deleteDbRecord, exportDbToCsv } from "../apps/database.js";
 import {
   psApplyFilter,
@@ -647,6 +647,7 @@ export class OrielApp {
     window.selectPaintTool = selectPaintTool;
     window.clearPaint = clearPaint;
     window.copyCharMap = copyCharMap;
+    window.clearCharMap = clearCharMap;
     window.runCompiler = runCompiler;
     window.runPython = runPython;
     window.exportFileSystem = this.#exportFileSystem.bind(this);

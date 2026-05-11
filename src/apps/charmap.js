@@ -47,6 +47,10 @@ export function copyCharMap(b) {
   document.execCommand("copy");
 }
 
+export function clearCharMap(button) {
+  button.closest(".window").querySelector("#char-copy-input").value = "";
+}
+
 export function getCharMapContent() {
     return `<div class="char-map-layout">
               <div class="char-map-toolbar">
@@ -71,7 +75,7 @@ export function getCharMapContent() {
                   <input type="text" class="char-input" id="char-copy-input" readonly>
                   <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
                 </div>
-                <button class="task-btn" onclick="document.getElementById('char-copy-input').value = ''">Clear</button>
+                <button class="task-btn" onclick="clearCharMap(this)">Clear</button>
               </div>
             </div>`;
 
