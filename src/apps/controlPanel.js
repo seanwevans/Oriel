@@ -70,6 +70,16 @@ function persistThemeCustom(theme) {
   persistDesktopState({ ...currentState, themeCustom: theme });
 }
 
+function resolveControlPanelScope(target) {
+  if (!target) return document;
+  if (target.matches?.(".cp-view-area") || target.matches?.(".window")) return target;
+  const viewArea = target.closest?.(".cp-view-area");
+  if (viewArea) return viewArea;
+  const win = target.closest?.(".window");
+  if (win) return win;
+  return target.querySelector ? target : document;
+}
+
 function applyThemePreset(presetKey, container) {
   const theme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
   setThemeVariables(theme);
@@ -105,10 +115,12 @@ function updateThemeInputs(theme, container) {
   });
 }
 
-function applyTheme(targetPreset) {
-  const select = document.getElementById("cs-sel");
-  const preset = targetPreset || select?.value || "d";
-  applyThemePreset(preset, document);
+function applyTheme(targetPresetOrElement) {
+  const isPreset = typeof targetPresetOrElement === "string";
+  const scope = isPreset ? document : resolveControlPanelScope(targetPresetOrElement);
+  const select = scope.querySelector?.("#cs-sel") || document.getElementById?.("cs-sel");
+  const preset = (isPreset ? targetPresetOrElement : null) || select?.value || "d";
+  applyThemePreset(preset, scope);
 }
 
 function handleThemeInputChange(container) {
@@ -118,18 +130,20 @@ function handleThemeInputChange(container) {
   publish("theme:change", { theme: "custom", values: theme });
 }
 
-function setWallpaper() {
-  const url = document.getElementById("bg-url")?.value || "";
-  const mode = document.getElementById("bg-mode")?.value || "cover";
+function setWallpaper(target) {
+  const scope = resolveControlPanelScope(target);
+  const url = scope.querySelector?.("#bg-url")?.value || "";
+  const mode = scope.querySelector?.("#bg-mode")?.value || "cover";
   applyWallpaperSettings(url, mode, true);
 }
 
-function captureScreensaverForm(context) {
-  const select = document.getElementById("cp-saver-select");
-  const delay = document.getElementById("cp-saver-delay");
-  const status = document.getElementById("cp-saver-status");
-  const passInput = document.getElementById("cp-saver-passphrase");
-  const requireToggle = document.getElementById("cp-saver-require");
+function captureScreensaverForm(context, target) {
+  const scope = resolveControlPanelScope(target);
+  const select = scope.querySelector?.("#cp-saver-select");
+  const delay = scope.querySelector?.("#cp-saver-delay");
+  const status = scope.querySelector?.("#cp-saver-status");
+  const passInput = scope.querySelector?.("#cp-saver-passphrase");
+  const requireToggle = scope.querySelector?.("#cp-saver-require");
   if (select?.value) context?.screensaver?.setType?.(select.value);
   const parsedDelay = parseInt(delay?.value || "", 10);
   if (!isNaN(parsedDelay)) {
@@ -146,8 +160,8 @@ function captureScreensaverForm(context) {
   return { status, hasPass };
 }
 
-function applyScreensaver(context) {
-  const { status, hasPass } = captureScreensaverForm(context);
+function applyScreensaver(context, target) {
+  const { status, hasPass } = captureScreensaverForm(context, target);
   context?.screensaver?.setIdleTime?.(0);
   const type = context?.screensaver?.getType?.();
   const timeout = context?.screensaver?.getTimeout?.();
@@ -158,9 +172,10 @@ function applyScreensaver(context) {
     })`;
 }
 
-function previewScreensaver(context) {
-  const select = document.getElementById("cp-saver-select");
-  captureScreensaverForm(context);
+function previewScreensaver(context, target) {
+  const scope = resolveControlPanelScope(target);
+  const select = scope.querySelector?.("#cp-saver-select");
+  captureScreensaverForm(context, target);
   const chosen = select?.value || context?.screensaver?.getType?.();
   context?.screensaver?.setType?.(chosen);
   context?.screensaver?.setIdleTime?.(0);
@@ -201,7 +216,7 @@ function openCPDesktop(context, el, containerOverride) {
             </select>
             <div style="display:flex; gap:6px; justify-content:flex-end;">
                 <button class="task-btn" onclick="applyWallpaperSettings('${DEFAULT_WALLPAPER}', 'cover', true)">Reset</button>
-                <button class="task-btn" onclick="setWallpaper()">Apply</button>
+                <button class="task-btn" onclick="setWallpaper(this)">Apply</button>
             </div>
         </div>
         <div class="cp-section">
@@ -284,8 +299,8 @@ function openCPScreensaver(context, target, containerOverride) {
               </label>
             </div>
             <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:8px;">
-              <button class="task-btn" onclick="previewScreensaver()">Preview</button>
-              <button class="task-btn" onclick="applyScreensaver()">Apply</button>
+              <button class="task-btn" onclick="previewScreensaver(this)">Preview</button>
+              <button class="task-btn" onclick="applyScreensaver(this)">Apply</button>
             </div>
             <div class="cp-saver-note" id="cp-saver-status">Current saver: ${saverType}${
               saverRequire && saverPass ? " (Locked)" : ""
@@ -533,7 +548,7 @@ function openCPFonts(target, containerOverride) {
     .map((f) => `<option value="${f}">${f}</option>`)
     .join("");
 
-  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection()">Apply</button></div></div></div>`;
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection(this)">Apply</button></div></div></div>`;
 
   const select = body.querySelector("#cp-font-select");
   const custom = body.querySelector("#cp-font-custom");
@@ -567,15 +582,16 @@ function loadGoogleFont(fontName) {
   link.href = href;
 }
 
-function applyFontSelection() {
-  const custom = document.getElementById("cp-font-custom");
-  const select = document.getElementById("cp-font-select");
+function applyFontSelection(target) {
+  const scope = resolveControlPanelScope(target);
+  const custom = scope.querySelector?.("#cp-font-custom");
+  const select = scope.querySelector?.("#cp-font-select");
   const chosen = (custom?.value.trim() || select?.value || "").trim();
   if (!chosen) return;
   loadGoogleFont(chosen);
   const family = `'${chosen}', sans-serif`;
   document.documentElement.style.setProperty("--font-main", family);
-  const preview = document.getElementById("cp-font-preview-text");
+  const preview = scope.querySelector?.("#cp-font-preview-text");
   if (preview) {
     preview.style.fontFamily = family;
     preview.textContent = `The quick brown fox jumps over the lazy dog. (${chosen})`;
@@ -634,10 +650,10 @@ function openCPColor(target, containerOverride) {
   const presetSelect = body.querySelector("#cs-sel");
   if (presetSelect) {
     presetSelect.value = "d";
-    presetSelect.addEventListener("change", () => applyTheme());
+    presetSelect.addEventListener("change", () => applyTheme(body));
   }
   const applyBtn = body.querySelector("#cs-apply-btn");
-  if (applyBtn) applyBtn.addEventListener("click", () => applyTheme());
+  if (applyBtn) applyBtn.addEventListener("click", () => applyTheme(applyBtn));
   body.querySelectorAll(".cs-color-input").forEach((input) => {
     input.addEventListener("input", () => handleThemeInputChange(body));
   });
