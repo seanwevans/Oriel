@@ -253,6 +253,31 @@ export async function saveFileSystem(fs = MOCK_FS) {
 
 export const MOCK_FS = structuredClone(DEFAULT_FS);
 
+function defineDataProperty(target, key, value) {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    configurable: true,
+    writable: true
+  });
+}
+
+function copyPlainData(value, { childrenObject = false } = {}) {
+  if (!value || typeof value !== "object") return value;
+  if (value instanceof Blob) return value;
+  if (Array.isArray(value)) return value.map((item) => copyPlainData(item));
+
+  const target = childrenObject ? Object.create(null) : {};
+  Object.entries(value).forEach(([key, childValue]) => {
+    const copiedValue =
+      key === "children"
+        ? copyPlainData(childValue, { childrenObject: true })
+        : copyPlainData(childValue);
+    defineDataProperty(target, key, copiedValue);
+  });
+  return target;
+}
+
 function stripNativeNodes(node) {
   if (!node || typeof node !== "object") return node;
   if (isNativeNode(node)) return null;
@@ -309,9 +334,11 @@ export async function exportFileSystemAsJson(fs = MOCK_FS) {
 export async function replaceFileSystem(newFs, { persist = true } = {}) {
   const preservedNative = Object.entries(MOCK_FS).filter(([, node]) => isNativeNode(node));
   Object.keys(MOCK_FS).forEach((key) => delete MOCK_FS[key]);
-  Object.assign(MOCK_FS, newFs);
+  Object.entries(newFs || {}).forEach(([key, node]) => {
+    defineDataProperty(MOCK_FS, key, copyPlainData(node));
+  });
   preservedNative.forEach(([key, node]) => {
-    MOCK_FS[key] = node;
+    defineDataProperty(MOCK_FS, key, node);
   });
   if (persist) await saveFileSystem(MOCK_FS);
 }
@@ -335,7 +362,7 @@ export async function mountNativeFolder(driveLetter = NATIVE_DRIVE_LETTER) {
 export async function hydrateNativeDirectory(node) {
   if (!node?.nativeHandle) return node;
   try {
-    const children = {};
+    const children = Object.create(null);
     for await (const entry of node.nativeHandle.values()) {
       const key = entry.name.toUpperCase();
       const priorChild = node.children?.[key];

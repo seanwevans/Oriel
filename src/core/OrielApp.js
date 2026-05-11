@@ -82,6 +82,16 @@ const RESERVED_FOLDER_NAMES = new Set([
   "LPT9"
 ]);
 
+const UNSAFE_CHILD_NAMES = new Set(["__proto__", "prototype", "constructor"]);
+
+function isRestrictedFileSystemName(name) {
+  if (typeof name !== "string" || !name.trim()) return true;
+  if (UNSAFE_CHILD_NAMES.has(name)) return true;
+  if (/[. ]$/.test(name)) return true;
+  if (INVALID_FOLDER_CHARS.test(name)) return true;
+  return RESERVED_FOLDER_NAMES.has(name.trim().toUpperCase());
+}
+
 export class OrielApp {
   constructor({
     WindowManager,
@@ -310,8 +320,13 @@ export class OrielApp {
   #isValidFileSystemNode(node) {
     if (!node || typeof node !== "object") return false;
     if (node.type === "dir") {
-      if (typeof node.children !== "object") return false;
-      return Object.values(node.children).every((child) => this.#isValidFileSystemNode(child));
+      if (!node.children || typeof node.children !== "object" || Array.isArray(node.children)) {
+        return false;
+      }
+      return Object.entries(node.children).every(
+        ([childName, child]) =>
+          !isRestrictedFileSystemName(childName) && this.#isValidFileSystemNode(child)
+      );
     }
     return node.type === "file";
   }
