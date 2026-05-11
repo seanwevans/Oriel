@@ -161,6 +161,9 @@ export { MAIL_PROXY_ROOT };
 export function normalizeHttpUrl(raw) {
   const trimmed = (raw || "").trim();
   if (!trimmed) return null;
+  const schemeMatch = trimmed.match(/^([a-z][a-z\d+.-]*):/i);
+  const hostPortLike = /^[^/?#\s:]+:\d+(?:[/?#]|$)/.test(trimmed);
+  if (schemeMatch && !/^https?:\/\//i.test(trimmed) && !hostPortLike) return null;
   if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
   return trimmed;
 }
@@ -345,10 +348,12 @@ export function initRssReader(win) {
     titleEl.textContent = item.title || "(Untitled)";
     metaEl.textContent = `${formatRssDate(item.date)} · ${item.link || "No link"}`;
     textEl.textContent = stripHtmlText(item.summary) || "(No description)";
-    if (item.link) {
-      linkEl.href = item.link;
+    const normalizedLink = normalizeHttpUrl(item.link);
+    if (normalizedLink && /^https?:\/\//i.test(normalizedLink)) {
+      linkEl.setAttribute("href", normalizedLink);
       linkEl.style.display = "inline";
     } else {
+      linkEl.removeAttribute("href");
       linkEl.style.display = "none";
     }
   };

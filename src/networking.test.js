@@ -117,3 +117,185 @@ test("RSS proxy JSON envelopes return their contents field", async () => {
 
   assert.equal(text, xml);
 });
+
+class FakeElement {
+  constructor(className = "") {
+    this.className = className;
+    this.children = [];
+    this.dataset = {};
+    this.listeners = {};
+    this.attributes = new Map();
+    this.style = {};
+    this.value = "";
+    this.textContent = "";
+    this.classList = {
+      toggle: () => {}
+    };
+  }
+
+  set innerHTML(value) {
+    this._innerHTML = value;
+    this.children = [];
+    this.textContent = String(value || "").replace(/<[^>]*>/g, "");
+  }
+
+  get innerHTML() {
+    return this._innerHTML || "";
+  }
+
+  appendChild(child) {
+    this.children.push(child);
+    return child;
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+    if (name === "href") this.href = String(value);
+  }
+
+  getAttribute(name) {
+    return this.attributes.get(name) || null;
+  }
+
+  removeAttribute(name) {
+    this.attributes.delete(name);
+    if (name === "href") this.href = "";
+  }
+
+  addEventListener(type, handler) {
+    this.listeners[type] = handler;
+  }
+
+  querySelectorAll() {
+    return [];
+  }
+
+  closest(selector) {
+    if (!selector.startsWith(".")) return null;
+    const className = selector.slice(1);
+    return this.className.split(/\s+/).includes(className) ? this : null;
+  }
+}
+
+function createRssWindow() {
+  const elements = new Map(
+    [
+      ".rss-url",
+      ".rss-preset",
+      ".rss-load",
+      ".rss-status",
+      ".rss-list",
+      ".rss-preview-title",
+      ".rss-preview-meta",
+      ".rss-preview-text",
+      ".rss-preview-link"
+    ].map((selector) => [selector, new FakeElement(selector.slice(1))])
+  );
+  elements.get(".rss-url").value = "https://example.test/feed.xml";
+
+  return {
+    elements,
+    querySelector(selector) {
+      return elements.get(selector) || null;
+    }
+  };
+}
+
+function installRssDomParser(feedItems) {
+  return class FakeDOMParser {
+    parseFromString() {
+      return {
+        querySelector(selector) {
+          if (selector === "parsererror") return null;
+          if (selector === "channel > title, feed > title") return { textContent: "Example Feed" };
+          return null;
+        },
+        querySelectorAll(selector) {
+          if (selector !== "item, entry") return [];
+          return feedItems.map((item) => ({
+            querySelector(itemSelector) {
+              if (itemSelector === "link[href]") return null;
+              if (item[itemSelector] === undefined) return null;
+              return { textContent: item[itemSelector] };
+            }
+          }));
+        }
+      };
+    }
+  };
+}
+
+test("RSS preview only exposes normalized HTTP(S) item links", async () => {
+  const previousDocument = global.document;
+  const previousDOMParser = global.DOMParser;
+  const previousFetch = global.fetch;
+  const previousConsoleError = console.error;
+  const win = createRssWindow();
+  const feedItems = [
+    {
+      title: "Unsafe script URL",
+      link: "javascript:alert(1)",
+      pubDate: "2024-01-01T00:00:00Z",
+      description: "Should not expose a link"
+    },
+    {
+      title: "Empty URL",
+      link: "",
+      pubDate: "2024-01-02T00:00:00Z",
+      description: "Should not expose a link"
+    },
+    {
+      title: "Normal URL",
+      link: "https://example.com/story",
+      pubDate: "2024-01-03T00:00:00Z",
+      description: "Should expose a link"
+    }
+  ];
+
+  global.document = {
+    createElement: (tagName) => new FakeElement(tagName)
+  };
+  global.DOMParser = installRssDomParser(feedItems);
+  global.fetch = async () => new Response("<rss></rss>", {
+    headers: { "content-type": "application/rss+xml" }
+  });
+  console.error = () => {};
+
+  try {
+    networking.initRssReader(win);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const listEl = win.elements.get(".rss-list");
+    const linkEl = win.elements.get(".rss-preview-link");
+
+    assert.equal(linkEl.style.display, "none");
+    assert.equal(linkEl.getAttribute("href"), null);
+    assert.equal(linkEl.href, "");
+
+    listEl.listeners.click({ target: listEl.children[1] });
+    assert.equal(linkEl.style.display, "none");
+    assert.equal(linkEl.getAttribute("href"), null);
+    assert.equal(linkEl.href, "");
+
+    listEl.listeners.click({ target: listEl.children[2] });
+    assert.equal(linkEl.style.display, "inline");
+    assert.equal(linkEl.href, "https://example.com/story");
+  } finally {
+    if (previousDocument === undefined) {
+      delete global.document;
+    } else {
+      global.document = previousDocument;
+    }
+    if (previousDOMParser === undefined) {
+      delete global.DOMParser;
+    } else {
+      global.DOMParser = previousDOMParser;
+    }
+    if (previousFetch === undefined) {
+      delete global.fetch;
+    } else {
+      global.fetch = previousFetch;
+    }
+    console.error = previousConsoleError;
+  }
+});
