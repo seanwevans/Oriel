@@ -31,6 +31,17 @@ function assignPendingMountPromise({ pendingMountPromise, winEl, winObj }) {
   if (winEl) winEl.pendingMountPromise = pendingMountPromise;
 }
 
+function dispatchAppDestroy(winEl) {
+  if (typeof winEl?.dispatchEvent !== "function") return;
+
+  const event =
+    typeof CustomEvent === "function"
+      ? new CustomEvent("app:destroy")
+      : { type: "app:destroy" };
+
+  winEl.dispatchEvent(event);
+}
+
 export class AppHost {
   constructor({ onMountError } = {}) {
     this.onMountError = onMountError;
@@ -112,12 +123,15 @@ export class AppHost {
     const winEl = winObj?.el;
     const appInstance = winObj?.appInstance || winEl?.appInstance || null;
 
-    if (appInstance && typeof appInstance.dispose === "function") {
+    const hasDispose = appInstance && typeof appInstance.dispose === "function";
+    if (hasDispose) {
       try {
         appInstance.dispose();
       } catch (err) {
         console.error("App dispose failed:", err);
       }
+    } else {
+      dispatchAppDestroy(winEl);
     }
 
     LEGACY_CLEANUP_KEYS.forEach((key) => {
