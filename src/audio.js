@@ -10,6 +10,7 @@ function clampVolume(v) {
 }
 
 function loadStoredVolume() {
+  if (typeof localStorage === "undefined") return 0.7;
   const stored = parseFloat(localStorage.getItem(VOLUME_STORAGE_KEY));
   if (isNaN(stored)) return 0.7;
   return clampVolume(stored);
