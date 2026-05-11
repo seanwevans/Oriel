@@ -37,6 +37,55 @@ export function getNetNewsContent() {
   `;
 }
 
+
+export function appendNetNewsEmptyMessage(container, message) {
+  const empty = document.createElement("div");
+  empty.className = "netnews-empty";
+  empty.textContent = message;
+  container.appendChild(empty);
+}
+
+export function createNetNewsGroupRow(group, isSelected = false) {
+  const row = document.createElement("div");
+  row.className = "netnews-group" + (isSelected ? " active" : "");
+  row.dataset.id = group.id;
+  row.setAttribute("role", "option");
+  row.tabIndex = 0;
+
+  const title = document.createElement("div");
+  title.className = "netnews-group-title";
+  title.textContent = group.title;
+
+  const description = document.createElement("div");
+  description.className = "netnews-group-desc";
+  description.textContent = group.description;
+
+  row.appendChild(title);
+  row.appendChild(description);
+  return row;
+}
+
+export function createNetNewsThreadRow(thread, idx, isSelected = false) {
+  const row = document.createElement("div");
+  row.className = "netnews-thread" + (isSelected ? " active" : "");
+  row.dataset.index = idx.toString();
+  row.tabIndex = 0;
+  row.setAttribute("role", "option");
+  row.setAttribute("aria-selected", isSelected ? "true" : "false");
+
+  const title = document.createElement("div");
+  title.className = "netnews-thread-title";
+  title.textContent = thread.title || "(Untitled)";
+
+  const meta = document.createElement("div");
+  meta.className = "netnews-thread-meta";
+  meta.textContent = `${thread.feedTitle || ""} · ${formatRssDate(thread.date)}`;
+
+  row.appendChild(title);
+  row.appendChild(meta);
+  return row;
+}
+
 export function initNetNews(win) {
   const groupsEl = win.querySelector(".netnews-groups");
   const threadsEl = win.querySelector(".netnews-threads");
@@ -66,18 +115,13 @@ export function initNetNews(win) {
   };
 
   const renderGroups = () => {
-    groupsEl.innerHTML = "";
+    groupsEl.textContent = "";
     if (!NETNEWS_GROUPS.length) {
-      groupsEl.innerHTML = '<div class="netnews-empty">No groups configured.</div>';
+      appendNetNewsEmptyMessage(groupsEl, "No groups configured.");
       return;
     }
     NETNEWS_GROUPS.forEach((group) => {
-      const row = document.createElement("div");
-      row.className = "netnews-group" + (group.id === selectedGroupId ? " active" : "");
-      row.dataset.id = group.id;
-      row.setAttribute("role", "option");
-      row.tabIndex = 0;
-      row.innerHTML = `<div class="netnews-group-title">${group.title}</div><div class="netnews-group-desc">${group.description}</div>`;
+      const row = createNetNewsGroupRow(group, group.id === selectedGroupId);
       row.addEventListener("click", () => {
         if (group.id === selectedGroupId) return;
         selectedGroupId = group.id;
@@ -96,21 +140,14 @@ export function initNetNews(win) {
   };
 
   const renderThreads = () => {
-    threadsEl.innerHTML = "";
+    threadsEl.textContent = "";
     threadsEl.setAttribute("role", "listbox");
     if (!threads.length) {
-      threadsEl.innerHTML = '<div class="netnews-empty">No stories yet.</div>';
+      appendNetNewsEmptyMessage(threadsEl, "No stories yet.");
       return;
     }
     threads.forEach((thread, idx) => {
-      const row = document.createElement("div");
-      row.className = "netnews-thread" + (idx === selectedThread ? " active" : "");
-      row.dataset.index = idx.toString();
-      row.tabIndex = 0;
-      row.setAttribute("role", "option");
-      row.setAttribute("aria-selected", idx === selectedThread ? "true" : "false");
-      row.innerHTML = `<div class="netnews-thread-title">${thread.title || "(Untitled)"}</div>
-        <div class="netnews-thread-meta">${thread.feedTitle || ""} · ${formatRssDate(thread.date)}</div>`;
+      const row = createNetNewsThreadRow(thread, idx, idx === selectedThread);
       row.addEventListener("click", () => selectThread(idx));
       row.addEventListener("keydown", (e) => {
         if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
