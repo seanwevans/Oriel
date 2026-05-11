@@ -1,0 +1,155 @@
+import { getMinecraftRoot, initMinecraft } from "./minecraft.js";
+import { getN64Root, initN64 } from "./n64.js";
+import { getNotepadContent, initNotepad, NotepadApp } from "./notepad.js";
+import { getCardfileContent, initCardfile } from "./cardfile.js";
+import { getClockContent, initClock } from "./clock.js";
+import { getDiscordContent, initDiscord } from "./discord.js";
+import { getSpotifyContent, initSpotify } from "./spotify.js";
+import { getIRCContent, initIRC } from "./irc.js";
+import { getBbsContent, initBbs } from "./bbsDialer.js";
+import { getEmailContent, initEmail } from "./email.js";
+import { getMessengerContent, initMessenger } from "./messenger.js";
+import { getRetroAIContent, initRetroAI } from "./retroAI.js";
+import { getKakuroContent, initKakuro } from "./kakuro.js";
+import { getMarkdownContent, initMarkdownViewer } from "./markdown.js";
+import { getMinesContent, initMinesweeper } from "./minesweeper.js";
+import { getCeleryManContent, initCeleryMan } from "./celeryman.js";
+import { getPdfReaderContent, initPdfReader } from "./pdfReader.js";
+import { getPaintRoot, initPaint } from "./paint.js";
+import { getPixelStudioContent, initPixelStudio } from "./pixelStudio.js";
+import { getPostgresContent, initPostgres } from "./postgres.js";
+import { getVmContent, initVm } from "./vm.js";
+import { getWriteContent, initWrite } from "./write.js";
+import { getArtistContent, initArtist } from "./artist.js";
+import { getSandspielRoot, initSandspiel } from "./sandspiel.js";
+import { getSandspiel3DRoot, initSandspiel3d } from "./sandspiel3d.js";
+import { getWhiteboardRoot, initWhiteboard } from "./whiteboard.js";
+import { getImageViewerContent, initImageViewer } from "./imageViewer.js";
+import { getReversiContent, initReversi } from "./reversi.js";
+import { getSolitaireContent, initSolitaire } from "./solitaire.js";
+import { getSudokuContent, initSudoku } from "./sudoku.js";
+import { getCharMapContent, initCharMap } from "./charmap.js";
+import { getBeatMakerContent, initBeatMaker } from "./beatMaker.js";
+import { getMidiSequencerContent, initMidiSequencer } from "./midiSequencer.js";
+import { getDatabaseContent, initDatabase } from "./database.js";
+import { getMediaPlayerContent, initMediaPlayer } from "./mediaPlayer.js";
+import { getTaskManContent, initTaskMan } from "./taskman.js";
+import { getResetContent, initReset } from "./reset.js";
+import { getHexEditorContent, initHexEditor } from "./hexEditor.js";
+import { getSoundRecContent, initSoundRecorder } from "./soundRecorder.js";
+import { getDoomContent, initDoom } from "./doom.js";
+import { getWinFileContent, initFileManager } from "./fileManager.js";
+import { getCompilerContent, getConsoleContent, getPythonContent, initConsole } from "./console.js";
+import { getPhotoshopContent, initPhotoshop } from "./photoshop.js";
+import { getLineRiderContent, initLineRider } from "./linerider.js";
+import { getSimCityContent, initSimCity } from "./simcity.js";
+import { getNetNewsContent, initNetNews } from "./netnews.js";
+import { getSkiFreeContent, initSkiFree } from "./skifree.js";
+import { getPinballContent, initPinball } from "./pinball.js";
+import { getAngryBirdsContent, initAngryBirds } from "./angrybirds.js";
+import { getCannonDuelContent, initCannonDuel } from "./cannonDuel.js";
+import { getMafiaContent, initMafia } from "./mafia.js";
+import { getPacketLabContent, initPacketLab } from "./packetLab.js";
+import { getApiClientContent, initApiClient } from "./apiClient.js";
+import { getTi83Root, initTi83 } from "./ti83.js";
+import { getTrackerContent, initTracker } from "./tracker.js";
+import { getControlPanelContent, initControlPanel } from "./controlPanel.js";
+import { getChessContent, initChess } from "./chess.js";
+import { getPapersContent, initPapersPlease } from "./papersPlease.js";
+import { getShaderLabRoot, initShaderLab } from "./shaderLab.js";
+import { getCodePenContent, initCodePen } from "./codepen.js";
+import { getCalcContent } from "./calc.js";
+import { getReadmeContent } from "./readme.js";
+import { getClipboardContent } from "./clipboard.js";
+import { getRssReaderContent } from "./rss.js";
+
+export const APP_MANIFEST = {
+  progman: {
+    type: "progman",
+    title: "Program Manager",
+    width: 500,
+    height: 480,
+    icon: "progman",
+    label: "Program Manager",
+    showInProgramManager: false,
+    contentProviderKey: "programManager"
+  },
+  notepad: { type: "notepad", title: "Notepad", width: 300, height: 200, icon: "notepad", label: "Notepad", executableName: "NOTEPAD.EXE", initializer: initNotepad, contentProvider: getNotepadContent, appClass: NotepadApp },
+  write: { type: "write", title: "Write", width: 500, height: 400, icon: "write", label: "Write", executableName: "WRITE.EXE", initializer: initWrite, contentProvider: getWriteContent },
+  codepen: { type: "codepen", title: "CodePen Runner", width: 900, height: 640, icon: "codepen", label: "CodePen", executableName: "CODEPEN.EXE", initializer: initCodePen, contentProvider: (initData) => initData?.mode === "viewer" ? "" : getCodePenContent(initData) },
+  winfile: { type: "winfile", title: "File Manager", width: 500, height: 350, icon: "winfile", label: "File Mgr", executableName: "WINFILE.EXE", initializer: initFileManager, contentProvider: getWinFileContent },
+  cardfile: { type: "cardfile", title: "Cardfile", width: 350, height: 400, icon: "cardfile", label: "Cardfile", executableName: "CARDFILE.EXE", initializer: initCardfile, contentProvider: getCardfileContent },
+  calc: { type: "calc", title: "Calculator", width: 220, height: 250, icon: "calc", label: "Calculator", executableName: "CALC.EXE", contentProvider: getCalcContent },
+  mines: { type: "mines", title: "Minesweeper", width: 240, height: 320, icon: "mines", label: "Minesweeper", executableName: "WINMINE.EXE", initializer: initMinesweeper, contentProvider: getMinesContent },
+  kakuro: { type: "kakuro", title: "Kakuro", width: 320, height: 380, icon: "kakuro", label: "Kakuro", executableName: "KAKURO.EXE", initializer: initKakuro, contentProvider: getKakuroContent },
+  solitaire: { type: "solitaire", title: "Solitaire", width: 600, height: 450, icon: "solitaire", label: "Solitaire", executableName: "SOL.EXE", initializer: initSolitaire, contentProvider: getSolitaireContent },
+  chess: { type: "chess", title: "Chess", width: 640, height: 520, icon: "chess", label: "Chess", executableName: "CHESS.EXE", initializer: initChess, contentProvider: getChessContent },
+  reversi: { type: "reversi", title: "Reversi", width: 300, height: 340, icon: "reversi", label: "Reversi", executableName: "REVERSI.EXE", initializer: initReversi, contentProvider: getReversiContent },
+  sudoku: { type: "sudoku", title: "Sudoku", width: 520, height: 620, icon: "sudoku", label: "Sudoku", initializer: initSudoku, contentProvider: getSudokuContent },
+  mafia: { type: "mafia", title: "Mystery Mafia", width: 760, height: 640, icon: "mafia", label: "Mafia", initializer: initMafia, contentProvider: getMafiaContent },
+  paint: { type: "paint", title: "Paintbrush", width: 500, height: 400, icon: "paint", label: "Paintbrush", executableName: "PBRUSH.EXE", initializer: initPaint, contentProvider: getPaintRoot },
+  pixelstudio: { type: "pixelstudio", title: "Pixel Studio", width: 980, height: 620, icon: "pixelstudio", label: "pixelstudio", initializer: initPixelStudio, contentProvider: getPixelStudioContent },
+  whiteboard: { type: "whiteboard", title: "Whiteboard", width: 900, height: 640, icon: "whiteboard", label: "whiteboard", initializer: initWhiteboard, contentProvider: getWhiteboardRoot },
+  photoshop: { type: "photoshop", title: "Photoshop 3.0", width: 760, height: 560, icon: "photoshop", label: "Photoshop", executableName: "PHOTOSHP.EXE", initializer: initPhotoshop, contentProvider: getPhotoshopContent },
+  mplayer: { type: "mplayer", title: "Media Player", width: 350, height: 250, icon: "mplayer", label: "Media Player", executableName: "MPLAYER.EXE", initializer: initMediaPlayer, contentProvider: getMediaPlayerContent },
+  simcity: { type: "simcity", title: "Micropolis", width: 560, height: 520, icon: "simcity", label: "Micropolis", executableName: "SIMCITY.EXE", initializer: initSimCity, contentProvider: getSimCityContent },
+  angrybirds: { type: "angrybirds", title: "Bird Slinger", width: 860, height: 540, icon: "angrybirds", label: "Angry Birds", initializer: initAngryBirds, contentProvider: getAngryBirdsContent },
+  skifree: { type: "skifree", title: "SkiFree", width: 520, height: 520, icon: "skifree", label: "SkiFree", executableName: "SKIFREE.EXE", initializer: initSkiFree, contentProvider: getSkiFreeContent },
+  cannonduel: { type: "cannonduel", title: "Cannon Duel", width: 780, height: 520, icon: "cannonduel", label: "Cannon Duel", initializer: initCannonDuel, contentProvider: getCannonDuelContent },
+  pinball: { type: "pinball", title: "Pinball", width: 520, height: 640, icon: "pinball", label: "Pinball", executableName: "PINBALL.EXE", initializer: initPinball, contentProvider: getPinballContent },
+  linerider: { type: "linerider", title: "Line Rider", width: 620, height: 520, icon: "linerider", label: "Line Rider", executableName: "LINERIDR.EXE", initializer: initLineRider, contentProvider: getLineRiderContent },
+  soundrec: { type: "soundrec", title: "Sound Recorder", width: 300, height: 160, icon: "soundrec", label: "Sound Rec", executableName: "SOUNDREC.EXE", initializer: initSoundRecorder, contentProvider: getSoundRecContent },
+  radio: { type: "radio", title: "Radio", width: 620, height: 460, icon: "radio", label: "Radio", executableName: "RADIO.EXE", initializerKey: "radio", contentProviderKey: "radio" },
+  beatmaker: { type: "beatmaker", title: "Beat Lab", width: 720, height: 420, icon: "beatmaker", label: "Beat Lab", executableName: "BEATLAB.EXE", initializer: initBeatMaker, contentProvider: getBeatMakerContent },
+  tracker: { type: "tracker", title: "Chip Studio", width: 820, height: 520, icon: "tracker", label: "Chip Studio", executableName: "TRACKER.EXE", initializer: initTracker, contentProvider: getTrackerContent },
+  midisequencer: { type: "midisequencer", title: "MIDI Sequencer", width: 920, height: 600, icon: "midisequencer", label: "MIDI Seq", initializer: initMidiSequencer, contentProvider: getMidiSequencerContent },
+  clock: { type: "clock", title: "Clock", width: 250, height: 250, icon: "clock", label: "Clock", executableName: "CLOCK.EXE", initializer: initClock, contentProvider: getClockContent },
+  spotify: { type: "spotify", title: "Spotify", width: 420, height: 520, icon: "spotify", label: "Spotify", executableName: "SPOTIFY.EXE", initializer: initSpotify, contentProvider: getSpotifyContent },
+  charmap: { type: "charmap", title: "Character Map", width: 460, height: 380, icon: "charmap", label: "Char Map", executableName: "CHARMAP.EXE", initializer: initCharMap, contentProvider: getCharMapContent },
+  control: { type: "control", title: "Control Panel", width: 400, height: 300, icon: "control", label: "Control", executableName: "CONTROL.EXE", initializer: initControlPanel, contentProvider: getControlPanelContent, usesControlPanelContext: true },
+  reset: { type: "reset", title: "Reset System", width: 400, height: 260, icon: "reset", label: "Reset", executableName: "RESET.EXE", initializer: initReset, contentProvider: getResetContent },
+  imageviewer: { type: "imageviewer", title: "Image Viewer", width: 720, height: 540, icon: "imageviewer", label: "Image View", executableName: "IMGVIEW.EXE", initializer: initImageViewer, contentProvider: getImageViewerContent },
+  pdfreader: { type: "pdfreader", title: "PDF Reader", width: 720, height: 540, icon: "pdfreader", label: "PDF Reader", initializer: initPdfReader, contentProvider: getPdfReaderContent },
+  markdown: { type: "markdown", title: "Markdown Viewer", width: 700, height: 500, icon: "markdown", label: "Markdown", initializer: initMarkdownViewer, contentProvider: getMarkdownContent },
+  netnews: { type: "netnews", title: "NetNews", width: 980, height: 640, icon: "netnews", label: "NetNews", initializer: initNetNews, contentProvider: getNetNewsContent },
+  clipbrd: { type: "clipbrd", title: "Clipboard", width: 300, height: 250, icon: "clipboard", label: "Clipboard", executableName: "CLIPBRD.EXE", contentProvider: getClipboardContent },
+  taskman: { type: "taskman", title: "Task List", width: 320, height: 350, icon: "taskman", label: "Task List", executableName: "TASKMAN.EXE", initializer: initTaskMan, contentProvider: getTaskManContent },
+  database: { type: "database", title: "Data Manager", width: 500, height: 400, icon: "database", label: "Data Mgr", executableName: "DATAMGR.EXE", initializer: initDatabase, contentProvider: getDatabaseContent },
+  postgres: { type: "postgres", title: "Postgres", width: 820, height: 520, icon: "postgres", label: "Postgres", executableName: "POSTGRES.EXE", initializer: initPostgres, contentProvider: getPostgresContent },
+  compiler: { type: "compiler", title: "Tiny C", width: 450, height: 350, icon: "ccompiler", label: "Tiny C", executableName: "TINYC.EXE", contentProvider: getCompilerContent },
+  python: { type: "python", title: "Tiny Python", width: 450, height: 350, icon: "python", label: "Python", executableName: "PYTHON.EXE", contentProvider: getPythonContent },
+  console: { type: "console", title: "Console", width: 500, height: 350, icon: "console", label: "Console", executableName: "CONSOLE.EXE", initializer: initConsole, contentProvider: getConsoleContent },
+  apiclient: { type: "apiclient", title: "API Client", width: 820, height: 640, icon: "apiclient", label: "API Client", initializer: initApiClient, contentProvider: getApiClientContent },
+  packetlab: { type: "packetlab", title: "Packet Lab", width: 760, height: 520, icon: "packetlab", label: "Packet Lab", initializer: initPacketLab, contentProvider: getPacketLabContent },
+  retroai: { type: "retroai", title: "Retro AI", width: 620, height: 520, icon: "retroai", label: "Retro AI", initializer: initRetroAI, contentProvider: getRetroAIContent },
+  hexedit: { type: "hexedit", title: "Hex Editor", width: 720, height: 520, icon: "hexedit", label: "Hex Editor", executableName: "HEXEDIT.EXE", initializer: initHexEditor, contentProvider: getHexEditorContent },
+  rss: { type: "rss", title: "RSS Reader", width: 720, height: 520, icon: "rss", label: "RSS Reader", executableName: "RSS.EXE", initializerKey: "rss", contentProvider: getRssReaderContent },
+  browser: { type: "browser", title: "Web Browser", width: 640, height: 480, icon: "browser", label: "Browser", executableName: "WEB.EXE", initializerKey: "browser", contentProviderKey: "browser" },
+  celeryman: { type: "celeryman", title: "Celery Man", width: 920, height: 640, icon: "celeryman", label: "Celery Man", initializer: initCeleryMan, contentProvider: getCeleryManContent },
+  vm: { type: "vm", title: "Oriel VM", width: 900, height: 680, icon: "vm", label: "Oriel VM", initializer: initVm, contentProvider: getVmContent },
+  radiogarden: { type: "radiogarden", title: "Radio Garden", width: 720, height: 520, icon: "radiogarden", label: "Radio Garden", initializerKey: "radiogarden", contentProviderKey: "radiogarden" },
+  discord: { type: "discord", title: "Discord (API)", width: 720, height: 520, icon: "discord", label: "Discord", executableName: "DISCORD.EXE", initializer: initDiscord, contentProvider: getDiscordContent },
+  bbs: { type: "bbs", title: "BBS Dialer", width: 760, height: 520, icon: "bbs", label: "BBS", initializer: initBbs, contentProvider: getBbsContent },
+  email: { type: "email", title: "RetroMail", width: 920, height: 640, icon: "email", label: "Mail", initializer: initEmail, contentProvider: getEmailContent },
+  messenger: { type: "messenger", title: "Messenger", width: 520, height: 420, icon: "messenger", label: "Messenger", initializer: initMessenger, contentProvider: getMessengerContent },
+  irc: { type: "irc", title: "IRC Client", width: 680, height: 500, icon: "irc", label: "IRC", executableName: "IRC.EXE", initializer: initIRC, contentProvider: getIRCContent },
+  readme: { type: "readme", title: "Read Me", width: 350, height: 400, icon: "readme", label: "Read Me", contentProvider: getReadmeContent },
+  doom: { type: "doom", title: "DOOM", width: 640, height: 400, icon: "doom", label: "DOOM", executableName: "DOOM.EXE", initializer: initDoom, contentProvider: getDoomContent },
+  ti83: { type: "ti83", title: "TI-83 Emulator", width: 620, height: 520, icon: "ti83", label: "TI-83", initializer: initTi83, contentProvider: getTi83Root },
+  n64: { type: "n64", title: "Nintendo 64", width: 640, height: 520, icon: "n64", label: "N64", initializer: initN64, contentProvider: getN64Root },
+  minecraft: { type: "minecraft", title: "Minecraft Classic", width: 720, height: 560, icon: "minecraft", label: "Minecraft", executableName: "MCRAFT.EXE", initializer: initMinecraft, contentProvider: getMinecraftRoot },
+  sandspiel: { type: "sandspiel", title: "Sandspiel", width: 720, height: 560, icon: "sandspiel", label: "Sandspiel", executableName: "SAND.EXE", initializer: initSandspiel, contentProvider: getSandspielRoot },
+  sandspiel3d: { type: "sandspiel3d", title: "Sandspiel3D", width: 840, height: 620, icon: "sandspiel3d", label: "Sandspiel3D", executableName: "SAND3D.EXE", initializer: initSandspiel3d, contentProvider: getSandspiel3DRoot },
+  shaderlab: { type: "shaderlab", title: "Shader Lab", width: 920, height: 640, icon: "shaderlab", label: "Shader Lab", initializer: initShaderLab, contentProvider: getShaderLabRoot },
+  papers: { type: "papers", title: "Checkpoint", width: 640, height: 520, icon: "papers", label: "Checkpoint", initializer: initPapersPlease, contentProvider: getPapersContent }
+};
+
+export const APP_DEFINITIONS = Object.values(APP_MANIFEST);
+
+export function getExecutableEntries() {
+  return Object.fromEntries(
+    APP_DEFINITIONS
+      .filter(({ executableName }) => executableName)
+      .map(({ executableName, type }) => [executableName, { type: "file", app: type }])
+  );
+}

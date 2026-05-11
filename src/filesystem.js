@@ -4,6 +4,7 @@ import {
   DEFAULT_SCREEN_IMAGE
 } from "./defaults.js";
 import { publish } from "./eventBus.js";
+import { getExecutableEntries } from "./apps/manifest.js";
 
 export const FS_STORAGE_KEY = "oriel-fs-v1";
 export const NATIVE_DRIVE_LETTER = "D\\";
@@ -16,51 +17,7 @@ export const DEFAULT_FS = {
         type: "dir",
         children: {
           SYSTEM: { type: "dir", children: {} },
-          "CALC.EXE": { type: "file", app: "calc" },
-          "NOTEPAD.EXE": { type: "file", app: "notepad" },
-          "DOOM.EXE": { type: "file", app: "doom" },
-          "MCRAFT.EXE": { type: "file", app: "minecraft" },
-          "SAND.EXE": { type: "file", app: "sandspiel" },
-          "SAND3D.EXE": { type: "file", app: "sandspiel3d" },
-          "WRITE.EXE": { type: "file", app: "write" },
-          "CARDFILE.EXE": { type: "file", app: "cardfile" },
-          "WINMINE.EXE": { type: "file", app: "mines" },
-          "CHESS.EXE": { type: "file", app: "chess" },
-          "SOL.EXE": { type: "file", app: "solitaire" },
-          "REVERSI.EXE": { type: "file", app: "reversi" },
-          "KAKURO.EXE": { type: "file", app: "kakuro" },
-          "PBRUSH.EXE": { type: "file", app: "paint" },
-          "ARTIST.EXE": { type: "file", app: "artist" },
-          "PHOTOSHP.EXE": { type: "file", app: "photoshop" },
-          "MPLAYER.EXE": { type: "file", app: "mplayer" },
-          "SKIFREE.EXE": { type: "file", app: "skifree" },
-          "PINBALL.EXE": { type: "file", app: "pinball" },
-          "LINERIDR.EXE": { type: "file", app: "linerider" },
-          "SIMCITY.EXE": { type: "file", app: "simcity" },
-          "WINFILE.EXE": { type: "file", app: "winfile" },
-          "CODEPEN.EXE": { type: "file", app: "codepen" },
-          "TASKMAN.EXE": { type: "file", app: "taskman" },
-          "CLIPBRD.EXE": { type: "file", app: "clipbrd" },
-          "DATAMGR.EXE": { type: "file", app: "database" },
-          "POSTGRES.EXE": { type: "file", app: "postgres" },
-          "CHARMAP.EXE": { type: "file", app: "charmap" },
-          "SOUNDREC.EXE": { type: "file", app: "soundrec" },
-          "BEATLAB.EXE": { type: "file", app: "beatmaker" },
-          "TRACKER.EXE": { type: "file", app: "tracker" },
-          "RADIO.EXE": { type: "file", app: "radio" },
-          "SPOTIFY.EXE": { type: "file", app: "spotify" },
-          "CLOCK.EXE": { type: "file", app: "clock" },
-          "CONTROL.EXE": { type: "file", app: "control" },
-          "RESET.EXE": { type: "file", app: "reset" },
-          "RSS.EXE": { type: "file", app: "rss" },
-          "WEB.EXE": { type: "file", app: "browser" },
-          "DISCORD.EXE": { type: "file", app: "discord" },
-          "IRC.EXE": { type: "file", app: "irc" },
-          "TINYC.EXE": { type: "file", app: "compiler" },
-          "PYTHON.EXE": { type: "file", app: "python" },
-          "CONSOLE.EXE": { type: "file", app: "console" },
-          "HEXEDIT.EXE": { type: "file", app: "hexedit" },
-          "IMGVIEW.EXE": { type: "file", app: "imageviewer" }
+          ...getExecutableEntries()
         }
       },
       DOCUMENTS: {
