@@ -300,6 +300,54 @@ test("createWindowDOM wires window controls with event listeners", () => {
 });
 
 
+test("maximize restore captures fresh geometry after move and resize", () => {
+  const wm = createTestWindowManager();
+  wm.maximizeWindow = WindowManager.prototype.maximizeWindow;
+  wm.saveDesktopState = () => {};
+  wm.focusWindow = () => {};
+
+  const winEl = wm.createWindowDOM("max-id", "notes", "Max Test", 320, 240, "");
+  winEl.style.top = "24px";
+  winEl.style.left = "36px";
+  winEl.style.width = "320px";
+  winEl.style.height = "240px";
+  const win = { id: "max-id", el: winEl, maximized: false, prevRect: null, minimized: false };
+  wm.windows = [win];
+
+  wm.maximizeWindow("max-id");
+  wm.maximizeWindow("max-id");
+
+  assert.deepEqual(
+    {
+      top: winEl.style.top,
+      left: winEl.style.left,
+      width: winEl.style.width,
+      height: winEl.style.height
+    },
+    { top: "24px", left: "36px", width: "320px", height: "240px" }
+  );
+  assert.equal(win.prevRect, null);
+
+  winEl.style.top = "72px";
+  winEl.style.left = "84px";
+  winEl.style.width = "480px";
+  winEl.style.height = "300px";
+
+  wm.maximizeWindow("max-id");
+  wm.maximizeWindow("max-id");
+
+  assert.deepEqual(
+    {
+      top: winEl.style.top,
+      left: winEl.style.left,
+      width: winEl.style.width,
+      height: winEl.style.height
+    },
+    { top: "72px", left: "84px", width: "480px", height: "300px" }
+  );
+  assert.equal(win.prevRect, null);
+});
+
 test("openWindow generates unique IDs when Date.now is fixed", () => {
   const originalDateNow = Date.now;
   Date.now = () => 1234567890;

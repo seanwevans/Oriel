@@ -455,13 +455,12 @@ export class WindowManager {
     const win = this.windows.find((w) => w.id === id);
     if (!win) return;
     if (!win.maximized) {
-      win.prevRect =
-        win.prevRect || {
-          top: win.el.style.top,
-          left: win.el.style.left,
-          width: win.el.style.width,
-          height: win.el.style.height
-        };
+      win.prevRect = {
+        top: win.el.style.top,
+        left: win.el.style.left,
+        width: win.el.style.width,
+        height: win.el.style.height
+      };
       win.el.style.top = "0";
       win.el.style.left = "0";
       win.el.style.width = "100%";
@@ -472,6 +471,7 @@ export class WindowManager {
       win.el.style.left = win.prevRect.left;
       win.el.style.width = win.prevRect.width;
       win.el.style.height = win.prevRect.height;
+      win.prevRect = null;
       win.maximized = false;
     }
     this.focusWindow(id);
