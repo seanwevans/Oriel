@@ -125,6 +125,7 @@ class FakeElement {
     this.dataset = {};
     this.listeners = {};
     this.attributes = new Map();
+    this.assignmentLog = [];
     this.style = {};
     this.value = "";
     this.textContent = "";
@@ -141,6 +142,19 @@ class FakeElement {
 
   get innerHTML() {
     return this._innerHTML || "";
+  }
+
+  set srcdoc(value) {
+    this.assignmentLog.push({
+      type: "srcdoc",
+      value: String(value),
+      sandbox: this.getAttribute("sandbox")
+    });
+    this._srcdoc = String(value);
+  }
+
+  get srcdoc() {
+    return this._srcdoc || "";
   }
 
   appendChild(child) {
@@ -176,6 +190,75 @@ class FakeElement {
     return this.className.split(/\s+/).includes(className) ? this : null;
   }
 }
+
+
+function createBrowserWindow() {
+  const elements = new Map(
+    [
+      ".browser-url",
+      ".browser-frame",
+      ".browser-status",
+      '[data-action="back"]',
+      '[data-action="forward"]',
+      '[data-action="refresh"]',
+      '[data-action="home"]',
+      '[data-action="go"]'
+    ].map((selector) => [selector, new FakeElement(selector.replace(/^[.#]/, ""))])
+  );
+
+  return {
+    dataset: { id: "browser-test" },
+    elements,
+    querySelector(selector) {
+      return elements.get(selector) || null;
+    }
+  };
+}
+
+async function waitFor(predicate) {
+  for (let i = 0; i < 20; i += 1) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+}
+
+test("browser iframe is sandboxed before proxied HTML is assigned", async () => {
+  const previousFetch = global.fetch;
+  const win = createBrowserWindow();
+  const frame = win.elements.get(".browser-frame");
+
+  updateNetworkDefaults({
+    browserHome: "https://example.test/",
+    browserProxyPrefix: "https://proxy.test/"
+  });
+
+  global.fetch = async () => new Response(
+    '<main>Safe preview</main><script>globalThis.evil = true;</script>',
+    { headers: { "content-type": "text/html" } }
+  );
+
+  try {
+    networking.initBrowser(win, {});
+    await waitFor(() => frame.srcdoc.includes("Safe preview"));
+
+    assert.ok(frame.assignmentLog.length >= 2);
+    assert.ok(
+      frame.assignmentLog.every((entry) => entry.sandbox === networking.BROWSER_FRAME_SANDBOX),
+      "sandbox must be present before every srcdoc assignment"
+    );
+    assert.equal(frame.getAttribute("sandbox"), "allow-forms allow-popups");
+    assert.equal(frame.getAttribute("sandbox").includes("allow-same-origin"), false);
+    assert.equal(frame.getAttribute("sandbox").includes("allow-scripts"), false);
+    assert.equal(frame.srcdoc.includes("<script"), false);
+  } finally {
+    if (previousFetch === undefined) {
+      delete global.fetch;
+    } else {
+      global.fetch = previousFetch;
+    }
+    resetNetworkDefaults();
+  }
+});
 
 function createRssWindow() {
   const elements = new Map(

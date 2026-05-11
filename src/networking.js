@@ -5,6 +5,7 @@ import { publish, subscribe } from "./eventBus.js";
 
 const NETWORK_STORAGE_KEY = "oriel-network-defaults";
 const NETWORK_ACTIVITY_EVENT = "network:activity";
+const BROWSER_FRAME_SANDBOX = "allow-forms allow-popups";
 let networkEventCounter = 0;
 
 function nextNetworkEventId() {
@@ -157,6 +158,7 @@ export function updateNetworkDefaults(partial = {}) {
 }
 
 export { BROWSER_HOME, BROWSER_PROXY_PREFIX, RADIO_BROWSER_BASE, RADIO_GARDEN_PROXY, RSS_PROXY_ROOT };
+export { BROWSER_FRAME_SANDBOX };
 export { MAIL_PROXY_ROOT };
 export function normalizeHttpUrl(raw) {
   const trimmed = (raw || "").trim();
@@ -173,6 +175,23 @@ export function stripHtmlText(html) {
   div.innerHTML = html || "";
   div.querySelectorAll("script,style").forEach((n) => n.remove());
   return (div.textContent || "").trim();
+}
+
+
+export function stripScriptTags(html) {
+  return String(html || "").replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+}
+
+function ensureBrowserFrameSandbox(frame) {
+  if (!frame) return;
+  if (frame.getAttribute?.("sandbox") !== BROWSER_FRAME_SANDBOX) {
+    frame.setAttribute("sandbox", BROWSER_FRAME_SANDBOX);
+  }
+}
+
+function setBrowserFrameSrcdoc(frame, html) {
+  ensureBrowserFrameSandbox(frame);
+  frame.srcdoc = html;
 }
 
 export function formatRssDate(value) {
@@ -494,23 +513,25 @@ export function initBrowser(win, sessions = browserSessions) {
     const token = ++lastLoadToken;
     const proxied = buildProxiedUrl(url);
     setStatus(`Loading ${url} (via text proxy)...`);
+    ensureBrowserFrameSandbox(frame);
     frame.removeAttribute("src");
-    frame.srcdoc = "";
+    setBrowserFrameSrcdoc(frame, "");
     try {
       const res = await trackedFetch(proxied);
       if (token !== lastLoadToken) return;
       if (!res.ok) {
         const statusMessage = `Proxy error (HTTP ${res.status})`;
         setStatus(statusMessage);
-        frame.srcdoc = `<p>${statusMessage}</p>`;
+        setBrowserFrameSrcdoc(frame, `<p>${statusMessage}</p>`);
         return;
       }
-      const text = await res.text();
-      frame.srcdoc = text || `<p>Proxy returned an empty response for ${url}.</p>`;
+      const text = stripScriptTags(await res.text());
+      setBrowserFrameSrcdoc(frame, text || `<p>Proxy returned an empty response for ${url}.</p>`);
       setStatus(`Loaded ${url}`);
     } catch (err) {
       console.error(err);
       if (token !== lastLoadToken) return;
+      ensureBrowserFrameSandbox(frame);
       frame.removeAttribute("srcdoc");
       frame.src = proxied;
       setStatus(`Opening ${url} directly...`);
@@ -1009,7 +1030,7 @@ export function getBrowserContent() {
                 <button class="browser-btn go-btn" data-action="go">Go</button>
               </div>
               <div class="browser-view">
-                <iframe class="browser-frame" src="about:blank" sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups"></iframe>
+                <iframe class="browser-frame" src="about:blank" sandbox="allow-forms allow-popups"></iframe>
                 <div class="browser-status">Enter a URL to begin browsing.</div>
               </div>
             </div>`;
