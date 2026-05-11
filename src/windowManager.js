@@ -336,6 +336,7 @@ export class WindowManager {
       title,
       appInstance: null,
       pendingMountPromise: null,
+      isUnmounted: false,
       minimized: false,
       maximized: false,
       prevRect: stateOverrides.prevRect || null,
@@ -382,6 +383,7 @@ export class WindowManager {
     const index = this.windows.findIndex((w) => w.id === id);
     if (index > -1) {
       const closingWin = this.windows[index];
+      closingWin.isUnmounted = true;
       this.appHost.unmount(closingWin);
       closingWin.el.remove();
       // Remove minimized icon if exists

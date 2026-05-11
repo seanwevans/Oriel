@@ -114,6 +114,79 @@ function createMessengerWindow() {
   return { winEl, elements };
 }
 
+test("mount disposes asynchronous initializer result that resolves after unmount", async () => {
+  let resolveInitializer;
+  const disposeCalls = [];
+  const winEl = {};
+  const winObj = { el: winEl };
+  const appInstance = {
+    dispose() {
+      disposeCalls.push("late-dispose");
+    }
+  };
+  const appHost = new AppHost();
+
+  const pendingMountPromise = appHost.mount({
+    initializer: () =>
+      new Promise((resolve) => {
+        resolveInitializer = resolve;
+      }),
+    winEl,
+    winObj,
+    type: "async-late"
+  });
+
+  appHost.unmount(winObj);
+  resolveInitializer(appInstance);
+
+  assert.equal(await pendingMountPromise, null);
+  assert.deepEqual(disposeCalls, ["late-dispose"]);
+  assert.equal(winObj.appInstance, null);
+  assert.equal(winEl.appInstance, null);
+  assert.equal(winObj.pendingMountPromise, null);
+  assert.equal(winEl.pendingMountPromise, null);
+});
+
+test("mountInstance disposes asynchronous mount result that resolves after unmount", async () => {
+  let resolveMount;
+  const disposeCalls = [];
+  const winEl = {};
+  const winObj = { el: winEl };
+  const initialAppInstance = {
+    mount() {
+      return new Promise((resolve) => {
+        resolveMount = resolve;
+      });
+    },
+    dispose() {
+      disposeCalls.push("initial-dispose");
+    }
+  };
+  const resolvedAppInstance = {
+    dispose() {
+      disposeCalls.push("late-dispose");
+    }
+  };
+  const appHost = new AppHost();
+
+  const pendingMountPromise = appHost.mountInstance({
+    appInstance: initialAppInstance,
+    winEl,
+    winObj,
+    type: "async-late-instance"
+  });
+
+  appHost.unmount(winObj);
+  resolveMount(resolvedAppInstance);
+
+  assert.equal(await pendingMountPromise, null);
+  assert.deepEqual(disposeCalls, ["initial-dispose", "late-dispose"]);
+  assert.equal(winObj.appInstance, null);
+  assert.equal(winEl.appInstance, null);
+  assert.equal(winObj.pendingMountPromise, null);
+  assert.equal(winEl.pendingMountPromise, null);
+});
+
 test("unmount dispatches app:destroy for event-based apps without dispose", () => {
   const events = [];
   const winEl = new MessengerTestElement();

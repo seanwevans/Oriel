@@ -31,6 +31,20 @@ function assignPendingMountPromise({ pendingMountPromise, winEl, winObj }) {
   if (winEl) winEl.pendingMountPromise = pendingMountPromise;
 }
 
+function disposeAppInstance(appInstance) {
+  if (!appInstance || typeof appInstance.dispose !== "function") return;
+
+  try {
+    appInstance.dispose();
+  } catch (err) {
+    console.error("App dispose failed:", err);
+  }
+}
+
+function isWindowUnmounted(winObj) {
+  return winObj?.isUnmounted === true;
+}
+
 function dispatchAppDestroy(winEl) {
   if (typeof winEl?.dispatchEvent !== "function") return;
 
@@ -63,6 +77,16 @@ export class AppHost {
         const pendingMountPromise = Promise.resolve(mountResult)
           .then((resolvedAppInstance) => {
             const mountedAppInstance = resolvedAppInstance || appInstance;
+            if (isWindowUnmounted(winObj)) {
+              if (resolvedAppInstance && resolvedAppInstance !== appInstance) {
+                disposeAppInstance(resolvedAppInstance);
+              } else if (winObj?.appInstance === appInstance || winEl?.appInstance === appInstance) {
+                disposeAppInstance(appInstance);
+              }
+              assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
+              return null;
+            }
+
             assignAppInstance({ appInstance: mountedAppInstance, winEl, winObj });
             assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
             return mountedAppInstance;
@@ -73,12 +97,23 @@ export class AppHost {
             return null;
           });
 
+        if (isWindowUnmounted(winObj)) {
+          disposeAppInstance(appInstance);
+          assignPendingMountPromise({ pendingMountPromise, winEl, winObj });
+          return pendingMountPromise;
+        }
+
         assignAppInstance({ appInstance, winEl, winObj });
         assignPendingMountPromise({ pendingMountPromise, winEl, winObj });
         return pendingMountPromise;
       }
 
       const mountedAppInstance = mountResult || appInstance;
+      if (isWindowUnmounted(winObj)) {
+        disposeAppInstance(mountedAppInstance);
+        return null;
+      }
+
       assignAppInstance({ appInstance: mountedAppInstance, winEl, winObj });
       return mountedAppInstance;
     } catch (err) {
@@ -96,6 +131,12 @@ export class AppHost {
         const pendingMountPromise = Promise.resolve(initializerResult)
           .then((resolvedAppInstance) => {
             const appInstance = resolvedAppInstance || null;
+            if (isWindowUnmounted(winObj)) {
+              disposeAppInstance(appInstance);
+              assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
+              return null;
+            }
+
             assignAppInstance({ appInstance, winEl, winObj });
             assignPendingMountPromise({ pendingMountPromise: null, winEl, winObj });
             return appInstance;
@@ -111,6 +152,11 @@ export class AppHost {
       }
 
       const appInstance = initializerResult || null;
+      if (isWindowUnmounted(winObj)) {
+        disposeAppInstance(appInstance);
+        return null;
+      }
+
       assignAppInstance({ appInstance, winEl, winObj });
       return appInstance;
     } catch (err) {
@@ -120,16 +166,14 @@ export class AppHost {
   }
 
   unmount(winObj) {
+    if (winObj) winObj.isUnmounted = true;
+
     const winEl = winObj?.el;
     const appInstance = winObj?.appInstance || winEl?.appInstance || null;
 
     const hasDispose = appInstance && typeof appInstance.dispose === "function";
     if (hasDispose) {
-      try {
-        appInstance.dispose();
-      } catch (err) {
-        console.error("App dispose failed:", err);
-      }
+      disposeAppInstance(appInstance);
     } else {
       dispatchAppDestroy(winEl);
     }
@@ -142,5 +186,7 @@ export class AppHost {
       winEl.doomCI.exit();
       winEl.doomCI = null;
     }
+
+    assignAppInstance({ appInstance: null, winEl, winObj });
   }
 }
