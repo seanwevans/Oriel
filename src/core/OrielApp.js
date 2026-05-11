@@ -634,12 +634,12 @@ export class OrielApp {
   }
 
   #registerWindowGlobals() {
+    window.kernel = this.kernel;
     registerConsoleCommands();
 
     window.createFolder = this.#createFolder.bind(this);
     window.switchTask = switchTask;
     window.endTask = endTask;
-    window.kernel = this.kernel;
 
     window.handleConsoleKey = handleConsoleKey;
     window.calcInput = calcInput;
