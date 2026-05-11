@@ -146,8 +146,9 @@ export function initMessenger(win) {
   }
 
   const unsubscribe = subscribe("messenger:event", handleIncoming);
+  const handleChannelMessage = (event) => handleIncoming(event.data);
   if (channel) {
-    channel.addEventListener("message", (event) => handleIncoming(event.data));
+    channel.addEventListener("message", handleChannelMessage);
     setStatus("Live sync ready");
   } else {
     setStatus("BroadcastChannel unavailable; using local history only");
@@ -197,9 +198,16 @@ export function initMessenger(win) {
   // Ask peers for their history so new windows can hydrate quickly.
   broadcast({ type: "history:request", from: clientId });
 
-  // Clean up when window is destroyed
-  win.addEventListener("app:destroy", () => {
+  let disposed = false;
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
     unsubscribe();
+    channel?.removeEventListener?.("message", handleChannelMessage);
     channel?.close?.();
-  });
+  }
+
+  win.addEventListener?.("app:destroy", dispose);
+
+  return { dispose };
 }
