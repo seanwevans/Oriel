@@ -670,8 +670,8 @@ export class OrielApp {
       openCPDesktop(controlPanelContext, target, override);
     const openCPScreensaverWithContext = (target, override) =>
       openCPScreensaver(controlPanelContext, target, override);
-    const applyScreensaverWithContext = () => applyScreensaver(controlPanelContext);
-    const previewScreensaverWithContext = () => previewScreensaver(controlPanelContext);
+    const applyScreensaverWithContext = (target) => applyScreensaver(controlPanelContext, target);
+    const previewScreensaverWithContext = (target) => previewScreensaver(controlPanelContext, target);
 
     window.openCPColor = openCPColor;
     window.openCPDesktop = openCPDesktopWithContext;
