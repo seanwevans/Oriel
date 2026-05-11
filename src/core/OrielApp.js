@@ -331,12 +331,29 @@ export class OrielApp {
     return node.type === "file";
   }
 
+  #normalizeImportedDriveKey(key) {
+    if (typeof key !== "string") return null;
+    const driveMatch = key.match(/^([A-Za-z])(?::)?(?:\\+)?$/);
+    return driveMatch ? `${driveMatch[1].toUpperCase()}\\` : null;
+  }
+
   #normalizeImportedFileSystem(data) {
-    if (!data || typeof data !== "object") throw new Error("Invalid JSON structure");
-    const cDrive = data["C\\"] || data["C:\\\\"] || data["C:"] || data.C;
-    if (!cDrive || cDrive.type !== "dir") throw new Error("Import is missing a C drive directory");
-    if (!this.#isValidFileSystemNode(cDrive)) throw new Error("Import file system structure is invalid");
-    return { "C\\": cDrive };
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("Invalid JSON structure");
+    }
+
+    const normalized = {};
+    for (const [key, node] of Object.entries(data)) {
+      const driveKey = this.#normalizeImportedDriveKey(key);
+      if (!driveKey) continue;
+      if (node?.type !== "dir" || !this.#isValidFileSystemNode(node)) {
+        throw new Error("Import file system structure is invalid");
+      }
+      normalized[driveKey] = node;
+    }
+
+    if (!normalized["C\\"]) throw new Error("Import is missing a C drive directory");
+    return normalized;
   }
 
   #resolveFileManagerPath(path = "C\\") {

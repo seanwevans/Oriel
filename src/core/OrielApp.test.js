@@ -193,6 +193,29 @@ test("imports valid file system trees", async () => {
   assert.deepEqual(alerts, ["File system imported successfully."]);
 });
 
+test("imports and preserves multiple normalized drive keys", async () => {
+  const importedTree = {
+    "C\\": {
+      type: "dir",
+      children: {
+        "CFILE.TXT": { type: "file", app: "notepad", content: "from C" }
+      }
+    },
+    "D\\": {
+      type: "dir",
+      children: {
+        "DFILE.TXT": { type: "file", app: "notepad", content: "from D" }
+      }
+    }
+  };
+
+  const { alerts, replaceCalls } = await importFileSystem(JSON.stringify(importedTree));
+
+  assert.equal(replaceCalls.length, 1);
+  assert.deepEqual(replaceCalls[0], importedTree);
+  assert.deepEqual(alerts, ["File system imported successfully."]);
+});
+
 test("rejects imported trees with __proto__ child names", async () => {
   const json = '{"C\\\\":{"type":"dir","children":{"__proto__":{"type":"dir","children":{}}}}}';
 
