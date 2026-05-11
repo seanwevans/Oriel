@@ -411,6 +411,13 @@ function appendConsoleLine(w, text = "") {
   if (consoleEl) consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
+function renderPre(output, text) {
+  output.innerHTML = "";
+  const pre = document.createElement("pre");
+  pre.textContent = text;
+  output.appendChild(pre);
+}
+
 async function processConsoleCommand(w, input) {
   const state = getConsoleState(w);
   appendConsoleLine(w, `${state.cwd}>${input}`);
@@ -501,11 +508,11 @@ async function runCompiler(e) {
 
   const code = editor?.value || "";
   if (!code.trim()) {
-    output.innerHTML = `<pre>No source code provided.</pre>`;
+    renderPre(output, "No source code provided.");
     return;
   }
 
-  output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
+  renderPre(output, "Sending code to Compiler Explorer...");
 
   const payload = {
     source: code,
@@ -562,7 +569,7 @@ async function runCompiler(e) {
     lines.push(`Compilation failed: ${err.message}`);
   }
 
-  output.innerHTML = `<pre>${lines.join("\n")}</pre>`;
+  renderPre(output, lines.join("\n"));
 }
 
 async function runPython(e) {
