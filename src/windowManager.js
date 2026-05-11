@@ -26,6 +26,7 @@ export class WindowManager {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
+    this.nextWindowId = 1;
     this.highestZ = 100;
     this.isRestoring = false;
     this.dragState = {
@@ -265,8 +266,28 @@ export class WindowManager {
     win.addEventListener("mousedown", () => this.focusWindow(id));
     return win;
   }
+  generateWindowId() {
+    if (!Number.isInteger(this.nextWindowId) || this.nextWindowId < 1) {
+      this.nextWindowId = 1;
+    }
+
+    let id;
+    do {
+      id = `win-${this.nextWindowId++}`;
+    } while (this.windows.some((win) => win.id === id));
+
+    return id;
+  }
+  resolveWindowId(stateOverrides = {}) {
+    const requestedId = stateOverrides.id;
+    if (requestedId && !this.windows.some((win) => win.id === requestedId)) {
+      return requestedId;
+    }
+
+    return this.generateWindowId();
+  }
   openWindow(type, title, w, h, initData = null, stateOverrides = {}) {
-    const id = stateOverrides.id || "win-" + Date.now();
+    const id = this.resolveWindowId(stateOverrides);
     const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;

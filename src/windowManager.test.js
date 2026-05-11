@@ -203,6 +203,25 @@ class FakeElement {
 const originalDocument = globalThis.document;
 const originalNode = globalThis.Node;
 const originalLocalStorage = globalThis.localStorage;
+const originalWindow = globalThis.window;
+const originalKernel = globalThis.kernel;
+
+function createTestKernel() {
+  return {
+    processes: [],
+    registerProcess(pid, name) {
+      this.processes.push({ pid, name, state: "READY", priority: 1, cpuTime: 0 });
+    },
+    unregisterProcess(pid) {
+      const index = this.processes.findIndex((process) => process.pid === pid);
+      if (index >= 0) this.processes.splice(index, 1);
+    }
+  };
+}
+
+const testKernel = createTestKernel();
+globalThis.kernel = testKernel;
+globalThis.window = { kernel: testKernel };
 
 globalThis.localStorage = {
   getItem() {
@@ -220,6 +239,9 @@ globalThis.document = {
     const element = new FakeElement(id.includes("canvas") ? "canvas" : "div");
     element.id = id;
     return element;
+  },
+  querySelectorAll() {
+    return [];
   }
 };
 
@@ -229,11 +251,14 @@ test.after(() => {
   globalThis.document = originalDocument;
   globalThis.Node = originalNode;
   globalThis.localStorage = originalLocalStorage;
+  globalThis.window = originalWindow;
+  globalThis.kernel = originalKernel;
 });
 
 function createTestWindowManager() {
   const wm = Object.create(WindowManager.prototype);
   wm.windows = [];
+  wm.nextWindowId = 1;
   wm.addKeyboardActivation = WindowManager.prototype.addKeyboardActivation;
   wm.setupMenuBar = WindowManager.prototype.setupMenuBar;
   wm.startDrag = () => {};
@@ -271,6 +296,78 @@ test("createWindowDOM wires window controls with event listeners", () => {
   assert.deepEqual(wm.closeWindowCalls, ["event-id"]);
   assert.deepEqual(wm.minimizeWindowCalls, ["event-id"]);
   assert.deepEqual(wm.maximizeWindowCalls, ["event-id"]);
+});
+
+
+test("openWindow generates unique IDs when Date.now is fixed", () => {
+  const originalDateNow = Date.now;
+  Date.now = () => 1234567890;
+  testKernel.processes = [];
+
+  try {
+    const wm = createTestWindowManager();
+    wm.desktop = new FakeElement("div");
+    wm.minimizedContainer = new FakeElement("div");
+    wm.highestZ = 100;
+    wm.isRestoring = false;
+    wm.appRegistry = {
+      createApp() {
+        return null;
+      },
+      resolve() {
+        return null;
+      },
+      getRuntimeInitializer() {
+        return false;
+      }
+    };
+    wm.appHost = {
+      mount() {},
+      mountInstance() {},
+      unmount() {}
+    };
+    wm.saveDesktopState = () => {};
+    wm.getIconForType = () => "";
+    wm.focusWindow = () => {};
+    wm.closeWindow = WindowManager.prototype.closeWindow;
+    wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
+    wm.restoreWindow = WindowManager.prototype.restoreWindow;
+    wm.getTopWindowByZ = WindowManager.prototype.getTopWindowByZ;
+    wm.getWindowRectSnapshot = WindowManager.prototype.getWindowRectSnapshot;
+
+    const restored = wm.openWindow("notepad", "Restored", 320, 240, null, {
+      id: "restored-id",
+      minimized: true
+    });
+    const duplicateRestore = wm.openWindow("calc", "Duplicate Restored", 320, 240, null, {
+      id: "restored-id",
+      minimized: true
+    });
+    const generatedA = wm.openWindow("paint", "Generated A", 320, 240, null, {
+      minimized: true
+    });
+    const generatedB = wm.openWindow("write", "Generated B", 320, 240, null, {
+      minimized: true
+    });
+
+    const windows = [restored, duplicateRestore, generatedA, generatedB];
+    const windowIds = windows.map((win) => win.id);
+    const datasetIds = windows.map((win) => win.el.dataset.id);
+    const minimizedIconIds = wm.minimizedContainer.children.map((icon) => icon.id);
+    const processIds = testKernel.processes.map((process) => process.pid);
+
+    assert.equal(restored.id, "restored-id");
+    assert.notEqual(duplicateRestore.id, "restored-id");
+    assert.equal(new Set(windowIds).size, windows.length);
+    assert.deepEqual(datasetIds, windowIds);
+    assert.equal(new Set(minimizedIconIds).size, minimizedIconIds.length);
+    assert.deepEqual(minimizedIconIds, windowIds.map((id) => `min-${id}`));
+    assert.equal(new Set(processIds).size, processIds.length);
+    assert.deepEqual(processIds, windowIds);
+  } finally {
+    Date.now = originalDateNow;
+    testKernel.processes = [];
+  }
 });
 
 test("renderRuntimeError renders hostile error messages as text", () => {
