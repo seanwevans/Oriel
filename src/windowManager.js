@@ -9,6 +9,7 @@ import { publish, subscribe } from "./eventBus.js";
 import {
   getAvailablePrograms as getProgramManagerApps,
   getIconForType as getProgramManagerIcon,
+  createIconElementForType as getProgramManagerIconElement,
   getProgramDefaults as getProgramManagerDefaults,
   getProgramManagerContent,
   refreshProgramManagerContent,
@@ -422,7 +423,7 @@ export class WindowManager {
     icon.tabIndex = 0;
     const iconImage = document.createElement("div");
     iconImage.classList.add("icon-img");
-    iconImage.innerHTML = this.getIconForType(win.type);
+    iconImage.appendChild(this.getIconElementForType(win.type));
     icon.appendChild(iconImage);
 
     const iconLabel = document.createElement("div");
@@ -732,6 +733,9 @@ export class WindowManager {
   // Helper: Icons
   getIconForType(type) {
     return getProgramManagerIcon(type);
+  }
+  getIconElementForType(type) {
+    return getProgramManagerIconElement(type);
   }
   renderRuntimeError(winEl, err) {
     const contentArea = getWindowBodyContainer(winEl);
