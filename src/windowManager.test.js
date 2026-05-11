@@ -246,6 +246,7 @@ globalThis.document = {
 };
 
 const { WindowManager } = await import("./windowManager.js");
+const { createRuntimeIconElement } = await import("./apps/programManager.js");
 
 test.after(() => {
   globalThis.document = originalDocument;
@@ -328,6 +329,7 @@ test("openWindow generates unique IDs when Date.now is fixed", () => {
     };
     wm.saveDesktopState = () => {};
     wm.getIconForType = () => "";
+    wm.getIconElementForType = () => new FakeElement("span");
     wm.focusWindow = () => {};
     wm.closeWindow = WindowManager.prototype.closeWindow;
     wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
@@ -398,6 +400,7 @@ test("minimizing the active window hides it and activates the next visible windo
   wm.minimizedContainer = new FakeElement("div");
   wm.saveDesktopState = () => {};
   wm.getIconForType = () => "";
+  wm.getIconElementForType = () => new FakeElement("span");
   wm.focusWindow = WindowManager.prototype.focusWindow;
   wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
   wm.getTopWindowByZ = WindowManager.prototype.getTopWindowByZ;
@@ -420,6 +423,39 @@ test("minimizing the active window hides it and activates the next visible windo
   assert.equal(second.classList.contains("active"), false);
   assert.equal(first.classList.contains("active"), true);
   assert.equal(wm.minimizedContainer.children.length, 1);
+});
+
+test("minimized runtime icon manifest quotes stay in image properties", () => {
+  const wm = createTestWindowManager();
+  const manifest = {
+    icon: 'https://example.test/icon" onerror="alert(1).png',
+    name: 'Quoted App" onclick="alert(1)'
+  };
+  const win = wm.createWindowDOM("runtime-id", "runtime-app", "Runtime", 320, 240, "");
+
+  wm.minimizedContainer = new FakeElement("div");
+  wm.windows = [
+    { id: "runtime-id", el: win, type: "runtime-app", title: "Runtime", minimized: false }
+  ];
+  wm.saveDesktopState = () => {};
+  wm.restoreWindow = () => {};
+  wm.getTopWindowByZ = () => null;
+  wm.getWindowRectSnapshot = WindowManager.prototype.getWindowRectSnapshot;
+  wm.getIconElementForType = (type) => createRuntimeIconElement(manifest, type);
+  wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
+
+  wm.minimizeWindow("runtime-id");
+
+  const minimizedIcon = wm.minimizedContainer.children[0];
+  const iconImage = minimizedIcon.querySelector(".icon-img");
+  const img = iconImage.querySelector("img");
+
+  assert.equal(iconImage.innerHTML, "");
+  assert.equal(img.src, manifest.icon);
+  assert.equal(img.alt, `${manifest.name} icon`);
+  assert.equal(img.getAttribute("onerror"), null);
+  assert.equal(img.getAttribute("onclick"), null);
+  assert.equal(img.className, "runtime-icon");
 });
 
 test("top window lookup and shortcuts ignore minimized windows", () => {

@@ -12,13 +12,23 @@ const PROGRAM_MANAGER_VIEWS = new Set(["icons", "details"]);
 const MAX_APP_NAME_LENGTH = 64;
 
 
+function escapeAttributeValue(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function isSafeIconUrl(rawUrl) {
   if (typeof rawUrl !== "string") return false;
   const trimmed = rawUrl.trim();
   if (!trimmed) return false;
 
   try {
-    const parsed = new URL(trimmed, window.location.origin);
+    const baseUrl = globalThis.window?.location?.origin || "https://example.invalid";
+    const parsed = new URL(trimmed, baseUrl);
     if (!ALLOWED_ICON_PROTOCOLS.has(parsed.protocol)) return false;
     if (parsed.protocol === "data:") {
       return /^data:image\/[a-zA-Z0-9.+-]+;base64,[a-zA-Z0-9+/=\s]+$/.test(trimmed);
@@ -158,20 +168,26 @@ function createIconElementFromMarkup(markup) {
   return icon || document.createTextNode("?");
 }
 
-function createIconElementForProgram(prog) {
-  const type = prog?.type;
+export function createRuntimeIconElement(manifest, type) {
+  const img = document.createElement("img");
+  img.src = manifest.icon;
+  img.alt = `${manifest.name || type} icon`;
+  img.className = "runtime-icon";
+  return img;
+}
+
+function createRuntimeIconMarkup(manifest, type) {
+  const src = escapeAttributeValue(manifest.icon);
+  const alt = escapeAttributeValue(`${manifest.name || type} icon`);
+  return `<img src="${src}" alt="${alt}" class="runtime-icon">`;
+}
+
+export function createIconElementForType(type, fallbackIconKey = null) {
   const manifest = getManifestForApp(type);
 
   if (manifest?.icon) {
     if (ICONS[manifest.icon]) return createIconElementFromMarkup(ICONS[manifest.icon]);
-
-    if (isSafeIconUrl(manifest.icon)) {
-      const img = document.createElement("img");
-      img.src = manifest.icon;
-      img.alt = `${manifest.name || type} icon`;
-      img.className = "runtime-icon";
-      return img;
-    }
+    if (isSafeIconUrl(manifest.icon)) return createRuntimeIconElement(manifest, type);
   }
 
   const dynamic = getInstalledPrograms().find((app) => app.type === type);
@@ -179,11 +195,20 @@ function createIconElementForProgram(prog) {
     return createIconElementFromMarkup(ICONS[dynamic.icon]);
   }
 
+  if (fallbackIconKey && ICONS[fallbackIconKey]) {
+    return createIconElementFromMarkup(ICONS[fallbackIconKey]);
+  }
+
+  const prog = getAvailablePrograms().find((app) => app.type === type);
   if (prog?.icon && ICONS[prog.icon]) {
     return createIconElementFromMarkup(ICONS[prog.icon]);
   }
 
   return createIconElementFromMarkup(ICONS[type] || ICONS.help);
+}
+
+function createIconElementForProgram(prog) {
+  return createIconElementForType(prog?.type, prog?.icon);
 }
 
 export function getAvailablePrograms() {
@@ -199,9 +224,7 @@ export function getIconForType(type) {
   const manifest = getManifestForApp(type);
   if (manifest?.icon) {
     if (ICONS[manifest.icon]) return ICONS[manifest.icon];
-    if (isSafeIconUrl(manifest.icon)) {
-      return `<img src="${manifest.icon}" alt="${manifest.name || type} icon" class="runtime-icon">`;
-    }
+    if (isSafeIconUrl(manifest.icon)) return createRuntimeIconMarkup(manifest, type);
   }
   const dynamic = getInstalledPrograms().find((app) => app.type === type);
   if (dynamic?.icon && ICONS[dynamic.icon]) return ICONS[dynamic.icon];
