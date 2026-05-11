@@ -188,3 +188,34 @@ test("rFT and rFL render imported entry names as text instead of HTML", async ()
     "file list labels should be assigned via textContent"
   );
 });
+
+test("rFT builds child paths from trailing drive separators", async () => {
+  const importedFs = {
+    "D\\": {
+      type: "dir",
+      children: {
+        CHILD: { type: "dir", children: {} }
+      }
+    }
+  };
+
+  await replaceFileSystem(importedFs, { persist: false });
+
+  const win = createWindowStub();
+  win.cP = "D\\";
+  win.cD = MOCK_FS["D\\"];
+  win.currentDirObj = win.cD;
+
+  await rFT(win);
+
+  const childTreeItem = win
+    .querySelector("#file-tree-root")
+    .querySelectorAll(".tree-item")
+    .find((item) => item.querySelectorAll("span").some((span) => span.textContent === "CHILD"));
+
+  assert.ok(childTreeItem, "child directory should render in the tree");
+
+  await childTreeItem.onclick({ stopPropagation() {} });
+
+  assert.equal(win.cP, "D\\CHILD");
+});

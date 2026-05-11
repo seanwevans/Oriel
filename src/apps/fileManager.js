@@ -147,7 +147,8 @@ async function rFT(w) {
       s.style.paddingLeft = "15px";
       const dirEntries = Object.keys(o.children).filter((k) => o.children[k].type === "dir");
       for (const k of dirEntries) {
-        await b(s, p === "C\\" ? p + k : p + "\\" + k, o.children[k]);
+        const childPath = p.endsWith("\\") ? p + k : p + "\\" + k;
+        await b(s, childPath, o.children[k]);
       }
       c.appendChild(s);
     }
