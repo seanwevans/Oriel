@@ -18,7 +18,16 @@ export class SimulatedKernel {
   }
   unregisterProcess(pid) {
     const idx = this.processes.findIndex((p) => p.pid === pid);
-    if (idx > -1) this.processes.splice(idx, 1);
+    if (idx > -1) {
+      this.processes.splice(idx, 1);
+      if (this.processes.length === 0) {
+        this.currentProcessIndex = 0;
+        if (this.schedulerInterval) {
+          clearInterval(this.schedulerInterval);
+          this.schedulerInterval = null;
+        }
+      }
+    }
   }
   startScheduler() {
     if (this.schedulerInterval) return;
