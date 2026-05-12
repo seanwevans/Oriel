@@ -18,6 +18,16 @@ test("manifest apps resolve a content provider or initializer", () => {
   }
 });
 
+
+test("notepad is resolved through its BaseApp app class", () => {
+  const registry = new AppRegistry({ runtimeInitializerResolver: () => null });
+  const app = registry.createApp("notepad", { initData: "hello" });
+
+  assert.equal(app?.constructor.name, "NotepadApp");
+  assert.equal(registry.initializers.notepad, undefined);
+  assert.equal(registry.contentProviders.notepad, undefined);
+});
+
 test("manifest executable names point at valid app types", () => {
   const executableEntries = getExecutableEntries();
 
