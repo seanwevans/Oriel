@@ -66,7 +66,7 @@ class FileManagerApp extends BaseApp {
     const actions = this.services.fileSystemActions;
     if (!actions) return;
 
-    this.windowEl.addEventListener("click", (event) => {
+    this.listen(this.windowEl, "click", (event) => {
       const trigger = event.target.closest("[data-action]");
       if (!trigger || !this.windowEl.contains(trigger)) return;
 
@@ -81,9 +81,8 @@ class FileManagerApp extends BaseApp {
       handlers[trigger.dataset.action]?.();
     });
 
-    this.windowEl
-      .querySelector('[data-action="import-file-system"]')
-      ?.addEventListener("change", (event) => actions.importFileSystem(event));
+    const importInput = this.windowEl.querySelector('[data-action="import-file-system"]');
+    this.listen(importInput, "change", (event) => actions.importFileSystem(event));
   }
 }
 
