@@ -1,4 +1,5 @@
 import { publish, subscribe } from "../eventBus.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const CHANNEL_NAME = "oriel-messenger";
 const STORAGE_KEY = "oriel-messenger-history";
@@ -77,6 +78,7 @@ export function getMessengerContent() {
 }
 
 export function initMessenger(win) {
+  const app = new BaseApp();
   const logEl = win.querySelector(".messenger-log");
   const input = win.querySelector(".messenger-message");
   const sendBtn = win.querySelector(".messenger-send");
@@ -92,7 +94,7 @@ export function initMessenger(win) {
   const seenIds = new Set(messages.map((m) => m.id));
   nameInput.value = currentName;
 
-  const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
+  const channel = app.createBroadcastChannel(CHANNEL_NAME);
 
   function setStatus(text) {
     if (!status) return;
@@ -145,10 +147,10 @@ export function initMessenger(win) {
     }
   }
 
-  const unsubscribe = subscribe("messenger:event", handleIncoming);
+  const unsubscribe = app.registerDisposable(subscribe("messenger:event", handleIncoming));
   const handleChannelMessage = (event) => handleIncoming(event.data);
   if (channel) {
-    channel.addEventListener("message", handleChannelMessage);
+    app.listen(channel, "message", handleChannelMessage);
     setStatus("Live sync ready");
   } else {
     setStatus("BroadcastChannel unavailable; using local history only");
@@ -156,12 +158,12 @@ export function initMessenger(win) {
 
   renderMessages();
 
-  nameInput.addEventListener("input", () => {
+  app.listen(nameInput, "input", () => {
     currentName = nameInput.value.trim() || "Guest";
     saveName(currentName);
   });
 
-  clearBtn?.addEventListener("click", () => {
+  app.listen(clearBtn, "click", () => {
     messages = [];
     seenIds.clear();
     persistMessages();
@@ -183,12 +185,12 @@ export function initMessenger(win) {
     input.value = "";
   }
 
-  sendBtn.addEventListener("click", (e) => {
+  app.listen(sendBtn, "click", (e) => {
     e.preventDefault();
     sendMessage();
   });
 
-  input.addEventListener("keydown", (e) => {
+  app.listen(input, "keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       sendMessage();
@@ -202,12 +204,12 @@ export function initMessenger(win) {
   function dispose() {
     if (disposed) return;
     disposed = true;
+    app.unregisterDisposable(unsubscribe);
     unsubscribe();
-    channel?.removeEventListener?.("message", handleChannelMessage);
-    channel?.close?.();
+    app.dispose();
   }
 
-  win.addEventListener?.("app:destroy", dispose);
+  app.listen(win, "app:destroy", dispose);
 
   return { dispose };
 }

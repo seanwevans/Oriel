@@ -2,6 +2,7 @@ import { NETNEWS_GROUPS } from "../defaults/netnews.js";
 import { normalizeHttpUrl, stripHtmlText } from "../network/config.js";
 import { fetchGroupedRssFeeds, formatRssDate } from "../network/rssClient.js";
 import { getAppState, updateAppState } from "../state.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 export function getNetNewsContent() {
   return `
@@ -83,6 +84,7 @@ export function createNetNewsThreadRow(thread, idx, isSelected = false) {
 }
 
 export function initNetNews(win) {
+  const app = new BaseApp();
   const groupsEl = win.querySelector(".netnews-groups");
   const threadsEl = win.querySelector(".netnews-threads");
   const titleEl = win.querySelector(".netnews-article-title");
@@ -118,7 +120,7 @@ export function initNetNews(win) {
     }
     NETNEWS_GROUPS.forEach((group) => {
       const row = createNetNewsGroupRow(group, group.id === selectedGroupId);
-      row.addEventListener("click", () => {
+      app.listen(row, "click", () => {
         if (group.id === selectedGroupId) return;
         selectedGroupId = group.id;
         selectedThread = 0;
@@ -126,7 +128,7 @@ export function initNetNews(win) {
         renderGroups();
         loadGroup(group.id);
       });
-      row.addEventListener("keydown", (e) => {
+      app.listen(row, "keydown", (e) => {
         if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
         e.preventDefault();
         row.click();
@@ -144,8 +146,8 @@ export function initNetNews(win) {
     }
     threads.forEach((thread, idx) => {
       const row = createNetNewsThreadRow(thread, idx, idx === selectedThread);
-      row.addEventListener("click", () => selectThread(idx));
-      row.addEventListener("keydown", (e) => {
+      app.listen(row, "click", () => selectThread(idx));
+      app.listen(row, "keydown", (e) => {
         if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
         e.preventDefault();
         selectThread(idx);
@@ -188,7 +190,7 @@ export function initNetNews(win) {
     if (!group) return;
     const token = ++loadToken;
     if (abortController) abortController.abort();
-    abortController = new AbortController();
+    abortController = app.trackAbortController(new AbortController());
     const { signal } = abortController;
     setStatus(`Loading ${group.title}...`);
     try {
@@ -215,8 +217,15 @@ export function initNetNews(win) {
     }
   };
 
-  if (refreshBtn) refreshBtn.addEventListener("click", () => loadGroup(selectedGroupId));
+  app.listen(refreshBtn, "click", () => loadGroup(selectedGroupId));
 
   renderGroups();
   loadGroup(selectedGroupId);
+
+  return {
+    dispose() {
+      abortController?.abort();
+      app.dispose();
+    }
+  };
 }

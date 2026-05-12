@@ -1,5 +1,6 @@
 import { getSystemVolume } from "../audio.js";
 import { midiNoteToFrequency, parseMidiFile } from "../midi.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const NOTE_LANES = [
   { name: "C5", midi: 72 },
@@ -56,6 +57,7 @@ export function getMidiSequencerContent() {
 }
 
 export function initMidiSequencer(win) {
+  const app = new BaseApp();
   const playBtn = win.querySelector("#midi-play");
   const stopBtn = win.querySelector("#midi-stop");
   const clearBtn = win.querySelector("#midi-clear");
@@ -81,7 +83,7 @@ export function initMidiSequencer(win) {
 
   function ensureAudioContext() {
     audioCtx =
-      audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx || app.trackAudioContext(new (window.AudioContext || window.webkitAudioContext)());
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
@@ -210,7 +212,7 @@ export function initMidiSequencer(win) {
       flash.className = "midi-flash";
       flash.style.background = color;
       win.querySelector(".midi-sequencer")?.appendChild(flash);
-      setTimeout(() => flash.remove(), 180);
+      app.setTimeout(() => flash.remove(), 180);
     }
   }
 
@@ -240,14 +242,14 @@ export function initMidiSequencer(win) {
     currentStep = 0;
     refreshGrid();
     const intervalMs = stepDurationSeconds() * 1000;
-    stepTimer = setInterval(playStep, intervalMs);
+    stepTimer = app.setInterval(playStep, intervalMs);
     isPlaying = true;
     setStatus("Playing pattern.");
   }
 
   function stopPlayback() {
     if (stepTimer) {
-      clearInterval(stepTimer);
+      app.clearInterval(stepTimer);
       stepTimer = null;
     }
     isPlaying = false;
@@ -328,14 +330,14 @@ export function initMidiSequencer(win) {
     reader.readAsArrayBuffer(file);
   }
 
-  gridEl?.addEventListener("click", (e) => {
+  app.listen(gridEl, "click", (e) => {
     const cell = e.target.closest(".midi-grid-cell");
     if (cell && !cell.classList.contains("beat-marker")) {
       toggleCell(cell);
     }
   });
 
-  trackList?.addEventListener("click", (e) => {
+  app.listen(trackList, "click", (e) => {
     const trackEl = e.target.closest(".midi-track");
     const muteToggle = e.target.closest("input[data-mute]");
     if (muteToggle) {
@@ -351,7 +353,7 @@ export function initMidiSequencer(win) {
     }
   });
 
-  tempoSlider?.addEventListener("input", () => {
+  app.listen(tempoSlider, "input", () => {
     updateTempoLabel();
     if (isPlaying) {
       stopPlayback();
@@ -359,14 +361,14 @@ export function initMidiSequencer(win) {
     }
   });
 
-  playBtn?.addEventListener("click", startPlayback);
-  stopBtn?.addEventListener("click", stopPlayback);
-  clearBtn?.addEventListener("click", () => {
+  app.listen(playBtn, "click", startPlayback);
+  app.listen(stopBtn, "click", stopPlayback);
+  app.listen(clearBtn, "click", () => {
     stopPlayback();
     clearGrid();
     setStatus("Cleared pattern.");
   });
-  fileInput?.addEventListener("change", handleFileChange);
+  app.listen(fileInput, "change", handleFileChange);
 
   renderTrackList();
   updateTempoLabel();
@@ -375,7 +377,7 @@ export function initMidiSequencer(win) {
   return {
     dispose() {
       stopPlayback();
-      audioCtx?.close?.();
+      app.dispose();
     }
   };
 }

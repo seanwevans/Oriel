@@ -1,6 +1,8 @@
 import { registerMediaElement } from "../audio.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 export function initSoundRecorder(w) {
+  const app = new BaseApp();
   const canvas = w.querySelector(".sound-wave-canvas");
   const ctx = canvas.getContext("2d");
   const status = w.querySelector("#sound-status");
@@ -26,7 +28,7 @@ export function initSoundRecorder(w) {
 
   function draw() {
     if (!analyser) return;
-    animationId = requestAnimationFrame(draw);
+    animationId = app.requestAnimationFrame(draw);
     analyser.getByteTimeDomainData(dataArray);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -50,11 +52,11 @@ export function initSoundRecorder(w) {
   const stopBtn = w.querySelector("#btn-stop");
   const playBtn = w.querySelector("#btn-play");
 
-  recBtn.onclick = async () => {
+  const onRecord = async () => {
     try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!audioCtx) audioCtx = app.trackAudioContext(new (window.AudioContext || window.webkitAudioContext)());
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef = stream;
+      streamRef = app.trackMediaStream(stream);
 
       analyser = audioCtx.createAnalyser();
       source = audioCtx.createMediaStreamSource(stream);
@@ -71,9 +73,9 @@ export function initSoundRecorder(w) {
         revokeAudioUrl();
         audioBlob = new Blob(audioChunks, { type: "audio/wav" });
         if (audioUrl) URL.revokeObjectURL(audioUrl);
-        audioUrl = disposed ? null : URL.createObjectURL(audioBlob);
+        audioUrl = disposed ? null : app.trackObjectUrl(URL.createObjectURL(audioBlob));
         status.innerText = disposed ? "Ready" : "Stopped. Ready to play.";
-        cancelAnimationFrame(animationId);
+        app.cancelAnimationFrame(animationId);
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       };
@@ -86,7 +88,7 @@ export function initSoundRecorder(w) {
     }
   };
 
-  stopBtn.onclick = () => {
+  const onStop = () => {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
       if (streamRef) streamRef.getTracks().forEach((track) => track.stop());
@@ -94,7 +96,7 @@ export function initSoundRecorder(w) {
     }
   };
 
-  playBtn.onclick = () => {
+  const onPlay = () => {
     if (audioUrl) {
       if (playbackAudio) playbackAudio.pause();
       const audio = new Audio(audioUrl);
@@ -109,12 +111,13 @@ export function initSoundRecorder(w) {
     }
   };
 
+  app.listen(recBtn, "click", onRecord);
+  app.listen(stopBtn, "click", onStop);
+  app.listen(playBtn, "click", onPlay);
+
   const dispose = () => {
     if (disposed) return;
     disposed = true;
-    recBtn.onclick = null;
-    stopBtn.onclick = null;
-    playBtn.onclick = null;
     if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
     if (streamRef) streamRef.getTracks().forEach((track) => track.stop());
     if (playbackAudio) {
@@ -122,10 +125,10 @@ export function initSoundRecorder(w) {
       playbackAudio.src = "";
       playbackAudio = null;
     }
-    cancelAnimationFrame(animationId);
+    app.cancelAnimationFrame(animationId);
     if (source) source.disconnect();
-    if (audioCtx) audioCtx.close?.();
     revokeAudioUrl();
+    app.dispose();
   };
 
   return { dispose };
