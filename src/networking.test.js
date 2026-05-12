@@ -12,8 +12,20 @@ global.localStorage = {
 
 const { NETWORK_CONFIG } = await import("./config.js");
 const networking = await import("./networking.js");
+const configModule = await import("./network/config.js");
+const rssClientModule = await import("./network/rssClient.js");
+const trackedFetchModule = await import("./network/trackedFetch.js");
 const { getNetworkDefaults, refreshNetworkedWindows, resetNetworkDefaults, updateNetworkDefaults } = networking;
 
+
+test("split networking modules expose the compatibility barrel implementations", () => {
+  assert.equal(configModule.normalizeHttpUrl, networking.normalizeHttpUrl);
+  assert.equal(configModule.stripScriptTags, networking.stripScriptTags);
+  assert.equal(rssClientModule.parseRssXml, networking.parseRssXml);
+  assert.equal(rssClientModule.fetchRssFeed, networking.fetchRssFeed);
+  assert.equal(trackedFetchModule.trackedFetch, networking.trackedFetch);
+  assert.equal(trackedFetchModule.subscribeToNetworkEvents, networking.subscribeToNetworkEvents);
+});
 
 test("refreshNetworkedWindows reloads browser windows once", () => {
   const previousWindow = global.window;

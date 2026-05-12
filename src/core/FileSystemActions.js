@@ -37,10 +37,18 @@ function isRestrictedFileSystemName(name) {
 }
 
 export class FileSystemActions {
-  constructor({ filesystem, getWindowManager, alertUser = globalThis.alert } = {}) {
+  constructor({
+    filesystem,
+    getWindowManager,
+    alertUser = globalThis.alert,
+    installSelection = installSelectionFromWindow,
+    uninstallSelection = uninstallSelectionFromWindow
+  } = {}) {
     this.fs = filesystem;
     this.getWindowManager = getWindowManager;
     this.alertUser = alertUser;
+    this.installSelection = installSelection;
+    this.uninstallSelection = uninstallSelection;
   }
 
   normalizeFolderName(name) {
@@ -169,7 +177,7 @@ export class FileSystemActions {
     const win = btn.closest(".window");
     if (!win) return;
     try {
-      const manifest = await installSelectionFromWindow(win);
+      const manifest = await this.installSelection(win);
       this.alertUser(`Installed ${manifest.name} (${manifest.id})`);
     } catch (err) {
       this.alertUser(err.message || "Unable to install manifest.");
@@ -180,7 +188,7 @@ export class FileSystemActions {
     const win = btn.closest(".window");
     if (!win) return;
     try {
-      const removedId = await uninstallSelectionFromWindow(win);
+      const removedId = await this.uninstallSelection(win);
       this.alertUser(`Uninstalled ${removedId}`);
     } catch (err) {
       this.alertUser(err.message || "Unable to uninstall app.");
