@@ -19,7 +19,7 @@ const getKernel = () => consoleServices.kernel || null;
 
 class ConsoleApp extends BaseApp {
   getWindowContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
+    return `<div class="console"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" autocomplete="off"></div></div>`;
   }
 
   mount() {
@@ -30,8 +30,13 @@ class ConsoleApp extends BaseApp {
       historyIndex: null
     };
     updateConsolePrompt(this.windowEl);
+
+    const consoleEl = this.windowEl.querySelector(".console");
     const input = this.windowEl.querySelector(".console-input");
+    this.listen(consoleEl, "click", () => input?.focus());
+    this.listen(input, "keydown", (event) => handleConsoleKey(event));
     if (input) input.focus();
+    return this;
   }
 }
 
@@ -657,24 +662,56 @@ function calcInput(e, v) {
   d.innerText = d.dataset.val;
 }
 
+class CompilerApp extends BaseApp {
+  getWindowContent() {
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" type="button">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
+  }
+
+  mount() {
+    const runButton = this.windowEl.querySelector(".compiler-btn");
+    this.listen(runButton, "click", (event) => this.run(event));
+    return this;
+  }
+
+  run(event) {
+    return runCompiler(event);
+  }
+}
+
+class PythonApp extends BaseApp {
+  getWindowContent() {
+    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" type="button">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
+  }
+
+  mount() {
+    const runButton = this.windowEl.querySelector(".compiler-btn");
+    this.listen(runButton, "click", (event) => this.run(event));
+    return this;
+  }
+
+  run(event) {
+    return runPython(event);
+  }
+}
+
 export {
   calcInput,
+  CompilerApp,
   ConsoleApp,
   handleConsoleKey,
   initConsole,
+  PythonApp,
   registerConsoleCommands,
   runCompiler,
   runPython
 };
 
 export function getCompilerContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runCompiler(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">#include <stdio.h>\n\nint main() {\n    printf("Hello from C!");\n    return 0;\n}</textarea><div class="compiler-output" id="compiler-out"></div></div>`;
-
+  return new CompilerApp().getWindowContent();
 }
 
 export function getPythonContent() {
-    return `<div class="compiler-layout"><div class="compiler-toolbar"><button class="compiler-btn" onclick="runPython(event)">RUN</button></div><textarea class="compiler-editor" spellcheck="false">print("Hello Python!")\nfor i in range(3):\n    print(i)</textarea><div class="compiler-output" id="python-out"></div></div>`;
-
+  return new PythonApp().getWindowContent();
 }
 
 export function getConsoleContent() {

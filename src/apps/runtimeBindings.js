@@ -38,7 +38,15 @@ import { getHexEditorContent, initHexEditor } from "./hexEditor.js";
 import { SoundRecorderApp, getSoundRecContent, initSoundRecorder } from "./soundRecorder.js";
 import { getDoomContent, initDoom } from "./doom.js";
 import { FileManagerApp, getWinFileContent, initFileManager } from "./fileManager.js";
-import { ConsoleApp, getCompilerContent, getConsoleContent, getPythonContent, initConsole } from "./console.js";
+import {
+  CompilerApp,
+  ConsoleApp,
+  getCompilerContent,
+  getConsoleContent,
+  getPythonContent,
+  initConsole,
+  PythonApp
+} from "./console.js";
 import { getPhotoshopContent, initPhotoshop } from "./photoshop.js";
 import { getLineRiderContent, initLineRider } from "./linerider.js";
 import { getSimCityContent, initSimCity } from "./simcity.js";
@@ -202,6 +210,7 @@ export const runtimeBindings = {
     getWriteContent
   },
   appClasses: {
+    CompilerApp,
     ConsoleApp,
     FileManagerApp,
     MediaPlayerApp,
@@ -209,6 +218,7 @@ export const runtimeBindings = {
     MidiSequencerApp,
     NetNewsApp,
     NotepadApp,
+    PythonApp,
     RssApp,
     SoundRecorderApp,
     TrackerApp,
