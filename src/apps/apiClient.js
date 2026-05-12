@@ -29,12 +29,29 @@ async function readResponseBody(response) {
   }
 }
 
-function renderHeaders(headers) {
-  if (!headers) return "";
+function getHeaderLines(headers) {
+  if (!headers) return [];
   const entries = [];
   headers.forEach((value, key) => entries.push(`${key}: ${value}`));
-  if (!entries.length) return "No headers returned.";
-  return entries.map((line) => `<div class="httpclient-header-line">${line}</div>`).join("");
+  return entries;
+}
+
+function renderResponseHeaders(container, headers) {
+  const lines = getHeaderLines(headers);
+  if (!lines.length) {
+    container.textContent = "No headers returned.";
+    return;
+  }
+
+  const doc = container.ownerDocument || document;
+  const nodes = lines.map((line) => {
+    const el = doc.createElement("div");
+    el.className = "httpclient-header-line";
+    el.textContent = line;
+    return el;
+  });
+
+  container.replaceChildren(...nodes);
 }
 
 export function initApiClient(win) {
@@ -63,7 +80,7 @@ export function initApiClient(win) {
     statusEl.classList.add("error");
     timingEl.textContent = "";
     responseBodyEl.textContent = "";
-    responseHeadersEl.innerHTML = "";
+    responseHeadersEl.replaceChildren();
     previewEl.textContent = "";
   };
 
@@ -92,7 +109,7 @@ export function initApiClient(win) {
     statusEl.textContent = "Waiting for response...";
     timingEl.textContent = "";
     responseBodyEl.textContent = "";
-    responseHeadersEl.innerHTML = "";
+    responseHeadersEl.replaceChildren();
     previewEl.textContent = bodyText ? bodyText.slice(0, 400) : "";
 
     const started = performance.now();
@@ -105,7 +122,7 @@ export function initApiClient(win) {
       timingEl.textContent = `${duration} ms · ${response.headers.get("content-type") || "unknown type"}`;
       responseBodyEl.textContent = pretty || "(empty body)";
       responseBodyEl.dataset.format = isJson ? "json" : "text";
-      responseHeadersEl.innerHTML = renderHeaders(response.headers);
+      renderResponseHeaders(responseHeadersEl, response.headers);
     } catch (err) {
       showError(`Request failed: ${err?.message || err}`);
     } finally {
