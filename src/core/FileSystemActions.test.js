@@ -45,7 +45,9 @@ function createActions(overrides = {}) {
   const actions = new FileSystemActions({
     filesystem: { ...fs, ...overrides.filesystem },
     getWindowManager: () => overrides.windowManager || { windows: [] },
-    alertUser: (message) => alerts.push(message)
+    alertUser: (message) => alerts.push(message),
+    installSelection: overrides.installSelection,
+    uninstallSelection: overrides.uninstallSelection
   });
   actions.refreshOpenFileManagers = () => {
     refreshed += 1;
@@ -138,6 +140,31 @@ test("mountLocalFolder hydrates mounted drives and ignores user aborts", async (
   await abortingActions.mountLocalFolder({ closest: () => null });
 
   assert.deepEqual(alerts, []);
+});
+
+test("install and uninstall actions call injected file manager helpers and report success", async () => {
+  const calls = [];
+  const win = { selectedEntry: { name: "APP.JSON" } };
+  const button = { closest: () => win };
+  const actions = createActions({
+    installSelection: async (selectedWin) => {
+      calls.push(["install", selectedWin]);
+      return { id: "demo.app", name: "Demo App" };
+    },
+    uninstallSelection: async (selectedWin) => {
+      calls.push(["uninstall", selectedWin]);
+      return "demo.app";
+    }
+  });
+
+  await actions.installSelectedManifest(button);
+  await actions.uninstallManifest(button);
+
+  assert.deepEqual(calls, [
+    ["install", win],
+    ["uninstall", win]
+  ]);
+  assert.deepEqual(alerts, ["Installed Demo App (demo.app)", "Uninstalled demo.app"]);
 });
 
 test("install and uninstall actions surface file manager selection errors", async () => {
