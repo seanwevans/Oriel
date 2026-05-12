@@ -37,8 +37,8 @@ import { getResetContent, initReset } from "./reset.js";
 import { getHexEditorContent, initHexEditor } from "./hexEditor.js";
 import { getSoundRecContent, initSoundRecorder } from "./soundRecorder.js";
 import { getDoomContent, initDoom } from "./doom.js";
-import { getWinFileContent, initFileManager } from "./fileManager.js";
-import { getCompilerContent, getConsoleContent, getPythonContent, initConsole } from "./console.js";
+import { FileManagerApp, getWinFileContent, initFileManager } from "./fileManager.js";
+import { ConsoleApp, getCompilerContent, getConsoleContent, getPythonContent, initConsole } from "./console.js";
 import { getPhotoshopContent, initPhotoshop } from "./photoshop.js";
 import { getLineRiderContent, initLineRider } from "./linerider.js";
 import { getSimCityContent, initSimCity } from "./simcity.js";
@@ -202,6 +202,8 @@ export const runtimeBindings = {
     getWriteContent
   },
   appClasses: {
+    ConsoleApp,
+    FileManagerApp,
     NotepadApp
   },
   initializerKeys: {

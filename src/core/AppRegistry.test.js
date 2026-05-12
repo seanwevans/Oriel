@@ -138,13 +138,20 @@ test("missing apps without runtime initializers return null", () => {
 });
 
 
-test("notepad is resolved through its BaseApp app class", () => {
+test("BaseApp migrations are resolved through app classes", () => {
   const registry = new AppRegistry({ runtimeInitializerResolver: () => null });
-  const app = registry.createApp("notepad", { initData: "hello" });
 
-  assert.equal(app?.constructor.name, "NotepadApp");
-  assert.equal(registry.initializers.notepad, undefined);
-  assert.equal(registry.contentProviders.notepad, undefined);
+  for (const [type, className] of [
+    ["notepad", "NotepadApp"],
+    ["console", "ConsoleApp"],
+    ["winfile", "FileManagerApp"]
+  ]) {
+    const app = registry.createApp(type, { initData: "hello" });
+
+    assert.equal(app?.constructor.name, className);
+    assert.equal(registry.initializers[type], undefined);
+    assert.equal(registry.contentProviders[type], undefined);
+  }
 });
 
 test("manifest executable names point at valid app types", () => {
