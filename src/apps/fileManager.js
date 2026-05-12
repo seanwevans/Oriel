@@ -3,7 +3,7 @@ import { MOCK_FS, hydrateNativeDirectory } from "../filesystem.js";
 import { installFromManifestPath, readManifest, uninstallApp } from "../installer.js";
 import { BaseApp } from "./base/BaseApp.js";
 
-function getWinFileContent() {
+function getWinFileMarkup() {
   return `
         <div class="winfile-layout">
           <div class="drive-bar">
@@ -47,6 +47,10 @@ function getWinFileContent() {
 }
 
 class FileManagerApp extends BaseApp {
+  getWindowContent() {
+    return getWinFileMarkup();
+  }
+
   async mount() {
     const defaultDrive = Object.keys(MOCK_FS)[0] || "C\\";
     this.windowEl.cP = defaultDrive;
@@ -81,6 +85,10 @@ class FileManagerApp extends BaseApp {
       .querySelector('[data-action="import-file-system"]')
       ?.addEventListener("change", (event) => actions.importFileSystem(event));
   }
+}
+
+function getWinFileContent() {
+  return new FileManagerApp().getWindowContent();
 }
 
 async function initFileManager(w, initData, manager, services = {}) {

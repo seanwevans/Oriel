@@ -18,7 +18,12 @@ let consoleServices = {};
 const getKernel = () => consoleServices.kernel || null;
 
 class ConsoleApp extends BaseApp {
+  getWindowContent() {
+    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
+  }
+
   mount() {
+    consoleServices = this.services || {};
     this.windowEl.consoleState = {
       cwd: "C:\\",
       history: [],
@@ -673,6 +678,5 @@ export function getPythonContent() {
 }
 
 export function getConsoleContent() {
-    return `<div class="console" onclick="document.querySelector('.window.active .console-input')?.focus()"><div>Egg Oriel 1.0</div><br><div class="console-output"></div><div class="console-line"><span>C:\\></span><input type="text" class="console-input" onkeydown="handleConsoleKey(event)" autocomplete="off"></div></div>`;
-
+  return new ConsoleApp().getWindowContent();
 }
