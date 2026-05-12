@@ -57,7 +57,7 @@ import { getChessContent, initChess } from "./chess.js";
 import { getPapersContent, initPapersPlease } from "./papersPlease.js";
 import { getShaderLabRoot, initShaderLab } from "./shaderLab.js";
 import { getCodePenContent, initCodePen } from "./codepen.js";
-import { getCalcContent } from "./calc.js";
+import { getCalcContent, initCalc } from "./calc.js";
 import { getReadmeContent } from "./readme.js";
 import { getClipboardContent } from "./clipboard.js";
 import { getRssReaderContent } from "./rss.js";
@@ -86,6 +86,7 @@ export const runtimeBindings = {
     initApiClient,
     initBbs,
     initBeatMaker,
+    initCalc,
     initCannonDuel,
     initCardfile,
     initCeleryMan,

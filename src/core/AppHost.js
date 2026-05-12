@@ -122,10 +122,10 @@ export class AppHost {
     }
   }
 
-  mount({ initializer, winEl, winObj, initData = null, wmInstance = null, type = "unknown" }) {
+  mount({ initializer, winEl, winObj, initData = null, wmInstance = null, services = {}, type = "unknown" }) {
     if (!initializer) return null;
     try {
-      const initializerResult = initializer(winEl, initData, wmInstance);
+      const initializerResult = initializer(winEl, initData, wmInstance, services);
 
       if (isPromiseLike(initializerResult)) {
         const pendingMountPromise = Promise.resolve(initializerResult)

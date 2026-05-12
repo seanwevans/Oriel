@@ -28,7 +28,7 @@ controlPanelContext.screensaver = screensaverContext;
 
 
 export class WindowManager {
-  constructor(initialState = null) {
+  constructor(initialState = null, { services = {} } = {}) {
     this.desktop = document.getElementById("desktop");
     this.minimizedContainer = document.getElementById("minimized-container");
     this.windows = [];
@@ -49,6 +49,7 @@ export class WindowManager {
       getDesktop: () => this.desktop,
       saveDesktopState: () => this.saveDesktopState()
     });
+    this.appServices = services;
     this.appRegistry = new AppRegistry({ controlPanelContext });
     this.appHost = new AppHost({
       onMountError: ({ err, winEl, type }) => {
@@ -136,6 +137,7 @@ export class WindowManager {
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;
     const services = {
+      ...this.appServices,
       windowManager: this,
       kernel,
       publish,
@@ -464,6 +466,7 @@ export class WindowManager {
         winObj,
         initData,
         wmInstance: this,
+        services,
         type
       });
     } else if (!hasContent) {
@@ -497,6 +500,7 @@ export class WindowManager {
       windowEl: null,
       initData,
       services: {
+        ...this.appServices,
         windowManager: this,
         kernel: globalThis.kernel || null,
         publish,
