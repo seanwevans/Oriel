@@ -394,11 +394,3 @@ export class MidiSequencerApp extends BaseApp {
   }
 }
 
-export function getMidiSequencerContent() {
-  return new MidiSequencerApp().getWindowContent();
-}
-
-export function initMidiSequencer(win) {
-  const app = new MidiSequencerApp({ windowEl: win });
-  return app.mount();
-}

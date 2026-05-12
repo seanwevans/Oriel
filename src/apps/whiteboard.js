@@ -537,11 +537,3 @@ export class WhiteboardApp extends BaseApp {
   }
 }
 
-export function getWhiteboardRoot() {
-  return new WhiteboardApp().getWindowContent();
-}
-
-export function initWhiteboard(win) {
-  const app = new WhiteboardApp({ windowEl: win });
-  return app.mount();
-}

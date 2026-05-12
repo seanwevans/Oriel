@@ -206,11 +206,3 @@ export class RssApp extends BaseApp {
   }
 }
 
-export function getRssReaderContent() {
-  return new RssApp().getWindowContent();
-}
-
-export function initRssReader(win) {
-  const app = new RssApp({ windowEl: win });
-  return app.mount();
-}

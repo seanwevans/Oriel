@@ -215,11 +215,3 @@ export class MessengerApp extends BaseApp {
   }
 }
 
-export function getMessengerContent() {
-  return new MessengerApp().getWindowContent();
-}
-
-export function initMessenger(win) {
-  const app = new MessengerApp({ windowEl: win });
-  return app.mount();
-}

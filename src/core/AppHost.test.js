@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { initMessenger } from "../apps/messenger.js";
+import { MessengerApp } from "../apps/messenger.js";
 import { publish } from "../eventBus.js";
 import { AppHost } from "./AppHost.js";
 
@@ -372,8 +372,8 @@ test("closing Messenger through AppHost unsubscribes and closes BroadcastChannel
     const winObj = { el: winEl };
     const appHost = new AppHost();
 
-    const appInstance = appHost.mount({
-      initializer: initMessenger,
+    const appInstance = appHost.mountInstance({
+      appInstance: new MessengerApp(),
       winEl,
       winObj,
       type: "messenger"

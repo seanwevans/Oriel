@@ -193,10 +193,6 @@ export class NetNewsApp extends BaseApp {
   }
 }
 
-export function getNetNewsContent() {
-  return new NetNewsApp().getWindowContent();
-}
-
 
 export function appendNetNewsEmptyMessage(container, message) {
   const empty = document.createElement("div");
@@ -246,7 +242,3 @@ export function createNetNewsThreadRow(thread, idx, isSelected = false) {
   return row;
 }
 
-export function initNetNews(win) {
-  const app = new NetNewsApp({ windowEl: win });
-  return app.mount();
-}

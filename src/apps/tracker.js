@@ -492,11 +492,3 @@ export class TrackerApp extends BaseApp {
   }
 }
 
-export function getTrackerContent() {
-  return new TrackerApp().getWindowContent();
-}
-
-export function initTracker(win) {
-  const app = new TrackerApp({ windowEl: win });
-  return app.mount();
-}
