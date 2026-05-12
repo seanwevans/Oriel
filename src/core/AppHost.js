@@ -30,17 +30,6 @@ function isWindowUnmounted(winObj) {
   return winObj?.isUnmounted === true;
 }
 
-function dispatchAppDestroy(winEl) {
-  if (typeof winEl?.dispatchEvent !== "function") return;
-
-  const event =
-    typeof CustomEvent === "function"
-      ? new CustomEvent("app:destroy")
-      : { type: "app:destroy" };
-
-  winEl.dispatchEvent(event);
-}
-
 export class AppHost {
   constructor({ onMountError } = {}) {
     this.onMountError = onMountError;
@@ -156,12 +145,7 @@ export class AppHost {
     const winEl = winObj?.el;
     const appInstance = winObj?.appInstance || winEl?.appInstance || null;
 
-    const hasDispose = appInstance && typeof appInstance.dispose === "function";
-    if (hasDispose) {
-      disposeAppInstance(appInstance);
-    } else {
-      dispatchAppDestroy(winEl);
-    }
+    disposeAppInstance(appInstance);
 
     if (winEl?.doomCI) {
       winEl.doomCI.exit();
