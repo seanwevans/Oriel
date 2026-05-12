@@ -31,12 +31,7 @@ import {
   previewScreensaver,
   setWallpaper
 } from "../apps/controlPanel.js";
-import {
-  handleConsoleKey,
-  registerConsoleCommands,
-  runCompiler,
-  runPython
-} from "../apps/console.js";
+import { registerConsoleCommands } from "../apps/console.js";
 import { clearCharMap, copyCharMap } from "../apps/charmap.js";
 import { addDbRecord, deleteDbRecord, exportDbToCsv } from "../apps/database.js";
 import {
@@ -219,11 +214,8 @@ export class OrielApp {
     window.kernel = this.kernel;
     registerConsoleCommands(this.services);
 
-    window.handleConsoleKey = handleConsoleKey;
     window.copyCharMap = copyCharMap;
     window.clearCharMap = clearCharMap;
-    window.runCompiler = runCompiler;
-    window.runPython = runPython;
 
     window.addDbRecord = addDbRecord;
     window.exportDbToCsv = exportDbToCsv;

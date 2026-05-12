@@ -67,7 +67,10 @@ let originalFileReader;
 let originalAlert;
 let originalSetInterval;
 let originalClearInterval;
+let CompilerApp;
+let ConsoleApp;
 let OrielApp;
+let PythonApp;
 
 before(async () => {
   originalDocument = globalThis.document;
@@ -87,6 +90,7 @@ before(async () => {
   globalThis.clearInterval = () => {};
 
   ({ OrielApp } = await import("./OrielApp.js"));
+  ({ CompilerApp, ConsoleApp, PythonApp } = await import("../apps/console.js"));
 });
 
 after(() => {
@@ -124,6 +128,146 @@ function createFakeWindow() {
     innerHeight: 768
   };
 }
+
+
+class EventTargetElement {
+  constructor({ selectorMap = {}, closestMap = {} } = {}) {
+    this.children = [];
+    this.dataset = {};
+    this.eventListeners = new Map();
+    this.focusCount = 0;
+    this.innerHTML = "";
+    this.selectorMap = selectorMap;
+    this.closestMap = closestMap;
+    this.style = {};
+    this.textContent = "";
+    this.value = "";
+  }
+
+  addEventListener(type, listener) {
+    const listeners = this.eventListeners.get(type) || [];
+    listeners.push(listener);
+    this.eventListeners.set(type, listeners);
+  }
+
+  removeEventListener(type, listener) {
+    const listeners = this.eventListeners.get(type) || [];
+    this.eventListeners.set(type, listeners.filter((candidate) => candidate !== listener));
+  }
+
+  appendChild(child) {
+    this.children.push(child);
+    return child;
+  }
+
+  closest(selector) {
+    return this.closestMap[selector] || null;
+  }
+
+  dispatch(type, event = {}) {
+    const listeners = this.eventListeners.get(type) || [];
+    return Promise.all(listeners.map((listener) => listener({ target: this, ...event })));
+  }
+
+  focus() {
+    this.focusCount += 1;
+  }
+
+  querySelector(selector) {
+    return this.selectorMap[selector] || null;
+  }
+
+  setSelectionRange(start, end) {
+    this.selection = { start, end };
+  }
+}
+
+test("console app owns console focus and keydown behavior", async () => {
+  const consoleEl = new EventTargetElement();
+  const input = new EventTargetElement();
+  const prompt = new EventTargetElement();
+  const output = new EventTargetElement();
+  const windowEl = new EventTargetElement({
+    selectorMap: {
+      ".console": consoleEl,
+      ".console-input": input,
+      ".console-line span": prompt,
+      ".console-output": output
+    }
+  });
+  input.closestMap[".window"] = windowEl;
+
+  const app = new ConsoleApp({ windowEl });
+  const content = app.getWindowContent();
+
+  assert.equal(content.includes("onclick="), false);
+  assert.equal(content.includes("onkeydown="), false);
+
+  app.mount();
+  assert.equal(input.focusCount, 1);
+  assert.equal(consoleEl.eventListeners.get("click").length, 1);
+  assert.equal(input.eventListeners.get("keydown").length, 1);
+
+  await consoleEl.dispatch("click");
+  assert.equal(input.focusCount, 2);
+
+  windowEl.consoleState.history.push("help");
+  let prevented = false;
+  await input.dispatch("keydown", {
+    key: "ArrowUp",
+    preventDefault() {
+      prevented = true;
+    }
+  });
+
+  assert.equal(prevented, true);
+  assert.equal(input.value, "help");
+  assert.deepEqual(input.selection, { start: 4, end: 4 });
+});
+
+test("compiler and python apps own runner click behavior", async () => {
+  const compilerButton = new EventTargetElement();
+  const compilerEditor = new EventTargetElement();
+  const compilerOutput = new EventTargetElement();
+  const compilerWindow = new EventTargetElement({
+    selectorMap: {
+      ".compiler-btn": compilerButton,
+      ".compiler-editor": compilerEditor,
+      "#compiler-out": compilerOutput
+    }
+  });
+  compilerButton.closestMap[".window"] = compilerWindow;
+
+  const compilerApp = new CompilerApp({ windowEl: compilerWindow });
+  const compilerContent = compilerApp.getWindowContent();
+  assert.equal(compilerContent.includes("onclick="), false);
+  compilerEditor.value = "";
+  compilerApp.mount();
+  assert.equal(compilerButton.eventListeners.get("click").length, 1);
+  await compilerButton.dispatch("click");
+  assert.equal(compilerOutput.children[0].textContent, "No source code provided.");
+
+  const pythonButton = new EventTargetElement();
+  const pythonEditor = new EventTargetElement();
+  const pythonOutput = new EventTargetElement();
+  const pythonWindow = new EventTargetElement({
+    selectorMap: {
+      ".compiler-btn": pythonButton,
+      ".compiler-editor": pythonEditor,
+      "#python-out": pythonOutput
+    }
+  });
+  pythonButton.closestMap[".window"] = pythonWindow;
+
+  const pythonApp = new PythonApp({ windowEl: pythonWindow });
+  const pythonContent = pythonApp.getWindowContent();
+  assert.equal(pythonContent.includes("onclick="), false);
+  pythonEditor.value = "";
+  pythonApp.mount();
+  assert.equal(pythonButton.eventListeners.get("click").length, 1);
+  await pythonButton.dispatch("click");
+  assert.equal(pythonOutput.innerHTML, "<pre>No script provided.</pre>");
+});
 
 function deferred() {
   let resolve;
@@ -241,7 +385,9 @@ test("start waits for filesystem and installer readiness before desktop and scre
   assert.equal(constructedWindowManager.services.kernel, app.kernel);
   assert.equal(constructedWindowManager.services.windowManager, constructedWindowManager);
   assert.equal(globalThis.window.wm, constructedWindowManager);
-  assert.equal(typeof globalThis.window.handleConsoleKey, "function");
+  assert.equal(globalThis.window.handleConsoleKey, undefined);
+  assert.equal(globalThis.window.runCompiler, undefined);
+  assert.equal(globalThis.window.runPython, undefined);
   assert.equal(typeof globalThis.window.openCPDesktop, "function");
   assert.equal(typeof globalThis.window.applyWallpaperSettings, "function");
   assert.equal(typeof globalThis.window.submitLockPassphrase, "function");
