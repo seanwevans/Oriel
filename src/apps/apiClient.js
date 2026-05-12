@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { normalizeHttpUrl } from "../network/config.js";
 import { trackedFetch } from "../network/trackedFetch.js";
 
@@ -171,4 +172,14 @@ export function getApiClientContent() {
       </div>
     </div>
   `;
+}
+
+export class ApiClientApp extends BaseApp {
+  getWindowContent() {
+    return getApiClientContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initApiClient(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

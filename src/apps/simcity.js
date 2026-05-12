@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getSimCityContent() {
   return `
                 <div class="simcity-layout">
@@ -139,4 +140,14 @@ export function initSimCity(w) {
   buttons.forEach((btn) => btn.addEventListener("click", () => setTool(btn.dataset.tool)));
   setTool("road");
   updateStats();
+}
+
+export class SimCityApp extends BaseApp {
+  getWindowContent() {
+    return getSimCityContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initSimCity(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

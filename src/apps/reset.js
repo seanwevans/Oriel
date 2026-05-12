@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initReset(w) {
   const btn = w.querySelector(".reset-now-btn");
   const status = w.querySelector(".reset-status");
@@ -50,4 +51,14 @@ export function getResetContent() {
                 <div class="reset-status" aria-live="polite">No changes yet.</div>
             </div>`;
 
+}
+
+export class ResetApp extends BaseApp {
+  getWindowContent() {
+    return getResetContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initReset(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

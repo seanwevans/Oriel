@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 let chessLibPromise = null;
 
 function loadChessLibrary() {
@@ -326,4 +327,14 @@ export { initChess };
 export function getChessContent() {
     return `<div class="chess-layout"><div class="chess-board" aria-label="Chessboard"></div><div class="chess-sidebar"><div class="chess-status">Loading chess engine...</div><div class="chess-controls"><button class="task-btn chess-new">New Game</button><button class="task-btn chess-copy">Copy FEN</button><button class="task-btn chess-paste">Paste FEN</button><button class="task-btn chess-load">Load FEN</button><input type="text" id="chess-fen" class="chess-fen" spellcheck="false" title="Current FEN"></div><div class="chess-moves" aria-label="Move list"></div></div></div>`;
 
+}
+
+export class ChessApp extends BaseApp {
+  getWindowContent() {
+    return getChessContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initChess(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

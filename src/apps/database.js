@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 function renderDbTable(w, app = null) {
   const t = w.querySelector("#db-tbody");
   t.innerHTML = "";
@@ -95,4 +96,14 @@ export function exportDbToCsv(b) {
 export function getDatabaseContent() {
     return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" id="db-add-record" type="button">Add Record</button><button class="task-btn" id="db-export-csv" type="button">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
 
+}
+
+export class DatabaseApp extends BaseApp {
+  getWindowContent() {
+    return getDatabaseContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initDatabase(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

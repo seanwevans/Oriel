@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { getSystemVolume } from "../audio.js";
 
 export function getBeatMakerContent() {
@@ -243,4 +244,14 @@ export function initBeatMaker(win) {
       audioCtx?.close?.();
     }
   };
+}
+
+export class BeatMakerApp extends BaseApp {
+  getWindowContent() {
+    return getBeatMakerContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initBeatMaker(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

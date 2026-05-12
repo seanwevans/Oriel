@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { subscribeToNetworkEvents } from "../network/trackedFetch.js";
 
 function formatTime(ts) {
@@ -148,4 +149,14 @@ export function getPacketLabContent() {
       <div class="packetlab-list" aria-label="Network activity"></div>
     </div>
   `;
+}
+
+export class PacketLabApp extends BaseApp {
+  getWindowContent() {
+    return getPacketLabContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPacketLab(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

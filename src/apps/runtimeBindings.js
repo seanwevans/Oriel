@@ -1,159 +1,74 @@
-import { getMinecraftRoot, initMinecraft } from "./minecraft.js";
-import { getN64Root, initN64 } from "./n64.js";
+import { MinecraftApp } from "./minecraft.js";
+import { N64App } from "./n64.js";
 import { NotepadApp } from "./notepad.js";
-import { getCardfileContent, initCardfile } from "./cardfile.js";
-import { getClockContent, initClock } from "./clock.js";
-import { getDiscordContent, initDiscord } from "./discord.js";
-import { getSpotifyContent, initSpotify } from "./spotify.js";
-import { getIRCContent, initIRC } from "./irc.js";
-import { getBbsContent, initBbs } from "./bbsDialer.js";
-import { getEmailContent, initEmail } from "./email.js";
+import { CardfileApp } from "./cardfile.js";
+import { ClockApp } from "./clock.js";
+import { DiscordApp } from "./discord.js";
+import { SpotifyApp } from "./spotify.js";
+import { IrcApp } from "./irc.js";
+import { BbsApp } from "./bbsDialer.js";
+import { EmailApp } from "./email.js";
 import { MessengerApp } from "./messenger.js";
-import { getRetroAIContent, initRetroAI } from "./retroAI.js";
-import { getKakuroContent, initKakuro } from "./kakuro.js";
-import { getMarkdownContent, initMarkdownViewer } from "./markdown.js";
-import { getMinesContent, initMinesweeper } from "./minesweeper.js";
-import { getCeleryManContent, initCeleryMan } from "./celeryman.js";
-import { getPdfReaderContent, initPdfReader } from "./pdfReader.js";
-import { getPaintRoot, initPaint } from "./paint.js";
-import { getPixelStudioContent, initPixelStudio } from "./pixelStudio.js";
-import { getPostgresContent, initPostgres } from "./postgres.js";
-import { getVmContent, initVm } from "./vm.js";
-import { getWriteContent, initWrite } from "./write.js";
-import { getSandspielRoot, initSandspiel } from "./sandspiel.js";
-import { getSandspiel3DRoot, initSandspiel3d } from "./sandspiel3d.js";
+import { RetroAIApp } from "./retroAI.js";
+import { KakuroApp } from "./kakuro.js";
+import { MarkdownViewerApp } from "./markdown.js";
+import { MinesweeperApp } from "./minesweeper.js";
+import { CeleryManApp } from "./celeryman.js";
+import { PdfReaderApp } from "./pdfReader.js";
+import { PaintApp } from "./paint.js";
+import { PixelStudioApp } from "./pixelStudio.js";
+import { PostgresApp } from "./postgres.js";
+import { VmApp } from "./vm.js";
+import { WriteApp } from "./write.js";
+import { SandspielApp } from "./sandspiel.js";
+import { Sandspiel3dApp } from "./sandspiel3d.js";
 import { WhiteboardApp } from "./whiteboard.js";
-import { getImageViewerContent, initImageViewer } from "./imageViewer.js";
-import { getReversiContent, initReversi } from "./reversi.js";
-import { getSolitaireContent, initSolitaire } from "./solitaire.js";
-import { getSudokuContent, initSudoku } from "./sudoku.js";
-import { getCharMapContent, initCharMap } from "./charmap.js";
-import { getBeatMakerContent, initBeatMaker } from "./beatMaker.js";
+import { ImageViewerApp } from "./imageViewer.js";
+import { ReversiApp } from "./reversi.js";
+import { SolitaireApp } from "./solitaire.js";
+import { SudokuApp } from "./sudoku.js";
+import { CharMapApp } from "./charmap.js";
+import { BeatMakerApp } from "./beatMaker.js";
 import { MidiSequencerApp } from "./midiSequencer.js";
-import { getDatabaseContent, initDatabase } from "./database.js";
+import { DatabaseApp } from "./database.js";
 import { MediaPlayerApp } from "./mediaPlayer.js";
-import { getTaskManContent, initTaskMan } from "./taskman.js";
-import { getResetContent, initReset } from "./reset.js";
-import { getHexEditorContent, initHexEditor } from "./hexEditor.js";
+import { TaskManApp } from "./taskman.js";
+import { ResetApp } from "./reset.js";
+import { HexEditorApp } from "./hexEditor.js";
 import { SoundRecorderApp } from "./soundRecorder.js";
-import { getDoomContent, initDoom } from "./doom.js";
+import { DoomApp } from "./doom.js";
 import { FileManagerApp } from "./fileManager.js";
 import { CompilerApp, ConsoleApp, PythonApp } from "./console.js";
-import { getPhotoshopContent, initPhotoshop } from "./photoshop.js";
-import { getLineRiderContent, initLineRider } from "./linerider.js";
-import { getSimCityContent, initSimCity } from "./simcity.js";
+import { PhotoshopApp } from "./photoshop.js";
+import { LineRiderApp } from "./linerider.js";
+import { SimCityApp } from "./simcity.js";
 import { NetNewsApp } from "./netnews.js";
-import { getSkiFreeContent, initSkiFree } from "./skifree.js";
-import { getPinballContent, initPinball } from "./pinball.js";
-import { getAngryBirdsContent, initAngryBirds } from "./angrybirds.js";
-import { getCannonDuelContent, initCannonDuel } from "./cannonDuel.js";
-import { getMafiaContent, initMafia } from "./mafia.js";
-import { getPacketLabContent, initPacketLab } from "./packetLab.js";
-import { getApiClientContent, initApiClient } from "./apiClient.js";
-import { getTi83Root, initTi83 } from "./ti83.js";
+import { SkiFreeApp } from "./skifree.js";
+import { PinballApp } from "./pinball.js";
+import { AngryBirdsApp } from "./angrybirds.js";
+import { CannonDuelApp } from "./cannonDuel.js";
+import { MafiaApp } from "./mafia.js";
+import { PacketLabApp } from "./packetLab.js";
+import { ApiClientApp } from "./apiClient.js";
+import { Ti83App } from "./ti83.js";
 import { TrackerApp } from "./tracker.js";
-import { getControlPanelContent, initControlPanel } from "./controlPanel.js";
-import { getChessContent, initChess } from "./chess.js";
-import { getPapersContent, initPapersPlease } from "./papersPlease.js";
-import { getShaderLabRoot, initShaderLab } from "./shaderLab.js";
-import { getCodePenContent, initCodePen } from "./codepen.js";
-import { getCalcContent, initCalc } from "./calc.js";
-import { getReadmeContent } from "./readme.js";
-import { getClipboardContent } from "./clipboard.js";
+import { ControlPanelApp } from "./controlPanel.js";
+import { ChessApp } from "./chess.js";
+import { PapersPleaseApp } from "./papersPlease.js";
+import { ShaderLabApp } from "./shaderLab.js";
+import { CodePenApp } from "./codepen.js";
+import { CalcApp } from "./calc.js";
+import { ReadmeApp } from "./readme.js";
+import { ClipboardApp } from "./clipboard.js";
 import { RssApp } from "./rss.js";
-import { getProgramManagerContent } from "./programManager.js";
-import { getBrowserContent, initBrowser } from "./browser.js";
-import { getRadioGardenContent, initRadioGarden } from "./radioGarden.js";
-import { getRadioContent, initRadio } from "./radio.js";
-import { BaseApp } from "./base/BaseApp.js";
+import { ProgramManagerApp } from "./programManager.js";
+import { BrowserApp } from "./browser.js";
+import { RadioGardenApp } from "./radioGarden.js";
+import { RadioApp } from "./radio.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "appClass", group: "appClasses", target: "appClass" }
 ];
-
-function createRuntimeAppClass({ initializer = null, contentProvider = null, initializerContext = null } = {}) {
-  return class RuntimeApp extends BaseApp {
-    getWindowContent() {
-      if (!contentProvider) return "";
-      return contentProvider(this.initData, this.services);
-    }
-
-    mount() {
-      if (!initializer) return null;
-      const args = [this.windowEl, this.initData, this.services.windowManager, this.services, this];
-      if (initializerContext) {
-        return initializer(initializerContext(this.services), ...args);
-      }
-      return initializer(...args);
-    }
-  };
-}
-
-const ProgramManagerApp = createRuntimeAppClass({
-  contentProvider: (_initData, services) => getProgramManagerContent(services.windowManager)
-});
-const WriteApp = createRuntimeAppClass({ initializer: initWrite, contentProvider: getWriteContent });
-const CodePenApp = createRuntimeAppClass({
-  initializer: initCodePen,
-  contentProvider: (initData) => (initData?.mode === "viewer" ? "" : getCodePenContent(initData))
-});
-const CardfileApp = createRuntimeAppClass({ initializer: initCardfile, contentProvider: getCardfileContent });
-const CalcApp = createRuntimeAppClass({ initializer: initCalc, contentProvider: getCalcContent });
-const MinesweeperApp = createRuntimeAppClass({ initializer: initMinesweeper, contentProvider: getMinesContent });
-const KakuroApp = createRuntimeAppClass({ initializer: initKakuro, contentProvider: getKakuroContent });
-const SolitaireApp = createRuntimeAppClass({ initializer: initSolitaire, contentProvider: getSolitaireContent });
-const ChessApp = createRuntimeAppClass({ initializer: initChess, contentProvider: getChessContent });
-const ReversiApp = createRuntimeAppClass({ initializer: initReversi, contentProvider: getReversiContent });
-const SudokuApp = createRuntimeAppClass({ initializer: initSudoku, contentProvider: getSudokuContent });
-const MafiaApp = createRuntimeAppClass({ initializer: initMafia, contentProvider: getMafiaContent });
-const PaintApp = createRuntimeAppClass({ initializer: initPaint, contentProvider: getPaintRoot });
-const PixelStudioApp = createRuntimeAppClass({ initializer: initPixelStudio, contentProvider: getPixelStudioContent });
-const PhotoshopApp = createRuntimeAppClass({ initializer: initPhotoshop, contentProvider: getPhotoshopContent });
-const SimCityApp = createRuntimeAppClass({ initializer: initSimCity, contentProvider: getSimCityContent });
-const AngryBirdsApp = createRuntimeAppClass({ initializer: initAngryBirds, contentProvider: getAngryBirdsContent });
-const SkiFreeApp = createRuntimeAppClass({ initializer: initSkiFree, contentProvider: getSkiFreeContent });
-const CannonDuelApp = createRuntimeAppClass({ initializer: initCannonDuel, contentProvider: getCannonDuelContent });
-const PinballApp = createRuntimeAppClass({ initializer: initPinball, contentProvider: getPinballContent });
-const LineRiderApp = createRuntimeAppClass({ initializer: initLineRider, contentProvider: getLineRiderContent });
-const RadioApp = createRuntimeAppClass({ initializer: initRadio, contentProvider: getRadioContent });
-const BeatMakerApp = createRuntimeAppClass({ initializer: initBeatMaker, contentProvider: getBeatMakerContent });
-const SpotifyApp = createRuntimeAppClass({ initializer: initSpotify, contentProvider: getSpotifyContent });
-const CharMapApp = createRuntimeAppClass({ initializer: initCharMap, contentProvider: getCharMapContent });
-const ClockApp = createRuntimeAppClass({ initializer: initClock, contentProvider: getClockContent });
-const ControlPanelApp = createRuntimeAppClass({
-  initializer: initControlPanel,
-  contentProvider: getControlPanelContent,
-  initializerContext: (services) => services.controlPanelContext || {}
-});
-const ResetApp = createRuntimeAppClass({ initializer: initReset, contentProvider: getResetContent });
-const ImageViewerApp = createRuntimeAppClass({ initializer: initImageViewer, contentProvider: getImageViewerContent });
-const PdfReaderApp = createRuntimeAppClass({ initializer: initPdfReader, contentProvider: getPdfReaderContent });
-const MarkdownViewerApp = createRuntimeAppClass({ initializer: initMarkdownViewer, contentProvider: getMarkdownContent });
-const ClipboardApp = createRuntimeAppClass({ contentProvider: getClipboardContent });
-const TaskManApp = createRuntimeAppClass({ initializer: initTaskMan, contentProvider: getTaskManContent });
-const DatabaseApp = createRuntimeAppClass({ initializer: initDatabase, contentProvider: getDatabaseContent });
-const PostgresApp = createRuntimeAppClass({ initializer: initPostgres, contentProvider: getPostgresContent });
-const ApiClientApp = createRuntimeAppClass({ initializer: initApiClient, contentProvider: getApiClientContent });
-const PacketLabApp = createRuntimeAppClass({ initializer: initPacketLab, contentProvider: getPacketLabContent });
-const RetroAIApp = createRuntimeAppClass({ initializer: initRetroAI, contentProvider: getRetroAIContent });
-const HexEditorApp = createRuntimeAppClass({ initializer: initHexEditor, contentProvider: getHexEditorContent });
-const BrowserApp = createRuntimeAppClass({ initializer: initBrowser, contentProvider: getBrowserContent });
-const CeleryManApp = createRuntimeAppClass({ initializer: initCeleryMan, contentProvider: getCeleryManContent });
-const VmApp = createRuntimeAppClass({ initializer: initVm, contentProvider: getVmContent });
-const RadioGardenApp = createRuntimeAppClass({ initializer: initRadioGarden, contentProvider: getRadioGardenContent });
-const DiscordApp = createRuntimeAppClass({ initializer: initDiscord, contentProvider: getDiscordContent });
-const BbsApp = createRuntimeAppClass({ initializer: initBbs, contentProvider: getBbsContent });
-const EmailApp = createRuntimeAppClass({ initializer: initEmail, contentProvider: getEmailContent });
-const IrcApp = createRuntimeAppClass({ initializer: initIRC, contentProvider: getIRCContent });
-const ReadmeApp = createRuntimeAppClass({ contentProvider: getReadmeContent });
-const DoomApp = createRuntimeAppClass({ initializer: initDoom, contentProvider: getDoomContent });
-const Ti83App = createRuntimeAppClass({ initializer: initTi83, contentProvider: getTi83Root });
-const N64App = createRuntimeAppClass({ initializer: initN64, contentProvider: getN64Root });
-const MinecraftApp = createRuntimeAppClass({ initializer: initMinecraft, contentProvider: getMinecraftRoot });
-const SandspielApp = createRuntimeAppClass({ initializer: initSandspiel, contentProvider: getSandspielRoot });
-const Sandspiel3dApp = createRuntimeAppClass({ initializer: initSandspiel3d, contentProvider: getSandspiel3DRoot });
-const ShaderLabApp = createRuntimeAppClass({ initializer: initShaderLab, contentProvider: getShaderLabRoot });
-const PapersPleaseApp = createRuntimeAppClass({ initializer: initPapersPlease, contentProvider: getPapersContent });
 
 export const runtimeBindings = {
   appClasses: {

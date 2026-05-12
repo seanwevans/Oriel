@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 function initPapersPlease(win) {
   const nameEl = win.querySelector(".papers-name");
   const nationEl = win.querySelector(".papers-nation");
@@ -167,4 +168,14 @@ export function getPapersContent() {
                 </div>
             `;
 
+}
+
+export class PapersPleaseApp extends BaseApp {
+  getWindowContent() {
+    return getPapersContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPapersPlease(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

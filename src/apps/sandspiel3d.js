@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { loadThree } from "../threeLoader.js";
 
 const BRUSHES = {
@@ -268,4 +269,14 @@ export async function initSandspiel3d(win) {
       floorMat.dispose();
     }
   };
+}
+
+export class Sandspiel3dApp extends BaseApp {
+  getWindowContent() {
+    return getSandspiel3DRoot(this.initData, this.services);
+  }
+
+  mount() {
+    return initSandspiel3d(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

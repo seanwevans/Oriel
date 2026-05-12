@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const KAKURO_PUZZLE = [
   [
     { type: "block" },
@@ -189,4 +190,14 @@ export function getKakuroContent() {
                 <div class="kakuro-help">Each clue shows the sum for the across or down run starting beside it.</div>
             </div>`;
 
+}
+
+export class KakuroApp extends BaseApp {
+  getWindowContent() {
+    return getKakuroContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initKakuro(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

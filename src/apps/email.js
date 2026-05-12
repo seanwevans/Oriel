@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { getNetworkDefaults } from "../network/config.js";
 import { DEFAULT_SPLASH_IMAGE, DEFAULT_WALLPAPER } from "../defaults.js";
 
@@ -438,4 +439,14 @@ export function initEmail(win) {
   });
 
   renderList();
+}
+
+export class EmailApp extends BaseApp {
+  getWindowContent() {
+    return getEmailContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initEmail(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

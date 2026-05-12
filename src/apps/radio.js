@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { RADIO_FALLBACK_PRESETS } from "../defaults.js";
 import { registerMediaElement } from "../audio.js";
 import { RADIO_BROWSER_BASE } from "../network/config.js";
@@ -243,4 +244,14 @@ export function getRadioContent() {
               </div>
             </div>`;
 
+}
+
+export class RadioApp extends BaseApp {
+  getWindowContent() {
+    return getRadioContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initRadio(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

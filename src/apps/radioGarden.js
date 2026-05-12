@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { RADIO_GARDEN_PROXY } from "../network/config.js";
 import { trackedFetch } from "../network/trackedFetch.js";
 
@@ -227,4 +228,14 @@ export function getRadioGardenContent() {
               <div class="radio-results" role="list"></div>
             </div>`;
 
+}
+
+export class RadioGardenApp extends BaseApp {
+  getWindowContent() {
+    return getRadioGardenContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initRadioGarden(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

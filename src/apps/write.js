@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initWrite(win) {
   const editor = win.querySelector(".write-editor");
   if (!editor) return;
@@ -32,4 +33,14 @@ export function getWriteContent(txt) {
       txt || "Welcome to Oriel Write."
     }</div></div>`;
 
+}
+
+export class WriteApp extends BaseApp {
+  getWindowContent() {
+    return getWriteContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initWrite(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

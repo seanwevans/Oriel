@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getDiscordContent() {
   return `
         <div class="discord">
@@ -155,4 +156,14 @@ export function initDiscord(win) {
       sendMessage();
     }
   });
+}
+
+export class DiscordApp extends BaseApp {
+  getWindowContent() {
+    return getDiscordContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initDiscord(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

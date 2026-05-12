@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 function formatHexDump(bytes) {
   const offsets = [];
   const hexLines = [];
@@ -131,4 +132,14 @@ export function getHexEditorContent() {
                 </div>
             </div>`;
 
+}
+
+export class HexEditorApp extends BaseApp {
+  getWindowContent() {
+    return getHexEditorContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initHexEditor(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const TI83_URL = "https://www.cemetech.net/projects/jstified/";
 
 export function getTi83Root() {
@@ -36,5 +37,15 @@ export function initTi83(win) {
       if (status)
         status.textContent = "Emulator ready. Load a TI-83/84 ROM via the embedded controls.";
     });
+  }
+}
+
+export class Ti83App extends BaseApp {
+  getWindowContent() {
+    return getTi83Root(this.initData, this.services);
+  }
+
+  mount() {
+    return initTi83(this.windowEl, this.initData, this.services.windowManager, this.services, this);
   }
 }

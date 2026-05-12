@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const TOOL_NAMES = {
   marquee: "Marquee",
   lasso: "Lasso",
@@ -391,3 +392,13 @@ export {
   psExport,
   getPhotoshopContent
 };
+
+export class PhotoshopApp extends BaseApp {
+  getWindowContent() {
+    return getPhotoshopContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPhotoshop(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
+}

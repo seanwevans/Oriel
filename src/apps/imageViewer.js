@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initImageViewer(win, initData) {
   const fileInput = win.querySelector(".img-file-input");
   const urlInput = win.querySelector(".img-url-input");
@@ -126,4 +127,14 @@ export function getImageViewerContent(initData) {
 
     return root;
 
+}
+
+export class ImageViewerApp extends BaseApp {
+  getWindowContent() {
+    return getImageViewerContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initImageViewer(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

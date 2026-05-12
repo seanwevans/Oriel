@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getPaintRoot(options = {}) {
   return `
     <div class="paint-layout">
@@ -108,4 +109,14 @@ export function selectPaintTool(el, t) {
 export function clearPaint(win) {
   const c = win.querySelector("canvas");
   c.getContext("2d").fillRect(0, 0, c.width, c.height);
+}
+
+export class PaintApp extends BaseApp {
+  getWindowContent() {
+    return getPaintRoot(this.initData, this.services);
+  }
+
+  mount() {
+    return initPaint(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

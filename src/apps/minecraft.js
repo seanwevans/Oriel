@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const MINECRAFT_URL = "https://classic.minecraft.net/";
 
 export function getMinecraftRoot() {
@@ -120,4 +121,14 @@ export function initMinecraft(win) {
       iframe.src = "";
     }
   };
+}
+
+export class MinecraftApp extends BaseApp {
+  getWindowContent() {
+    return getMinecraftRoot(this.initData, this.services);
+  }
+
+  mount() {
+    return initMinecraft(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

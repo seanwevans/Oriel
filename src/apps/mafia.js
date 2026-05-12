@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const DEFAULT_NAMES = [
   "Alex", "Bailey", "Casey", "Dakota", "Emery", "Frankie", "Harper", "Indigo",
   "Jordan", "Kai", "Lennon", "Marley", "Nico", "Oakley", "Parker", "Quinn", "Riley",
@@ -317,4 +318,14 @@ export function getMafiaContent() {
       </div>
     `;
 
+}
+
+export class MafiaApp extends BaseApp {
+  getWindowContent() {
+    return getMafiaContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initMafia(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

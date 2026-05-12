@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { MOCK_FS, fileSystemReady, saveFileSystem } from "../filesystem.js";
 import { installFromManifestPath } from "../installer.js";
 import { getWindowBodyContainer } from "../windowContent.js";
@@ -307,4 +308,14 @@ export function initCodePen(win, initData, wm) {
     ?.addEventListener("click", () => install(true));
 
   run();
+}
+
+export class CodePenApp extends BaseApp {
+  getWindowContent() {
+    return this.initData?.mode === "viewer" ? "" : getCodePenContent(this.initData);
+  }
+
+  mount() {
+    return initCodePen(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }
