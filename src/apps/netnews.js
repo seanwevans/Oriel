@@ -4,7 +4,8 @@ import { fetchGroupedRssFeeds, formatRssDate } from "../network/rssClient.js";
 import { getAppState, updateAppState } from "../state.js";
 import { BaseApp } from "./base/BaseApp.js";
 
-export function getNetNewsContent() {
+export class NetNewsApp extends BaseApp {
+  getWindowContent() {
   return `
     <div class="netnews-root">
       <div class="netnews-toolbar">
@@ -32,59 +33,12 @@ export function getNetNewsContent() {
       </div>
     </div>
   `;
-}
 
+  }
 
-export function appendNetNewsEmptyMessage(container, message) {
-  const empty = document.createElement("div");
-  empty.className = "netnews-empty";
-  empty.textContent = message;
-  container.appendChild(empty);
-}
-
-export function createNetNewsGroupRow(group, isSelected = false) {
-  const row = document.createElement("div");
-  row.className = "netnews-group" + (isSelected ? " active" : "");
-  row.dataset.id = group.id;
-  row.setAttribute("role", "option");
-  row.tabIndex = 0;
-
-  const title = document.createElement("div");
-  title.className = "netnews-group-title";
-  title.textContent = group.title;
-
-  const description = document.createElement("div");
-  description.className = "netnews-group-desc";
-  description.textContent = group.description;
-
-  row.appendChild(title);
-  row.appendChild(description);
-  return row;
-}
-
-export function createNetNewsThreadRow(thread, idx, isSelected = false) {
-  const row = document.createElement("div");
-  row.className = "netnews-thread" + (isSelected ? " active" : "");
-  row.dataset.index = idx.toString();
-  row.tabIndex = 0;
-  row.setAttribute("role", "option");
-  row.setAttribute("aria-selected", isSelected ? "true" : "false");
-
-  const title = document.createElement("div");
-  title.className = "netnews-thread-title";
-  title.textContent = thread.title || "(Untitled)";
-
-  const meta = document.createElement("div");
-  meta.className = "netnews-thread-meta";
-  meta.textContent = `${thread.feedTitle || ""} · ${formatRssDate(thread.date)}`;
-
-  row.appendChild(title);
-  row.appendChild(meta);
-  return row;
-}
-
-export function initNetNews(win) {
-  const app = new BaseApp();
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const groupsEl = win.querySelector(".netnews-groups");
   const threadsEl = win.querySelector(".netnews-threads");
   const titleEl = win.querySelector(".netnews-article-title");
@@ -222,10 +176,77 @@ export function initNetNews(win) {
   renderGroups();
   loadGroup(selectedGroupId);
 
-  return {
-    dispose() {
+
+    this._dispose = () => {
       abortController?.abort();
-      app.dispose();
-    }
-  };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getNetNewsContent() {
+  return new NetNewsApp().getWindowContent();
+}
+
+
+export function appendNetNewsEmptyMessage(container, message) {
+  const empty = document.createElement("div");
+  empty.className = "netnews-empty";
+  empty.textContent = message;
+  container.appendChild(empty);
+}
+
+export function createNetNewsGroupRow(group, isSelected = false) {
+  const row = document.createElement("div");
+  row.className = "netnews-group" + (isSelected ? " active" : "");
+  row.dataset.id = group.id;
+  row.setAttribute("role", "option");
+  row.tabIndex = 0;
+
+  const title = document.createElement("div");
+  title.className = "netnews-group-title";
+  title.textContent = group.title;
+
+  const description = document.createElement("div");
+  description.className = "netnews-group-desc";
+  description.textContent = group.description;
+
+  row.appendChild(title);
+  row.appendChild(description);
+  return row;
+}
+
+export function createNetNewsThreadRow(thread, idx, isSelected = false) {
+  const row = document.createElement("div");
+  row.className = "netnews-thread" + (isSelected ? " active" : "");
+  row.dataset.index = idx.toString();
+  row.tabIndex = 0;
+  row.setAttribute("role", "option");
+  row.setAttribute("aria-selected", isSelected ? "true" : "false");
+
+  const title = document.createElement("div");
+  title.className = "netnews-thread-title";
+  title.textContent = thread.title || "(Untitled)";
+
+  const meta = document.createElement("div");
+  meta.className = "netnews-thread-meta";
+  meta.textContent = `${thread.feedTitle || ""} · ${formatRssDate(thread.date)}`;
+
+  row.appendChild(title);
+  row.appendChild(meta);
+  return row;
+}
+
+export function initNetNews(win) {
+  const app = new NetNewsApp({ windowEl: win });
+  return app.mount();
 }

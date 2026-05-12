@@ -1,8 +1,16 @@
 import { getMediaPlayerTracks, registerMediaElement } from "../audio.js";
 import { BaseApp } from "./base/BaseApp.js";
 
-export function initMediaPlayer(w) {
-  const app = new BaseApp();
+export class MediaPlayerApp extends BaseApp {
+  getWindowContent() {
+    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
+
+
+  }
+
+  mount() {
+    const w = this.windowEl;
+    const app = this;
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
   const video = w.querySelector(".mplayer-video");
@@ -163,22 +171,35 @@ export function initMediaPlayer(w) {
   app.listen(video, "play", onPlay);
   app.listen(video, "pause", stopVisual);
 
-  const dispose = () => {
-    if (disposed) return;
-    disposed = true;
-    stopVisual();
-    video.pause();
-    video.removeAttribute("src");
-    video.load?.();
-    app.dispose();
-  };
 
-  loadTrack(0);
+    this._dispose = () => {
+      if (disposed) return;
+      disposed = true;
+      stopVisual();
+      video.pause();
+      video.removeAttribute("src");
+      video.load?.();
+    };
 
-  return { dispose };
+    loadTrack(0);
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function initMediaPlayer(w) {
+  const app = new MediaPlayerApp({ windowEl: w });
+  return app.mount();
 }
 
 export function getMediaPlayerContent() {
-    return `<div class="mplayer-layout"><div class="mplayer-screen"><video class="mplayer-video" playsinline></video><canvas id="mplayer-canvas" width="300" height="150"></canvas><div class="mplayer-overlay"><div class="mplayer-track-label">Track: <span class="mplayer-track-name">Loading…</span></div><div class="mplayer-seek-row"><span class="mplayer-time mplayer-current">0:00</span><input type="range" class="mplayer-seek" min="0" max="100" value="0" aria-label="Seek"><span class="mplayer-time mplayer-duration">0:00</span></div></div></div><div class="mplayer-controls"><select class="mplayer-track-select" aria-label="Choose track"></select><div class="mplayer-btn" onclick="toggleMedia(this, 'play')">▶</div><div class="mplayer-btn" onclick="toggleMedia(this, 'pause')">||</div><div class="mplayer-btn" onclick="toggleMedia(this, 'stop')">■</div><label class="mplayer-load-btn">Open<input class="mplayer-file-input" type="file" accept="audio/*,video/*" multiple></label></div><div class="mplayer-status"><span class="mplayer-file-name">Load mp3 or video files from your computer to play them here.</span></div></div>`;
-
+  return new MediaPlayerApp().getWindowContent();
 }

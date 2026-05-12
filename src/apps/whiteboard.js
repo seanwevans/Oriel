@@ -36,7 +36,8 @@ function persistState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-export function getWhiteboardRoot() {
+export class WhiteboardApp extends BaseApp {
+  getWindowContent() {
   return `
     <div class="whiteboard-root">
       <div class="whiteboard-toolbar">
@@ -68,10 +69,12 @@ export function getWhiteboardRoot() {
       </div>
     </div>
   `;
-}
 
-export function initWhiteboard(win) {
-  const app = new BaseApp();
+  }
+
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const canvas = win.querySelector(".whiteboard-canvas");
   const board = win.querySelector(".whiteboard-board");
   const notesLayer = win.querySelector(".whiteboard-notes");
@@ -515,12 +518,30 @@ export function initWhiteboard(win) {
 
   emit({ type: "state-request", from: clientId });
 
-  return {
-    dispose() {
+
+    this._dispose = () => {
       app.clearInterval(cursorInterval);
       app.unregisterDisposable(unsubscribe);
       unsubscribe();
-      app.dispose();
-    }
-  };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getWhiteboardRoot() {
+  return new WhiteboardApp().getWindowContent();
+}
+
+export function initWhiteboard(win) {
+  const app = new WhiteboardApp({ windowEl: win });
+  return app.mount();
 }

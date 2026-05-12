@@ -9,7 +9,8 @@ const getRssPlaceholder = () => {
   return `${(browserHome || "https://example.com/").replace(/\/$/, "")}/feed.xml`;
 };
 
-export function getRssReaderContent() {
+export class RssApp extends BaseApp {
+  getWindowContent() {
   const presetOptions = RSS_PRESETS.map((p) => `<option value="${p.url}">${p.label}</option>`).join(
     ""
   );
@@ -34,10 +35,12 @@ export function getRssReaderContent() {
                 </div>
               </div>
             `;
-}
 
-export function initRssReader(win) {
-  const app = new BaseApp();
+  }
+
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const urlInput = win.querySelector(".rss-url");
   const presetSelect = win.querySelector(".rss-preset");
   const loadBtn = win.querySelector(".rss-load");
@@ -185,11 +188,29 @@ export function initRssReader(win) {
     if (target) loadFeed(target);
   };
 
-  return {
-    dispose() {
+
+    this._dispose = () => {
       rssAbort?.abort();
       win.reloadRssWithDefaults = null;
-      app.dispose();
-    }
-  };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getRssReaderContent() {
+  return new RssApp().getWindowContent();
+}
+
+export function initRssReader(win) {
+  const app = new RssApp({ windowEl: win });
+  return app.mount();
 }

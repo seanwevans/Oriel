@@ -68,7 +68,8 @@ const INSTRUMENT_OPTIONS = [
   { value: "noise", label: "Noise" }
 ];
 
-export function getTrackerContent() {
+export class TrackerApp extends BaseApp {
+  getWindowContent() {
   const steps = Array.from({ length: 16 }, (_, i) =>
     `<div class="tracker-step" data-step="${i}" title="Step ${i + 1}">—</div>`
   ).join("");
@@ -144,10 +145,12 @@ export function getTrackerContent() {
       </div>
       <div class="tracker-status" id="tracker-status">Ready to sketch a chip-tune pattern.</div>
     </div>`;
-}
 
-export function initTracker(win) {
-  const app = new BaseApp();
+  }
+
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const tempo = win.querySelector("#tracker-tempo");
   const tempoVal = win.querySelector("#tracker-tempo-val");
   const noteSelect = win.querySelector("#tracker-note");
@@ -472,10 +475,28 @@ export function initTracker(win) {
 
   renderPattern();
 
-  return {
-    dispose() {
+
+    this._dispose = () => {
       stopPlayback();
-      app.dispose();
-    }
-  };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getTrackerContent() {
+  return new TrackerApp().getWindowContent();
+}
+
+export function initTracker(win) {
+  const app = new TrackerApp({ windowEl: win });
+  return app.mount();
 }

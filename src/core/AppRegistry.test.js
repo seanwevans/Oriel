@@ -144,7 +144,15 @@ test("BaseApp migrations are resolved through app classes", () => {
   for (const [type, className] of [
     ["notepad", "NotepadApp"],
     ["console", "ConsoleApp"],
-    ["winfile", "FileManagerApp"]
+    ["winfile", "FileManagerApp"],
+    ["tracker", "TrackerApp"],
+    ["midisequencer", "MidiSequencerApp"],
+    ["netnews", "NetNewsApp"],
+    ["messenger", "MessengerApp"],
+    ["whiteboard", "WhiteboardApp"],
+    ["rss", "RssApp"],
+    ["mplayer", "MediaPlayerApp"],
+    ["soundrec", "SoundRecorderApp"]
   ]) {
     const app = registry.createApp(type, { initData: "hello" });
 
@@ -155,12 +163,26 @@ test("BaseApp migrations are resolved through app classes", () => {
 });
 
 test("BaseApp manifest entries do not keep legacy manifest wiring", () => {
+  const migratedTypes = [
+    "tracker",
+    "midisequencer",
+    "netnews",
+    "messenger",
+    "whiteboard",
+    "rss",
+    "mplayer",
+    "soundrec"
+  ];
   const legacyWiringFields = [
     "initializer",
     "initializerKey",
     "contentProvider",
     "contentProviderKey"
   ];
+
+  for (const type of migratedTypes) {
+    assert.ok(APP_MANIFEST[type]?.appClass, `${type} should use appClass after migration`);
+  }
 
   for (const definition of APP_DEFINITIONS.filter(({ appClass }) => appClass)) {
     const legacyFields = legacyWiringFields.filter((field) => definition[field]);
