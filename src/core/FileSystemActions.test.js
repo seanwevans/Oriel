@@ -104,6 +104,37 @@ test("importFileSystem rejects invalid JSON or unsafe trees without replacing th
   assert.equal(input.value, "");
 });
 
+test("createNamedFolder rejects unsafe manual folder names without mutating or saving", async () => {
+  for (const unsafeName of ["__proto__", "prototype", "constructor"]) {
+    let saveCalls = 0;
+    const targetDir = {
+      type: "dir",
+      children: {
+        Existing: { type: "dir", children: {} }
+      }
+    };
+    const actions = createActions({
+      filesystem: {
+        saveFileSystem() {
+          saveCalls += 1;
+        }
+      }
+    });
+    const originalChildren = targetDir.children;
+    const originalChildEntries = { ...targetDir.children };
+
+    const result = await actions.createNamedFolder(targetDir, unsafeName);
+
+    assert.deepEqual(result, {
+      success: false,
+      message: "That folder name is not allowed. Choose a different name and try again."
+    });
+    assert.equal(targetDir.children, originalChildren);
+    assert.deepEqual(targetDir.children, originalChildEntries);
+    assert.equal(saveCalls, 0);
+  }
+});
+
 test("mountLocalFolder warns when native mounts are unavailable", async () => {
   const actions = createActions({ filesystem: { isNativeFsSupported: () => false } });
 
