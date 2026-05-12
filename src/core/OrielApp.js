@@ -100,7 +100,9 @@ export class OrielApp {
     this.cacheDom();
 
     subscribe("fs:change", () => this.fileSystemActions?.refreshOpenFileManagers());
-    subscribe("network:config-update", refreshNetworkedWindows);
+    subscribe("network:config-update", () =>
+      refreshNetworkedWindows(this.windowManager || this.services.windowManager)
+    );
 
     this.installerReady = this.installer.bootstrapInstallations().catch((err) => {
       console.warn("Failed to bootstrap installed apps", err);
