@@ -14,6 +14,7 @@ import {
   setupProgramManagerMenu
 } from "./apps/programManager.js";
 import { screensaverContext } from "./apps/screensaver.js";
+import { getRuntimeInitializer } from "./installer.js";
 import { getWindowBodyContainer } from "./windowContent.js";
 import { WindowDragResizeController } from "./window/WindowDragResizeController.js";
 import { WindowLayoutService } from "./window/WindowLayoutService.js";
@@ -154,7 +155,7 @@ export class WindowManager {
       typeof appInstance?.getWindowContent === "function"
         ? appInstance.getWindowContent()
         : "";
-    const initializer = null;
+    const initializer = appInstance ? null : getRuntimeInitializer(type);
     const winEl = this.createWindowDOM(
       id,
       type,
