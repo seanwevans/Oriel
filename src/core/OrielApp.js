@@ -14,40 +14,22 @@ import {
   fileSystemReady
 } from "../filesystem.js";
 import { publish, subscribe } from "../eventBus.js";
-import { getNetworkDefaults, refreshNetworkedWindows } from "../network/config.js";
+import { refreshNetworkedWindows } from "../network/config.js";
 import { refreshAllProcessViews } from "../apps/taskman.js";
-import { initScreensaver, hideUnlockPrompt, submitLockPassphrase } from "../apps/screensaver.js";
+import { initScreensaver } from "../apps/screensaver.js";
 import {
-  applyFontSelection,
   applySavedTheme,
-  applyScreensaver,
-  applyTheme,
-  openCPColor,
-  openCPDefaults,
-  openCPDesktop,
-  openCPFonts,
-  openCPScreensaver,
-  openCPSound,
-  previewScreensaver,
-  setWallpaper
+  openCPDesktop
 } from "../apps/controlPanel.js";
 import { registerConsoleCommands } from "../apps/console.js";
-import { clearCharMap, copyCharMap } from "../apps/charmap.js";
-import { addDbRecord, deleteDbRecord, exportDbToCsv } from "../apps/database.js";
-import {
-  psApplyFilter,
-  psExport,
-  psFillCanvas,
-  psNewDocument,
-  psTriggerOpen,
-  setPsTool
-} from "../apps/photoshop.js";
 import { controlPanelContext } from "../windowManager.js";
 import { bootstrapInstallations } from "../installer.js";
 import { FileSystemActions } from "./FileSystemActions.js";
 import { DesktopController } from "./DesktopController.js";
 import { DesktopImportController } from "./DesktopImportController.js";
 import { createSystemServices, updateSystemServices } from "./systemServices.js";
+
+export const ALLOWED_WINDOW_GLOBALS = Object.freeze(["kernel"]);
 
 export class OrielApp {
   constructor({
@@ -137,7 +119,7 @@ export class OrielApp {
     );
 
     this.#initializeControllers();
-    this.#registerWindowGlobals();
+    this.#registerShellGlobals();
 
     await this.fs.fileSystemReady.catch(() => {});
     await this.installerReady.catch(() => {});
@@ -180,8 +162,6 @@ export class OrielApp {
       services: this.services
     });
     updateSystemServices(this.services, { windowManager: this.windowManager });
-    // Temporary debugging/compatibility alias while production callers migrate to services.windowManager.
-    window.wm = this.windowManager;
     return this.windowManager;
   }
 
@@ -209,51 +189,9 @@ export class OrielApp {
     });
   }
 
-  #registerWindowGlobals() {
-    // Temporary debugging/compatibility alias while production callers migrate to services.kernel.
+  #registerShellGlobals() {
+    // Intentional debugging/boot compatibility alias while callers migrate to services.kernel.
     window.kernel = this.kernel;
     registerConsoleCommands(this.services);
-
-    window.copyCharMap = copyCharMap;
-    window.clearCharMap = clearCharMap;
-
-    window.addDbRecord = addDbRecord;
-    window.exportDbToCsv = exportDbToCsv;
-    window.deleteDbRecord = deleteDbRecord;
-
-    window.psTriggerOpen = psTriggerOpen;
-    window.psNewDocument = psNewDocument;
-    window.psExport = psExport;
-    window.setPsTool = setPsTool;
-    window.psApplyFilter = psApplyFilter;
-    window.psFillCanvas = psFillCanvas;
-
-    const openCPDesktopWithContext = (target, override) =>
-      openCPDesktop(controlPanelContext, target, override, this.services);
-    const openCPScreensaverWithContext = (target, override) =>
-      openCPScreensaver(controlPanelContext, target, override);
-    const applyScreensaverWithContext = (target) => applyScreensaver(controlPanelContext, target);
-    const previewScreensaverWithContext = (target) => previewScreensaver(controlPanelContext, target);
-
-    window.openCPColor = openCPColor;
-    window.openCPDesktop = openCPDesktopWithContext;
-    window.openCPScreensaver = openCPScreensaverWithContext;
-    window.openCPSound = openCPSound;
-    window.openCPFonts = openCPFonts;
-    window.openCPDefaults = (target, override) => openCPDefaults(target, override, this.services);
-    window.applyTheme = applyTheme;
-    window.setWallpaper = (target) => setWallpaper(target, this.services);
-    window.applyWallpaperSettings = (...args) => applyWallpaperSettings(...args, this.services);
-    window.previewScreensaver = previewScreensaverWithContext;
-    window.applyScreensaver = applyScreensaverWithContext;
-    window.applyFontSelection = applyFontSelection;
-    window.submitLockPassphrase = submitLockPassphrase;
-    window.hideUnlockPrompt = hideUnlockPrompt;
-
-    const getBrowserPlaceholder = () => {
-      const { browserHome } = getNetworkDefaults();
-      return browserHome || "https://example.com";
-    };
-    window.getBrowserPlaceholder = getBrowserPlaceholder;
   }
 }

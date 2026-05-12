@@ -80,7 +80,7 @@ function createRuntimeAppClass({ initializer = null, contentProvider = null, ini
 
     mount() {
       if (!initializer) return null;
-      const args = [this.windowEl, this.initData, this.services.windowManager, this.services];
+      const args = [this.windowEl, this.initData, this.services.windowManager, this.services, this];
       if (initializerContext) {
         return initializer(initializerContext(this.services), ...args);
       }

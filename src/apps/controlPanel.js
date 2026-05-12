@@ -80,6 +80,11 @@ function resolveControlPanelScope(target) {
   return target.querySelector ? target : document;
 }
 
+function getAppListener(app) {
+  return app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
+}
+
+
 function applyThemePreset(presetKey, container) {
   const theme = THEME_PRESETS[presetKey] || DEFAULT_THEME;
   setThemeVariables(theme);
@@ -182,7 +187,7 @@ function previewScreensaver(context, target) {
   context?.screensaver?.start?.(chosen);
 }
 
-function openCPDesktop(context, el, containerOverride, services = {}) {
+function openCPDesktop(context, el, containerOverride, services = {}, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && el?.classList?.contains("cp-view-area")) {
     targetContainer = el;
@@ -233,15 +238,16 @@ function openCPDesktop(context, el, containerOverride, services = {}) {
   const current = getWallpaperSettings().mode || "cover";
   if (mode) mode.value = current;
 
-  body.querySelector("#cp-wallpaper-reset")?.addEventListener("click", () => {
+  const listen = getAppListener(app);
+  listen(body.querySelector("#cp-wallpaper-reset"), "click", () => {
     applyWallpaperSettings(DEFAULT_WALLPAPER, "cover", true, services);
   });
-  body.querySelector("#cp-wallpaper-apply")?.addEventListener("click", (event) => {
+  listen(body.querySelector("#cp-wallpaper-apply"), "click", (event) => {
     setWallpaper(event.currentTarget, services);
   });
 }
 
-function openCPScreensaver(context, target, containerOverride) {
+function openCPScreensaver(context, target, containerOverride, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -306,8 +312,8 @@ function openCPScreensaver(context, target, containerOverride) {
               </label>
             </div>
             <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:8px;">
-              <button class="task-btn" onclick="previewScreensaver(this)">Preview</button>
-              <button class="task-btn" onclick="applyScreensaver(this)">Apply</button>
+              <button class="task-btn" id="cp-saver-preview" type="button">Preview</button>
+              <button class="task-btn" id="cp-saver-apply" type="button">Apply</button>
             </div>
             <div class="cp-saver-note" id="cp-saver-status">Current saver: ${saverType}${
               saverRequire && saverPass ? " (Locked)" : ""
@@ -330,10 +336,13 @@ function openCPScreensaver(context, target, containerOverride) {
     if (descBox && selected) descBox.textContent = selected.desc;
   };
   updateDesc();
-  select?.addEventListener("change", updateDesc);
+  const listen = getAppListener(app);
+  listen(select, "change", updateDesc);
+  listen(body.querySelector("#cp-saver-preview"), "click", (event) => previewScreensaver(context, event.currentTarget));
+  listen(body.querySelector("#cp-saver-apply"), "click", (event) => applyScreensaver(context, event.currentTarget));
 }
 
-function openCPSound(target, containerOverride) {
+function openCPSound(target, containerOverride, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -381,13 +390,14 @@ function openCPSound(target, containerOverride) {
     if (pct) pct.textContent = `${Math.round(vol * 100)}%`;
   };
 
-  slider?.addEventListener("input", (e) => {
+  const listen = getAppListener(app);
+  listen(slider, "input", (e) => {
     const vol = Number(e.target.value) / 100;
     setSystemVolume(vol);
     syncUI(getSystemVolume());
   });
 
-  muteToggle?.addEventListener("change", (e) => {
+  listen(muteToggle, "change", (e) => {
     if (e.target.checked) {
       setSystemVolume(0);
     } else {
@@ -396,17 +406,17 @@ function openCPSound(target, containerOverride) {
     syncUI(getSystemVolume());
   });
 
-  body.querySelector(".volume-reset-btn")?.addEventListener("click", () => {
+  listen(body.querySelector(".volume-reset-btn"), "click", () => {
     setSystemVolume(0.7);
     syncUI(getSystemVolume());
   });
 
-  body.querySelector(".volume-test-btn")?.addEventListener("click", () => {
+  listen(body.querySelector(".volume-test-btn"), "click", () => {
     playVolumeTest();
   });
 }
 
-function openCPDefaults(target, containerOverride, services = {}) {
+function openCPDefaults(target, containerOverride, services = {}, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -485,14 +495,15 @@ function openCPDefaults(target, containerOverride, services = {}) {
     if (status) status.textContent = msg;
   };
 
-  body.querySelector("#cp-default-wallpaper-save")?.addEventListener("click", () => {
+  const listen = getAppListener(app);
+  listen(body.querySelector("#cp-default-wallpaper-save"), "click", () => {
     const url = body.querySelector("#cp-default-wallpaper-url")?.value || DEFAULT_WALLPAPER;
     const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "cover";
     applyWallpaperSettings(url, mode, true, services);
     setWallpaperStatus("Wallpaper defaults saved.");
   });
 
-  body.querySelector("#cp-default-volume-save")?.addEventListener("click", () => {
+  listen(body.querySelector("#cp-default-volume-save"), "click", () => {
     const volInput = body.querySelector("#cp-default-volume");
     const vol = volInput ? Number(volInput.value) / 100 : getSystemVolume();
     setSystemVolume(vol);
@@ -504,7 +515,7 @@ function openCPDefaults(target, containerOverride, services = {}) {
     if (status) status.textContent = text;
   };
 
-  body.querySelector("#cp-net-save")?.addEventListener("click", () => {
+  listen(body.querySelector("#cp-net-save"), "click", () => {
     const newConfig = {
       browserHome: body.querySelector("#cp-net-home")?.value?.trim() || network.browserHome,
       browserProxyPrefix: body.querySelector("#cp-net-proxy")?.value?.trim() || network.browserProxyPrefix,
@@ -516,7 +527,7 @@ function openCPDefaults(target, containerOverride, services = {}) {
     setNetworkStatus("Network defaults saved for future sessions.");
   });
 
-  body.querySelector("#cp-net-reset")?.addEventListener("click", () => {
+  listen(body.querySelector("#cp-net-reset"), "click", () => {
     const resetConfig = resetNetworkDefaults();
     const home = body.querySelector("#cp-net-home");
     const proxy = body.querySelector("#cp-net-proxy");
@@ -532,7 +543,7 @@ function openCPDefaults(target, containerOverride, services = {}) {
   });
 }
 
-function openCPFonts(target, containerOverride) {
+function openCPFonts(target, containerOverride, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -555,7 +566,7 @@ function openCPFonts(target, containerOverride) {
     .map((f) => `<option value="${f}">${f}</option>`)
     .join("");
 
-  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" onclick="applyFontSelection(this)">Apply</button></div></div></div>`;
+  body.innerHTML = `<div class="cp-settings-layout"><div class="cp-section"><label style="display:block;font-size:12px;margin-bottom:6px;">Choose a Google Font</label><select id="cp-font-select" style="width:100%;margin-bottom:8px;">${fontOptions}</select><label style="display:block;font-size:12px;margin-bottom:4px;">Or enter a Google Font name</label><input type="text" id="cp-font-custom" placeholder="e.g. Space Grotesk" style="width:100%;margin-bottom:8px;"><div class="cp-font-preview" id="cp-font-preview-text">The quick brown fox jumps over the lazy dog.</div><div style="text-align:right;margin-top:8px;"><button class="task-btn" id="cp-font-apply" type="button">Apply</button></div></div></div>`;
 
   const select = body.querySelector("#cp-font-select");
   const custom = body.querySelector("#cp-font-custom");
@@ -570,8 +581,10 @@ function openCPFonts(target, containerOverride) {
     }
   };
 
-  select?.addEventListener("change", updatePreview);
-  custom?.addEventListener("input", updatePreview);
+  const listen = getAppListener(app);
+  listen(select, "change", updatePreview);
+  listen(custom, "input", updatePreview);
+  listen(body.querySelector("#cp-font-apply"), "click", (event) => applyFontSelection(event.currentTarget));
   updatePreview();
 }
 
@@ -610,7 +623,7 @@ function applySavedTheme(theme) {
   setThemeVariables(theme);
 }
 
-function openCPColor(target, containerOverride) {
+function openCPColor(target, containerOverride, app = null) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -657,16 +670,18 @@ function openCPColor(target, containerOverride) {
   const presetSelect = body.querySelector("#cs-sel");
   if (presetSelect) {
     presetSelect.value = "d";
-    presetSelect.addEventListener("change", () => applyTheme(body));
+    const listen = getAppListener(app);
+    listen(presetSelect, "change", () => applyTheme(body));
   }
   const applyBtn = body.querySelector("#cs-apply-btn");
-  if (applyBtn) applyBtn.addEventListener("click", () => applyTheme(applyBtn));
+  const listen = getAppListener(app);
+  if (applyBtn) listen(applyBtn, "click", () => applyTheme(applyBtn));
   body.querySelectorAll(".cs-color-input").forEach((input) => {
-    input.addEventListener("input", () => handleThemeInputChange(body));
+    listen(input, "input", () => handleThemeInputChange(body));
   });
 }
 
-function initControlPanel(context, w, _initData, windowManager, services = {}) {
+function initControlPanel(context, w, _initData, windowManager, services = {}, app = null) {
   const menu = w.querySelector(".menu-bar");
   const body = getWindowBodyContainer(w);
   if (!menu || !body) return;
@@ -697,9 +712,18 @@ function initControlPanel(context, w, _initData, windowManager, services = {}) {
   `;
 
   const viewArea = body.querySelector(".cp-view-area");
+  const listen = getAppListener(app);
+
+  const bindControlPanelHomeLaunchers = (root) => {
+    root?.querySelectorAll?.("[data-cp-view]").forEach((launcher) => {
+      listen(launcher, "click", () => switchView(launcher.dataset.cpView));
+    });
+  };
 
   const renderHome = () => {
-    if (viewArea) viewArea.innerHTML = windowManager?.getControlPanelContent?.() || "";
+    if (!viewArea) return;
+    viewArea.innerHTML = windowManager?.getControlPanelContent?.() || "";
+    bindControlPanelHomeLaunchers(viewArea);
   };
 
   const setActive = (view) => {
@@ -713,21 +737,21 @@ function initControlPanel(context, w, _initData, windowManager, services = {}) {
 
   const switchView = (view) => {
     setActive(view);
-    if (view === "desktop") openCPDesktop(context, viewArea, null, services);
-    else if (view === "color") openCPColor(viewArea);
-    else if (view === "screensaver") openCPScreensaver(context, viewArea);
-    else if (view === "sound") openCPSound(viewArea);
-    else if (view === "fonts") openCPFonts(viewArea);
-    else if (view === "defaults") openCPDefaults(viewArea, null, services);
+    if (view === "desktop") openCPDesktop(context, viewArea, null, services, app);
+    else if (view === "color") openCPColor(viewArea, null, app);
+    else if (view === "screensaver") openCPScreensaver(context, viewArea, null, app);
+    else if (view === "sound") openCPSound(viewArea, null, app);
+    else if (view === "fonts") openCPFonts(viewArea, null, app);
+    else if (view === "defaults") openCPDefaults(viewArea, null, services, app);
     else renderHome();
   };
 
   body.querySelectorAll(".cp-tab-btn").forEach((btn) => {
-    btn.onclick = () => switchView(btn.dataset.view);
+    listen(btn, "click", () => switchView(btn.dataset.view));
   });
 
   menu.querySelectorAll(".cp-menu-item").forEach((btn) => {
-    btn.onclick = () => switchView(btn.dataset.view);
+    listen(btn, "click", () => switchView(btn.dataset.view));
   });
 
   switchView("desktop");
@@ -755,6 +779,6 @@ export {
 };
 
 export function getControlPanelContent() {
-    return `<div class="control-layout" id="cp-main"><div class="control-icon" onclick="openCPColor(this)">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" onclick="openCPDesktop(this)">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" onclick="openCPScreensaver(this)">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" onclick="openCPSound(this)">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" onclick="openCPFonts(this)"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
+    return `<div class="control-layout" id="cp-main"><div class="control-icon" data-cp-view="color" role="button" tabindex="0">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" data-cp-view="desktop" role="button" tabindex="0">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" data-cp-view="screensaver" role="button" tabindex="0">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" data-cp-view="sound" role="button" tabindex="0">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" data-cp-view="fonts" role="button" tabindex="0"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
 
 }

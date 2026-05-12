@@ -2,9 +2,15 @@ import {
   BROWSER_FRAME_SANDBOX,
   BROWSER_HOME,
   BROWSER_PROXY_PREFIX,
+  getNetworkDefaults,
   stripScriptTags
 } from "../network/config.js";
 import { trackedFetch } from "../network/trackedFetch.js";
+
+export function getBrowserPlaceholder() {
+  const { browserHome } = getNetworkDefaults();
+  return browserHome || "https://example.com";
+}
 
 function ensureBrowserFrameSandbox(frame) {
   if (!frame) return;
@@ -20,7 +26,8 @@ function setBrowserFrameSrcdoc(frame, html) {
 
 export const browserSessions = {};
 
-export function initBrowser(win, sessions = browserSessions) {
+export function initBrowser(win, sessions = browserSessions, _windowManager = null, _services = {}, app = null) {
+  const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
   const sessionStore =
     sessions && typeof sessions === "object" ? sessions : browserSessions;
   const urlInput = win.querySelector(".browser-url");
@@ -121,7 +128,7 @@ export function initBrowser(win, sessions = browserSessions) {
   };
 
   if (backBtn)
-    backBtn.onclick = () => {
+    listen(backBtn, "click", () => {
       const session = sessionStore[sessionId];
       if (!session || session.index <= 0) return;
       session.index -= 1;
@@ -129,10 +136,10 @@ export function initBrowser(win, sessions = browserSessions) {
       urlInput.value = target;
       renderProxiedContent(target);
       updateNavState();
-    };
+    });
 
   if (fwdBtn)
-    fwdBtn.onclick = () => {
+    listen(fwdBtn, "click", () => {
       const session = sessionStore[sessionId];
       if (!session || session.index >= session.history.length - 1) return;
       session.index += 1;
@@ -140,24 +147,24 @@ export function initBrowser(win, sessions = browserSessions) {
       urlInput.value = target;
       renderProxiedContent(target);
       updateNavState();
-    };
+    });
 
   if (refreshBtn)
-    refreshBtn.onclick = () => {
+    listen(refreshBtn, "click", () => {
       const session = sessionStore[sessionId];
       if (!session || session.index < 0) return;
       const target = session.history[session.index];
       renderProxiedContent(target);
-    };
+    });
 
-  if (homeBtn) homeBtn.onclick = () => loadUrl(BROWSER_HOME);
-  if (goBtn) goBtn.onclick = () => loadUrl(urlInput.value);
+  if (homeBtn) listen(homeBtn, "click", () => loadUrl(BROWSER_HOME));
+  if (goBtn) listen(goBtn, "click", () => loadUrl(urlInput.value));
 
-  urlInput.addEventListener("keydown", (e) => {
+  listen(urlInput, "keydown", (e) => {
     if (e.key === "Enter") loadUrl(urlInput.value);
   });
 
-  frame.addEventListener("load", () => {
+  listen(frame, "load", () => {
     const session = sessionStore[sessionId];
     if (!session) return;
     const currentUrl = session.history[session.index] || "";

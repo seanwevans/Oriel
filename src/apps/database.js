@@ -1,4 +1,4 @@
-function renderDbTable(w) {
+function renderDbTable(w, app = null) {
   const t = w.querySelector("#db-tbody");
   t.innerHTML = "";
   w.dbData.forEach((r, i) => {
@@ -13,7 +13,8 @@ function renderDbTable(w) {
     const actionTd = document.createElement("td");
     const button = document.createElement("button");
     button.textContent = "X";
-    button.addEventListener("click", () => deleteDbRecord(button, i));
+    const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
+    listen(button, "click", () => deleteDbRecord(button, i));
     actionTd.appendChild(button);
     tr.appendChild(actionTd);
 
@@ -21,7 +22,7 @@ function renderDbTable(w) {
   });
 }
 
-export function initDatabase(w) {
+export function initDatabase(w, _initData = null, _windowManager = null, _services = {}, app = null) {
   const d = localStorage.getItem("w31-db");
   w.dbData = d
     ? JSON.parse(d)
@@ -33,7 +34,11 @@ export function initDatabase(w) {
           email: "b@ms.com"
         }
       ];
-  renderDbTable(w);
+  w.dbApp = app;
+  renderDbTable(w, app);
+  const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
+  listen(w.querySelector("#db-add-record"), "click", (e) => addDbRecord(e.currentTarget));
+  listen(w.querySelector("#db-export-csv"), "click", (e) => exportDbToCsv(e.currentTarget));
 }
 
 export function addDbRecord(b) {
@@ -51,14 +56,14 @@ export function addDbRecord(b) {
   n.value = "";
   p.value = "";
   e.value = "";
-  renderDbTable(w);
+  renderDbTable(w, w.dbApp);
 }
 
 export function deleteDbRecord(b, i) {
   const w = b.closest(".window");
   w.dbData.splice(i, 1);
   localStorage.setItem("w31-db", JSON.stringify(w.dbData));
-  renderDbTable(w);
+  renderDbTable(w, w.dbApp);
 }
 
 export function exportDbToCsv(b) {
@@ -88,6 +93,6 @@ export function exportDbToCsv(b) {
 }
 
 export function getDatabaseContent() {
-    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" onclick="addDbRecord(this)">Add Record</button><button class="task-btn" onclick="exportDbToCsv(this)">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
+    return `<div class="db-layout"><div class="db-form"><div class="db-input-group"><label>Name</label><input type="text" class="db-input" id="db-name"></div><div class="db-input-group"><label>Phone</label><input type="text" class="db-input" id="db-phone"></div><div class="db-input-group"><label>Email</label><input type="text" class="db-input" id="db-email"></div><button class="task-btn" id="db-add-record" type="button">Add Record</button><button class="task-btn" id="db-export-csv" type="button">Save CSV</button></div><div class="db-grid-container"><table class="db-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th style="width:50px">Action</th></tr></thead><tbody id="db-tbody"></tbody></table></div></div>`;
 
 }
