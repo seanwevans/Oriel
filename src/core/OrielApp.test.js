@@ -72,6 +72,7 @@ let ConsoleApp;
 let ALLOWED_WINDOW_GLOBALS;
 let OrielApp;
 let PythonApp;
+let publish;
 
 before(async () => {
   originalDocument = globalThis.document;
@@ -91,6 +92,7 @@ before(async () => {
   globalThis.clearInterval = () => {};
 
   ({ ALLOWED_WINDOW_GLOBALS, OrielApp } = await import("./OrielApp.js"));
+  ({ publish } = await import("../eventBus.js"));
   ({ CompilerApp, ConsoleApp, PythonApp } = await import("../apps/console.js"));
 });
 
@@ -385,6 +387,18 @@ test("start waits for filesystem and installer readiness before desktop and scre
   assert.equal(constructedWindowManager.initialState, initialDesktopState);
   assert.equal(constructedWindowManager.services.kernel, app.kernel);
   assert.equal(constructedWindowManager.services.windowManager, constructedWindowManager);
+  let browserReloads = 0;
+  constructedWindowManager.windows.push({
+    type: "browser",
+    el: {
+      browserReload() {
+        browserReloads += 1;
+      }
+    }
+  });
+  assert.equal(globalThis.window.wm, undefined);
+  publish("network:config-update", { config: {} });
+  assert.equal(browserReloads, 1);
   assert.equal(globalThis.window.wm, undefined);
   assert.equal(globalThis.window.handleConsoleKey, undefined);
   assert.equal(globalThis.window.runCompiler, undefined);

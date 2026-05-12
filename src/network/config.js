@@ -135,8 +135,15 @@ export function resetNetworkDefaults() {
   return reset;
 }
 
-export function refreshNetworkedWindows() {
-  const windows = window?.wm?.windows;
+function resolveRefreshWindows(windowManagerOrWindows) {
+  if (Array.isArray(windowManagerOrWindows)) return windowManagerOrWindows;
+  if (Array.isArray(windowManagerOrWindows?.windows)) return windowManagerOrWindows.windows;
+  if (windowManagerOrWindows === undefined) return globalThis.window?.wm?.windows;
+  return undefined;
+}
+
+export function refreshNetworkedWindows(windowManagerOrWindows) {
+  const windows = resolveRefreshWindows(windowManagerOrWindows);
   if (!Array.isArray(windows)) return;
 
   windows.forEach((win) => {

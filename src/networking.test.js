@@ -27,7 +27,36 @@ test("split networking modules expose the compatibility barrel implementations",
   assert.equal(trackedFetchModule.subscribeToNetworkEvents, networking.subscribeToNetworkEvents);
 });
 
-test("refreshNetworkedWindows reloads browser windows once", () => {
+test("refreshNetworkedWindows reloads parameterized network window collections", () => {
+  const calls = [];
+  const windows = [
+    { type: "browser", el: { browserReload: () => calls.push("browser") } },
+    { type: "rss", el: { reloadRssWithDefaults: () => calls.push("rss") } },
+    { type: "radio", el: { reloadRadioWithDefaults: () => calls.push("radio") } },
+    {
+      type: "radiogarden",
+      el: { refreshRadioGardenWithDefaults: () => calls.push("radiogarden") }
+    },
+    { type: "browser", el: null },
+    { type: "notes", el: { reload: () => calls.push("notes") } }
+  ];
+
+  refreshNetworkedWindows({ windows });
+  refreshNetworkedWindows(windows);
+
+  assert.deepEqual(calls, [
+    "browser",
+    "rss",
+    "radio",
+    "radiogarden",
+    "browser",
+    "rss",
+    "radio",
+    "radiogarden"
+  ]);
+});
+
+test("refreshNetworkedWindows preserves legacy window manager fallback", () => {
   const previousWindow = global.window;
   let reloadCount = 0;
 
