@@ -297,33 +297,46 @@ export async function initShaderLab(win) {
     }
   };
 
-  const debouncedRun = (() => {
-    let handle = null;
-    return () => {
-      if (handle) cancelAnimationFrame(handle);
-      handle = requestAnimationFrame(() => applyShader());
-    };
-  })();
+  let debouncedRunFrame = null;
+  const debouncedRun = () => {
+    if (debouncedRunFrame) cancelAnimationFrame(debouncedRunFrame);
+    debouncedRunFrame = requestAnimationFrame(() => {
+      debouncedRunFrame = null;
+      applyShader();
+    });
+  };
 
   codeArea.value = DEFAULT_FRAGMENT.trim();
   applyShader(DEFAULT_FRAGMENT);
   if (presetSelect?.value) loadPreset(presetSelect.value);
   render(startTime);
 
-  canvas.addEventListener("pointermove", (evt) => {
+  const onPointerMove = (evt) => {
     const rect = canvas.getBoundingClientRect();
     uniforms.iMouse.value.set(evt.clientX - rect.left, rect.height - (evt.clientY - rect.top));
-  });
+  };
+  const onRunClick = () => applyShader();
+  const onLoadClick = () => loadPreset(presetSelect?.value);
+  const onPresetChange = () => loadPreset(presetSelect.value);
 
+  canvas.addEventListener("pointermove", onPointerMove);
   codeArea.addEventListener("input", debouncedRun);
-  runBtn?.addEventListener("click", () => applyShader());
-  loadBtn?.addEventListener("click", () => loadPreset(presetSelect?.value));
-  presetSelect?.addEventListener("change", () => loadPreset(presetSelect.value));
+  runBtn?.addEventListener("click", onRunClick);
+  loadBtn?.addEventListener("click", onLoadClick);
+  presetSelect?.addEventListener("change", onPresetChange);
 
-  win.shaderLabCleanup = () => {
-    cancelAnimationFrame(animationId);
-    material.dispose();
-    geometry.dispose();
-    renderer.dispose();
+  return {
+    dispose() {
+      cancelAnimationFrame(animationId);
+      if (debouncedRunFrame) cancelAnimationFrame(debouncedRunFrame);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      codeArea.removeEventListener("input", debouncedRun);
+      runBtn?.removeEventListener("click", onRunClick);
+      loadBtn?.removeEventListener("click", onLoadClick);
+      presetSelect?.removeEventListener("change", onPresetChange);
+      material.dispose();
+      geometry.dispose();
+      renderer.dispose();
+    }
   };
 }

@@ -163,31 +163,34 @@ export async function initSandspiel3d(win) {
     }
   }
 
-  canvas.addEventListener("pointerdown", (evt) => {
+  const onPointerDown = (evt) => {
     canvas.setPointerCapture(evt.pointerId);
     startPouring(evt);
-  });
+  };
 
-  canvas.addEventListener("pointermove", (evt) => {
+  const onPointerMove = (evt) => {
     if (!isPointerDown || !spawnInterval) return;
     const target = getPointerTarget(evt);
     spawnVoxel(target);
-  });
+  };
 
-  canvas.addEventListener("pointerup", (evt) => {
+  const onPointerUp = (evt) => {
     canvas.releasePointerCapture(evt.pointerId);
     stopPouring();
-  });
-
-  canvas.addEventListener("pointerleave", stopPouring);
-
-  resetBtn?.addEventListener("click", clearWorld);
+  };
 
   let zoom = 14;
-  canvas.addEventListener("wheel", (evt) => {
+  const onWheel = (evt) => {
     evt.preventDefault();
     zoom = Math.min(26, Math.max(8, zoom + Math.sign(evt.deltaY)));
-  });
+  };
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  canvas.addEventListener("pointermove", onPointerMove);
+  canvas.addEventListener("pointerup", onPointerUp);
+  canvas.addEventListener("pointerleave", stopPouring);
+  resetBtn?.addEventListener("click", clearWorld);
+  canvas.addEventListener("wheel", onWheel);
 
   function update(delta) {
     const gravity = parseFloat(gravitySlider?.value || "12");
@@ -249,11 +252,20 @@ export async function initSandspiel3d(win) {
 
   let animationId = requestAnimationFrame(render);
 
-  win.sandspiel3dCleanup = () => {
-    cancelAnimationFrame(animationId);
-    clearWorld();
-    renderer.dispose();
-    floorGeo.dispose();
-    floorMat.dispose();
+  return {
+    dispose() {
+      cancelAnimationFrame(animationId);
+      stopPouring();
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointerleave", stopPouring);
+      resetBtn?.removeEventListener("click", clearWorld);
+      canvas.removeEventListener("wheel", onWheel);
+      clearWorld();
+      renderer.dispose();
+      floorGeo.dispose();
+      floorMat.dispose();
+    }
   };
 }

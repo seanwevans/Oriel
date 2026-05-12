@@ -346,18 +346,23 @@ export function initPinball(win) {
     }
   };
 
+  const focusLayout = () => layout.focus();
+
   resetBtn?.addEventListener("click", newGame);
   layout.addEventListener("keydown", onKeyDown);
   layout.addEventListener("keyup", onKeyUp);
-  layout.addEventListener("click", () => layout.focus());
+  layout.addEventListener("click", focusLayout);
   layout.focus();
 
   newGame();
 
-  win.pinballCleanup = () => {
-    cancelAnimationFrame(raf);
-    layout.removeEventListener("keydown", onKeyDown);
-    layout.removeEventListener("keyup", onKeyUp);
-    resetBtn?.removeEventListener("click", newGame);
+  return {
+    dispose() {
+      cancelAnimationFrame(raf);
+      layout.removeEventListener("keydown", onKeyDown);
+      layout.removeEventListener("keyup", onKeyUp);
+      layout.removeEventListener("click", focusLayout);
+      resetBtn?.removeEventListener("click", newGame);
+    }
   };
 }

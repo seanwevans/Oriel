@@ -188,17 +188,22 @@ export function initSkiFree(win) {
     raf = requestAnimationFrame(update);
   };
 
+  const focusLayout = () => layout.focus();
+
   resetBtn.addEventListener("click", resetGame);
-  layout.addEventListener("click", () => layout.focus());
+  layout.addEventListener("click", focusLayout);
   resetGame();
 
-  win.skifreeCleanup = () => {
-    playing = false;
-    monster = null;
-    if (raf) cancelAnimationFrame(raf);
-    raf = null;
-    layout.removeEventListener("keydown", onKeyDown);
-    layout.removeEventListener("keyup", onKeyUp);
-    resetBtn.removeEventListener("click", resetGame);
+  return {
+    dispose() {
+      playing = false;
+      monster = null;
+      if (raf) cancelAnimationFrame(raf);
+      raf = null;
+      layout.removeEventListener("keydown", onKeyDown);
+      layout.removeEventListener("keyup", onKeyUp);
+      layout.removeEventListener("click", focusLayout);
+      resetBtn.removeEventListener("click", resetGame);
+    }
   };
 }

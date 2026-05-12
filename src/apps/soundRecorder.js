@@ -46,7 +46,11 @@ export function initSoundRecorder(w) {
     ctx.stroke();
   }
 
-  w.querySelector("#btn-rec").onclick = async () => {
+  const recBtn = w.querySelector("#btn-rec");
+  const stopBtn = w.querySelector("#btn-stop");
+  const playBtn = w.querySelector("#btn-play");
+
+  recBtn.onclick = async () => {
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -82,7 +86,7 @@ export function initSoundRecorder(w) {
     }
   };
 
-  w.querySelector("#btn-stop").onclick = () => {
+  stopBtn.onclick = () => {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
       if (streamRef) streamRef.getTracks().forEach((track) => track.stop());
@@ -90,7 +94,7 @@ export function initSoundRecorder(w) {
     }
   };
 
-  w.querySelector("#btn-play").onclick = () => {
+  playBtn.onclick = () => {
     if (audioUrl) {
       if (playbackAudio) playbackAudio.pause();
       const audio = new Audio(audioUrl);
@@ -108,6 +112,9 @@ export function initSoundRecorder(w) {
   const dispose = () => {
     if (disposed) return;
     disposed = true;
+    recBtn.onclick = null;
+    stopBtn.onclick = null;
+    playBtn.onclick = null;
     if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
     if (streamRef) streamRef.getTracks().forEach((track) => track.stop());
     if (playbackAudio) {
@@ -120,8 +127,6 @@ export function initSoundRecorder(w) {
     if (audioCtx) audioCtx.close?.();
     revokeAudioUrl();
   };
-
-  w.soundRecorderCleanup = dispose;
 
   return { dispose };
 }

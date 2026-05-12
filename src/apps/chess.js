@@ -91,6 +91,7 @@ function initChess(w) {
 
   let game = null;
   let selected = null;
+  let disposed = false;
   let legalTargets = [];
   let userTurn = true;
 
@@ -188,6 +189,7 @@ function initChess(w) {
   const requestEngineMove = () => {
     initStockfishEngine(w)
       .then((worker) => {
+        if (disposed) return;
         const listener = (event) => {
           const msg = String(event.data || "");
           if (msg.startsWith("bestmove")) {
@@ -234,10 +236,12 @@ function initChess(w) {
     renderBoard();
   };
 
-  boardEl.addEventListener("click", (e) => {
+  const handleBoardClick = (e) => {
     const target = e.target.closest(".chess-square");
     if (target?.dataset.square) selectSquare(target.dataset.square);
-  });
+  };
+
+  boardEl.addEventListener("click", handleBoardClick);
 
   newBtn.onclick = () => {
     if (!game) return;
@@ -276,8 +280,18 @@ function initChess(w) {
     alert("Invalid FEN string");
   };
 
-  w.chessCleanup = () => {
-    if (w.chessWorker) w.chessWorker.terminate();
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    boardEl.removeEventListener("click", handleBoardClick);
+    newBtn.onclick = null;
+    copyBtn.onclick = null;
+    pasteBtn.onclick = null;
+    loadBtn.onclick = null;
+    if (w.chessWorker) {
+      w.chessWorker.terminate();
+      w.chessWorker = null;
+    }
     if (w.chessWorkerBlobUrl) {
       URL.revokeObjectURL(w.chessWorkerBlobUrl);
       w.chessWorkerBlobUrl = null;
@@ -286,14 +300,25 @@ function initChess(w) {
 
   loadChessLibrary()
     .then((ChessClass) => {
+      if (disposed) return;
       game = new ChessClass();
       resetSelection();
       renderBoard();
       renderMoves();
       setStatus("Your move (White)");
-      initStockfishEngine(w).catch(() => setStatus("Engine unavailable"));
+      initStockfishEngine(w)
+        .then(() => {
+          if (disposed) dispose();
+        })
+        .catch(() => {
+          if (!disposed) setStatus("Engine unavailable");
+        });
     })
-    .catch(() => setStatus("Failed to load chess.js"));
+    .catch(() => {
+      if (!disposed) setStatus("Failed to load chess.js");
+    });
+
+  return { dispose };
 }
 
 export { initChess };

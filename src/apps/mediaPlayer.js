@@ -105,28 +105,26 @@ export function initMediaPlayer(w) {
     }
   };
 
-  selectEl.addEventListener("change", (e) => {
+  const onTrackChange = (e) => {
     loadTrack(parseInt(e.target.value, 10));
     registerMediaElement(video);
     video.play();
     if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
-  });
+  };
 
-  seekEl.addEventListener("input", () => {
+  const onSeekInput = () => {
     if (!video.duration || !isFinite(video.duration)) return;
     video.currentTime = (parseFloat(seekEl.value) / 100) * video.duration;
-  });
+  };
 
-  video.addEventListener("timeupdate", updateSeek);
-  video.addEventListener("loadedmetadata", updateSeek);
-  video.addEventListener("ended", () => {
+  const onEnded = () => {
     stopVisual();
     video.currentTime = 0;
     seekEl.value = 0;
     currentEl.textContent = formatTime(0);
-  });
+  };
 
-  fileInput.addEventListener("change", () => {
+  const onFileChange = () => {
     if (!fileInput.files || !fileInput.files.length) {
       fileNameEl.textContent = "Load mp3 or video files from your computer to play them here.";
       return;
@@ -150,26 +148,39 @@ export function initMediaPlayer(w) {
       .map((f) => f.name)
       .join(", ");
     fileNameEl.textContent = names;
-  });
+  };
 
-  video.addEventListener("play", () => {
+  const onPlay = () => {
     if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
-  });
+  };
 
+  selectEl.addEventListener("change", onTrackChange);
+  seekEl.addEventListener("input", onSeekInput);
+  video.addEventListener("timeupdate", updateSeek);
+  video.addEventListener("loadedmetadata", updateSeek);
+  video.addEventListener("ended", onEnded);
+  fileInput.addEventListener("change", onFileChange);
+  video.addEventListener("play", onPlay);
   video.addEventListener("pause", stopVisual);
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
     stopVisual();
+    selectEl.removeEventListener("change", onTrackChange);
+    seekEl.removeEventListener("input", onSeekInput);
+    video.removeEventListener("timeupdate", updateSeek);
+    video.removeEventListener("loadedmetadata", updateSeek);
+    video.removeEventListener("ended", onEnded);
+    fileInput.removeEventListener("change", onFileChange);
+    video.removeEventListener("play", onPlay);
+    video.removeEventListener("pause", stopVisual);
     video.pause();
     video.removeAttribute("src");
     video.load?.();
     localObjectUrls.forEach((url) => URL.revokeObjectURL(url));
     localObjectUrls.clear();
   };
-
-  w.mediaPlayerCleanup = dispose;
 
   loadTrack(0);
 

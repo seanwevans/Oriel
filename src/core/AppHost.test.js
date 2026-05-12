@@ -197,6 +197,49 @@ test("unmount dispatches app:destroy for event-based apps without dispose", () =
   assert.deepEqual(events, ["app:destroy"]);
 });
 
+test("unmount no longer invokes win.*Cleanup legacy hooks", () => {
+  const calls = [];
+  const winEl = new MessengerTestElement();
+  winEl.chessCleanup = () => calls.push("legacy");
+
+  new AppHost().unmount({ el: winEl, appInstance: null });
+
+  assert.deepEqual(calls, []);
+});
+
+test("unmount disposes each migrated app through its app instance", () => {
+  const migratedTypes = [
+    "chess",
+    "skifree",
+    "cannonduel",
+    "pinball",
+    "linerider",
+    "sandspiel3d",
+    "shaderlab",
+    "whiteboard",
+    "packetlab",
+    "irc",
+    "mplayer",
+    "soundrec"
+  ];
+  const disposed = [];
+  const appHost = new AppHost();
+
+  for (const type of migratedTypes) {
+    const winEl = new MessengerTestElement();
+    appHost.unmount({
+      el: winEl,
+      appInstance: {
+        dispose() {
+          disposed.push(type);
+        }
+      }
+    });
+  }
+
+  assert.deepEqual(disposed, migratedTypes);
+});
+
 test("unmount prefers app dispose over app:destroy to avoid duplicate cleanup", () => {
   const calls = [];
   const winEl = new MessengerTestElement();
