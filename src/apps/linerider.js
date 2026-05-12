@@ -225,34 +225,39 @@ export function initLineRider(win) {
     if (!raf) raf = requestAnimationFrame(step);
   };
 
+  const disposables = [];
+  const listen = (target, type, listener) => {
+    target?.addEventListener(type, listener);
+    disposables.push(() => target?.removeEventListener(type, listener));
+  };
+
   modeButtons.forEach((btn) =>
-    btn.addEventListener("click", () => setMode(btn.dataset.mode))
+    listen(btn, "click", () => setMode(btn.dataset.mode))
   );
-  playBtn?.addEventListener("click", startRide);
-  resetBtn?.addEventListener("click", () => {
+  listen(playBtn, "click", startRide);
+  listen(resetBtn, "click", () => {
     stopRide();
     resetSled();
   });
-  clearBtn?.addEventListener("click", () => {
+  listen(clearBtn, "click", () => {
     stopRide();
     segments.length = 0;
     resetSled();
     statusEl.textContent = "Cleared the canvas.";
   });
 
-  canvas.addEventListener("mousedown", onPointerDown);
-  canvas.addEventListener("mousemove", onPointerMove);
-  canvas.addEventListener("mouseup", endDraw);
-  canvas.addEventListener("mouseleave", endDraw);
+  listen(canvas, "mousedown", onPointerDown);
+  listen(canvas, "mousemove", onPointerMove);
+  listen(canvas, "mouseup", endDraw);
+  listen(canvas, "mouseleave", endDraw);
 
   setMode(mode);
   resetSled();
 
-  win.lineRiderCleanup = () => {
-    stopRide();
-    canvas.removeEventListener("mousedown", onPointerDown);
-    canvas.removeEventListener("mousemove", onPointerMove);
-    canvas.removeEventListener("mouseup", endDraw);
-    canvas.removeEventListener("mouseleave", endDraw);
+  return {
+    dispose() {
+      stopRide();
+      while (disposables.length) disposables.pop()();
+    }
   };
 }

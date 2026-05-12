@@ -1,18 +1,3 @@
-const LEGACY_CLEANUP_KEYS = [
-  "chessCleanup",
-  "skifreeCleanup",
-  "cannonduelCleanup",
-  "pinballCleanup",
-  "lineRiderCleanup",
-  "sandspiel3dCleanup",
-  "shaderLabCleanup",
-  "whiteboardCleanup",
-  "packetLabCleanup",
-  "ircCleanup",
-  "mediaPlayerCleanup",
-  "soundRecorderCleanup"
-];
-
 function isPromiseLike(value) {
   return (
     value !== null &&
@@ -177,10 +162,6 @@ export class AppHost {
     } else {
       dispatchAppDestroy(winEl);
     }
-
-    LEGACY_CLEANUP_KEYS.forEach((key) => {
-      if (typeof winEl?.[key] === "function") winEl[key]();
-    });
 
     if (winEl?.doomCI) {
       winEl.doomCI.exit();

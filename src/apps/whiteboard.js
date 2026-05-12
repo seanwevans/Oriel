@@ -293,7 +293,10 @@ export function initWhiteboard(win) {
   if (channel) {
     const handler = (event) => handleMessage(event.data);
     channel.addEventListener("message", handler);
-    cleanupChannel = () => channel.removeEventListener("message", handler);
+    cleanupChannel = () => {
+      channel.removeEventListener("message", handler);
+      channel.close?.();
+    };
   }
   const unsubscribe = subscribe("whiteboard:message", handleMessage);
 
@@ -477,30 +480,39 @@ export function initWhiteboard(win) {
     pendingNotePlacement = tool === "note";
   }
 
+  const disposables = [];
+  const listen = (target, type, listener) => {
+    target?.addEventListener(type, listener);
+    disposables.push(() => target?.removeEventListener(type, listener));
+  };
+
   toolButtons.forEach((btn) => {
-    btn.addEventListener("click", () => selectTool(btn.dataset.tool));
+    listen(btn, "click", () => selectTool(btn.dataset.tool));
   });
 
-  clearBtn?.addEventListener("click", () => {
+  listen(clearBtn, "click", () => {
     state.strokes = [];
     state.shapes = [];
     persistState(state);
     redraw();
   });
 
-  canvas.addEventListener("pointerdown", handlePointerDown);
-  canvas.addEventListener("pointermove", handlePointerMove);
-  canvas.addEventListener("pointerup", handlePointerUp);
-  canvas.addEventListener("pointerleave", () => {
+  const handlePointerLeave = () => {
     if (drawing) handlePointerUp();
-  });
-
-  board.addEventListener("pointermove", handlePointerMove);
-  board.addEventListener("pointerdown", (e) => {
+  };
+  const handleBoardPointerDown = (e) => {
     if (e.target === notesLayer && pendingNotePlacement) handlePointerDown(e);
-  });
+  };
 
-  window.addEventListener("resize", resizeCanvas);
+  listen(canvas, "pointerdown", handlePointerDown);
+  listen(canvas, "pointermove", handlePointerMove);
+  listen(canvas, "pointerup", handlePointerUp);
+  listen(canvas, "pointerleave", handlePointerLeave);
+
+  listen(board, "pointermove", handlePointerMove);
+  listen(board, "pointerdown", handleBoardPointerDown);
+
+  listen(window, "resize", resizeCanvas);
 
   const cursorInterval = setInterval(cleanupCursors, 1500);
 
@@ -511,14 +523,12 @@ export function initWhiteboard(win) {
 
   emit({ type: "state-request", from: clientId });
 
-  win.whiteboardCleanup = () => {
-    cleanupChannel?.();
-    unsubscribe();
-    clearInterval(cursorInterval);
-    window.removeEventListener("resize", resizeCanvas);
-    canvas.removeEventListener("pointerdown", handlePointerDown);
-    canvas.removeEventListener("pointermove", handlePointerMove);
-    canvas.removeEventListener("pointerup", handlePointerUp);
-    board.removeEventListener("pointermove", handlePointerMove);
+  return {
+    dispose() {
+      cleanupChannel?.();
+      unsubscribe();
+      clearInterval(cursorInterval);
+      while (disposables.length) disposables.pop()();
+    }
   };
 }

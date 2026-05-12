@@ -94,30 +94,40 @@ export function initPacketLab(win) {
   };
 
   const unsubscribe = subscribeToNetworkEvents(onNetworkEvent);
-  win.packetLabCleanup = unsubscribe;
+  const disposables = [unsubscribe];
+  const listen = (target, type, listener) => {
+    target.addEventListener(type, listener);
+    disposables.push(() => target.removeEventListener(type, listener));
+  };
 
-  filterInput.addEventListener("input", () => {
+  listen(filterInput, "input", () => {
     state.filterText = filterInput.value || "";
     render();
   });
 
-  statusSelect.addEventListener("change", () => {
+  listen(statusSelect, "change", () => {
     state.filterStatus = statusSelect.value || "all";
     render();
   });
 
-  pauseBtn.addEventListener("click", () => {
+  listen(pauseBtn, "click", () => {
     state.paused = !state.paused;
     pauseBtn.textContent = state.paused ? "Resume" : "Pause";
     pauseBtn.classList.toggle("ghost", state.paused);
   });
 
-  clearBtn.addEventListener("click", () => {
+  listen(clearBtn, "click", () => {
     state.events = [];
     render();
   });
 
   render();
+
+  return {
+    dispose() {
+      while (disposables.length) disposables.pop()();
+    }
+  };
 }
 
 export function getPacketLabContent() {

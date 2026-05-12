@@ -279,28 +279,38 @@ export function initIRC(win) {
   };
 
   // Event Listeners
-  connectBtn.addEventListener("click", handleConnect);
+  const disposables = [];
+  const listen = (target, type, listener) => {
+    target?.addEventListener(type, listener);
+    disposables.push(() => target?.removeEventListener(type, listener));
+  };
 
-  joinBtn.addEventListener("click", () => {
+  const handleJoin = () => {
     if (client && isConnected) {
       const chan = channelInput.value.trim();
       if (chan) client.join(chan.startsWith("#") ? chan : "#" + chan);
     }
-  });
+  };
 
-  sendBtn.addEventListener("click", handleSend);
-  input.addEventListener("keydown", (e) => {
+  const handleInputKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleSend();
     }
-  });
+  };
 
-  // Cleanup
-  win.ircCleanup = () => {
-    if (client) {
-      client.quit();
-      client = null;
+  listen(connectBtn, "click", handleConnect);
+  listen(joinBtn, "click", handleJoin);
+  listen(sendBtn, "click", handleSend);
+  listen(input, "keydown", handleInputKeyDown);
+
+  return {
+    dispose() {
+      while (disposables.length) disposables.pop()();
+      if (client) {
+        client.quit();
+        client = null;
+      }
     }
   };
 }
