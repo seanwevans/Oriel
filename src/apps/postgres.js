@@ -94,24 +94,39 @@ function parseSimpleSelect(sql) {
 }
 
 function renderResults(container, rows) {
-  container.innerHTML = "";
+  container.textContent = "";
   container.classList.toggle("pg-results-empty", !rows?.length);
   if (!rows?.length) {
-    container.innerHTML = '<div class="pg-empty">No rows returned.</div>';
+    const empty = document.createElement("div");
+    empty.className = "pg-empty";
+    empty.textContent = "No rows returned.";
+    container.appendChild(empty);
     return;
   }
+
   const table = document.createElement("table");
   table.className = "pg-table";
+
   const header = document.createElement("thead");
+  const headerRow = document.createElement("tr");
   const headers = Object.keys(rows[0]);
-  header.innerHTML = `<tr>${headers
-    .map((key) => `<th scope="col">${key}</th>`)
-    .join("")}</tr>`;
+  headers.forEach((key) => {
+    const th = document.createElement("th");
+    th.setAttribute("scope", "col");
+    th.textContent = key;
+    headerRow.appendChild(th);
+  });
+  header.appendChild(headerRow);
   table.appendChild(header);
+
   const body = document.createElement("tbody");
   rows.forEach((row) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = headers.map((key) => `<td>${row[key] ?? ""}</td>`).join("");
+    headers.forEach((key) => {
+      const td = document.createElement("td");
+      td.textContent = String(row[key] ?? "");
+      tr.appendChild(td);
+    });
     body.appendChild(tr);
   });
   table.appendChild(body);
