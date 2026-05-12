@@ -24,6 +24,9 @@ export class BaseApp {
     this.initData = initData;
     this.services = services;
     this.disposables = new Set();
+    this.timeoutDisposables = new Map();
+    this.intervalDisposables = new Map();
+    this.frameDisposables = new Map();
     this.isDisposed = false;
   }
 
@@ -70,25 +73,100 @@ export class BaseApp {
   }
 
   setTimeout(callback, delay, ...args) {
-    const timerId = globalThis.setTimeout(callback, delay, ...args);
-    const disposable = () => globalThis.clearTimeout(timerId);
+    let disposable;
+    const timerId = globalThis.setTimeout((...callbackArgs) => {
+      this.unregisterDisposable(disposable);
+      this.timeoutDisposables.delete(timerId);
+      callback(...callbackArgs);
+    }, delay, ...args);
+    disposable = () => globalThis.clearTimeout(timerId);
+    this.timeoutDisposables.set(timerId, disposable);
     this.registerDisposable(disposable);
     return timerId;
   }
 
   clearTimeout(timerId) {
     globalThis.clearTimeout(timerId);
+    const disposable = this.timeoutDisposables.get(timerId);
+    if (disposable) {
+      this.unregisterDisposable(disposable);
+      this.timeoutDisposables.delete(timerId);
+    }
   }
 
   setInterval(callback, delay, ...args) {
     const intervalId = globalThis.setInterval(callback, delay, ...args);
     const disposable = () => globalThis.clearInterval(intervalId);
+    this.intervalDisposables.set(intervalId, disposable);
     this.registerDisposable(disposable);
     return intervalId;
   }
 
   clearInterval(intervalId) {
     globalThis.clearInterval(intervalId);
+    const disposable = this.intervalDisposables.get(intervalId);
+    if (disposable) {
+      this.unregisterDisposable(disposable);
+      this.intervalDisposables.delete(intervalId);
+    }
+  }
+
+  requestAnimationFrame(callback) {
+    let disposable;
+    const frameId = globalThis.requestAnimationFrame((timestamp) => {
+      this.unregisterDisposable(disposable);
+      this.frameDisposables.delete(frameId);
+      callback(timestamp);
+    });
+    disposable = () => globalThis.cancelAnimationFrame(frameId);
+    this.frameDisposables.set(frameId, disposable);
+    this.registerDisposable(disposable);
+    return frameId;
+  }
+
+  cancelAnimationFrame(frameId) {
+    globalThis.cancelAnimationFrame(frameId);
+    const disposable = this.frameDisposables.get(frameId);
+    if (disposable) {
+      this.unregisterDisposable(disposable);
+      this.frameDisposables.delete(frameId);
+    }
+  }
+
+  createAbortController() {
+    const controller = new AbortController();
+    return this.trackAbortController(controller);
+  }
+
+  trackAbortController(controller) {
+    if (!controller) return controller;
+    this.registerDisposable(() => controller.abort());
+    return controller;
+  }
+
+  createBroadcastChannel(name) {
+    if (!("BroadcastChannel" in globalThis)) return null;
+    return this.trackBroadcastChannel(new BroadcastChannel(name));
+  }
+
+  trackBroadcastChannel(channel) {
+    if (!channel) return channel;
+    this.registerDisposable(() => channel.close?.());
+    return channel;
+  }
+
+  trackMediaStream(stream) {
+    if (!stream) return stream;
+    this.registerDisposable(() => {
+      stream.getTracks?.().forEach((track) => track.stop?.());
+    });
+    return stream;
+  }
+
+  trackAudioContext(audioContext) {
+    if (!audioContext) return audioContext;
+    this.registerDisposable(() => audioContext.close?.());
+    return audioContext;
   }
 
   trackObjectUrl(objectUrl) {
@@ -120,6 +198,9 @@ export class BaseApp {
         console.error("App cleanup failed:", err);
       }
     }
+    this.timeoutDisposables.clear();
+    this.intervalDisposables.clear();
+    this.frameDisposables.clear();
   }
 }
 

@@ -1,6 +1,8 @@
 import { getMediaPlayerTracks, registerMediaElement } from "../audio.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 export function initMediaPlayer(w) {
+  const app = new BaseApp();
   const canvas = w.querySelector("#mplayer-canvas");
   const ctx = canvas.getContext("2d");
   const video = w.querySelector(".mplayer-video");
@@ -31,7 +33,6 @@ export function initMediaPlayer(w) {
   let dy = 2;
   let currentTrack = 0;
   let disposed = false;
-  const localObjectUrls = new Set();
 
   const formatTime = (seconds) => {
     if (!isFinite(seconds)) return "0:00";
@@ -55,7 +56,7 @@ export function initMediaPlayer(w) {
   };
 
   const stopVisual = () => {
-    clearInterval(interval);
+    app.clearInterval(interval);
     interval = null;
   };
 
@@ -109,7 +110,7 @@ export function initMediaPlayer(w) {
     loadTrack(parseInt(e.target.value, 10));
     registerMediaElement(video);
     video.play();
-    if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
+    if (canvas.style.display !== "none" && !interval) interval = app.setInterval(animate, 30);
   };
 
   const onSeekInput = () => {
@@ -132,8 +133,7 @@ export function initMediaPlayer(w) {
 
     let startIndex = tracks.length;
     Array.from(fileInput.files).forEach((file) => {
-      const url = URL.createObjectURL(file);
-      localObjectUrls.add(url);
+      const url = app.trackObjectUrl(URL.createObjectURL(file));
       const entry = { name: file.name, url, type: file.type };
       tracks.push(entry);
       addOption(entry, tracks.length - 1, "Local: ");
@@ -151,35 +151,26 @@ export function initMediaPlayer(w) {
   };
 
   const onPlay = () => {
-    if (canvas.style.display !== "none" && !interval) interval = setInterval(animate, 30);
+    if (canvas.style.display !== "none" && !interval) interval = app.setInterval(animate, 30);
   };
 
-  selectEl.addEventListener("change", onTrackChange);
-  seekEl.addEventListener("input", onSeekInput);
-  video.addEventListener("timeupdate", updateSeek);
-  video.addEventListener("loadedmetadata", updateSeek);
-  video.addEventListener("ended", onEnded);
-  fileInput.addEventListener("change", onFileChange);
-  video.addEventListener("play", onPlay);
-  video.addEventListener("pause", stopVisual);
+  app.listen(selectEl, "change", onTrackChange);
+  app.listen(seekEl, "input", onSeekInput);
+  app.listen(video, "timeupdate", updateSeek);
+  app.listen(video, "loadedmetadata", updateSeek);
+  app.listen(video, "ended", onEnded);
+  app.listen(fileInput, "change", onFileChange);
+  app.listen(video, "play", onPlay);
+  app.listen(video, "pause", stopVisual);
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
     stopVisual();
-    selectEl.removeEventListener("change", onTrackChange);
-    seekEl.removeEventListener("input", onSeekInput);
-    video.removeEventListener("timeupdate", updateSeek);
-    video.removeEventListener("loadedmetadata", updateSeek);
-    video.removeEventListener("ended", onEnded);
-    fileInput.removeEventListener("change", onFileChange);
-    video.removeEventListener("play", onPlay);
-    video.removeEventListener("pause", stopVisual);
     video.pause();
     video.removeAttribute("src");
     video.load?.();
-    localObjectUrls.forEach((url) => URL.revokeObjectURL(url));
-    localObjectUrls.clear();
+    app.dispose();
   };
 
   loadTrack(0);

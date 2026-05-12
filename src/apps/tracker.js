@@ -1,4 +1,5 @@
 import { getSystemVolume } from "../audio.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const NOTE_FREQUENCIES = {
   C3: 130.81,
@@ -146,6 +147,7 @@ export function getTrackerContent() {
 }
 
 export function initTracker(win) {
+  const app = new BaseApp();
   const tempo = win.querySelector("#tracker-tempo");
   const tempoVal = win.querySelector("#tracker-tempo-val");
   const noteSelect = win.querySelector("#tracker-note");
@@ -169,7 +171,7 @@ export function initTracker(win) {
   const stepNodes = Array.from(win.querySelectorAll(".tracker-step"));
 
   function ensureContext() {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx = audioCtx || app.trackAudioContext(new (window.AudioContext || window.webkitAudioContext)());
     if (audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
@@ -280,13 +282,13 @@ export function initTracker(win) {
     currentStep = 0;
     renderPattern();
     playCurrentStep();
-    timer = setInterval(playCurrentStep, stepDurationSeconds() * 1000);
+    timer = app.setInterval(playCurrentStep, stepDurationSeconds() * 1000);
     status.textContent = "Playing pattern. Click steps to write notes.";
   }
 
   function stopPlayback() {
     if (timer) {
-      clearInterval(timer);
+      app.clearInterval(timer);
       timer = null;
     }
     currentStep = 0;
@@ -383,7 +385,7 @@ export function initTracker(win) {
       recorder.onstop = () => resolve(new Blob(chunks, { type: "audio/ogg" }));
     });
     recorder.start();
-    setTimeout(() => recorder.stop(), (totalDuration + 0.2) * 1000);
+    app.setTimeout(() => recorder.stop(), (totalDuration + 0.2) * 1000);
     const blob = await completion;
     downloadBlob(blob, "chip-pattern.ogg");
     status.textContent = "Exported OGG recording.";
@@ -437,7 +439,7 @@ export function initTracker(win) {
   }
 
   function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
+    const url = app.trackObjectUrl(URL.createObjectURL(blob));
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
@@ -445,35 +447,35 @@ export function initTracker(win) {
     URL.revokeObjectURL(url);
   }
 
-  tempo.addEventListener("input", () => {
+  app.listen(tempo, "input", () => {
     tempoVal.textContent = tempo.value;
     if (timer) {
-      clearInterval(timer);
-      timer = setInterval(playCurrentStep, stepDurationSeconds() * 1000);
+      app.clearInterval(timer);
+      timer = app.setInterval(playCurrentStep, stepDurationSeconds() * 1000);
     }
   });
 
-  stepNodes.forEach((node) => node.addEventListener("click", handleStepClick));
+  stepNodes.forEach((node) => app.listen(node, "click", handleStepClick));
 
-  win.querySelector("#tracker-play").onclick = startPlayback;
-  win.querySelector("#tracker-stop").onclick = stopPlayback;
-  win.querySelector("#tracker-clear").onclick = clearPattern;
+  app.listen(win.querySelector("#tracker-play"), "click", startPlayback);
+  app.listen(win.querySelector("#tracker-stop"), "click", stopPlayback);
+  app.listen(win.querySelector("#tracker-clear"), "click", clearPattern);
 
   exportButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    app.listen(btn, "click", () => {
       if (btn.dataset.format === "wav") exportWav();
       else exportOgg();
     });
   });
 
-  win.addEventListener("keydown", handleKeyDown);
+  app.listen(win, "keydown", handleKeyDown);
 
   renderPattern();
 
   return {
     dispose() {
       stopPlayback();
-      audioCtx?.close?.();
+      app.dispose();
     }
   };
 }

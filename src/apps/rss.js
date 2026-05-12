@@ -2,6 +2,7 @@ import { DEFAULT_RSS_SAMPLE, RSS_PRESETS } from "../defaults.js";
 import { getNetworkDefaults, normalizeHttpUrl, stripHtmlText, RSS_PROXY_ROOT } from "../network/config.js";
 import { parseRssXml, readRssResponseText, formatRssDate } from "../network/rssClient.js";
 import { trackedFetch } from "../network/trackedFetch.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const getRssPlaceholder = () => {
   const { browserHome } = getNetworkDefaults();
@@ -36,6 +37,7 @@ export function getRssReaderContent() {
 }
 
 export function initRssReader(win) {
+  const app = new BaseApp();
   const urlInput = win.querySelector(".rss-url");
   const presetSelect = win.querySelector(".rss-preset");
   const loadBtn = win.querySelector(".rss-load");
@@ -121,7 +123,7 @@ export function initRssReader(win) {
     if (!normalized) return;
     const token = ++rssLoadToken;
     if (rssAbort) rssAbort.abort();
-    rssAbort = new AbortController();
+    rssAbort = app.trackAbortController(new AbortController());
     const { signal } = rssAbort;
     lastRequestedUrl = normalized;
     setStatus("Loading...");
@@ -144,14 +146,14 @@ export function initRssReader(win) {
     }
   };
 
-  list.addEventListener("click", (e) => {
+  app.listen(list, "click", (e) => {
     const target = e.target.closest(".rss-item");
     if (!target) return;
     const idx = parseInt(target.dataset.index || "-1", 10);
     if (!Number.isNaN(idx)) showItem(idx);
   });
 
-  list.addEventListener("keydown", (e) => {
+  app.listen(list, "keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
     const target = e.target.closest(".rss-item");
     if (!target) return;
@@ -160,14 +162,14 @@ export function initRssReader(win) {
     if (!Number.isNaN(idx)) showItem(idx);
   });
 
-  presetSelect.addEventListener("change", () => {
+  app.listen(presetSelect, "change", () => {
     const value = presetSelect.value;
     urlInput.value = value;
     loadFeed(value);
   });
 
-  loadBtn.addEventListener("click", () => loadFeed(urlInput.value));
-  urlInput.addEventListener("keydown", (e) => {
+  app.listen(loadBtn, "click", () => loadFeed(urlInput.value));
+  app.listen(urlInput, "keydown", (e) => {
     if (e.key === "Enter") loadFeed(urlInput.value);
   });
 
@@ -181,5 +183,13 @@ export function initRssReader(win) {
   win.reloadRssWithDefaults = () => {
     const target = urlInput.value || lastRequestedUrl || RSS_PRESETS?.[0]?.url || "";
     if (target) loadFeed(target);
+  };
+
+  return {
+    dispose() {
+      rssAbort?.abort();
+      win.reloadRssWithDefaults = null;
+      app.dispose();
+    }
   };
 }

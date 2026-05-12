@@ -1,4 +1,5 @@
 import { publish, subscribe } from "../eventBus.js";
+import { BaseApp } from "./base/BaseApp.js";
 
 const CHANNEL_NAME = "oriel-whiteboard";
 const STORAGE_KEY = "oriel-whiteboard-state";
@@ -70,6 +71,7 @@ export function getWhiteboardRoot() {
 }
 
 export function initWhiteboard(win) {
+  const app = new BaseApp();
   const canvas = win.querySelector(".whiteboard-canvas");
   const board = win.querySelector(".whiteboard-board");
   const notesLayer = win.querySelector(".whiteboard-notes");
@@ -91,7 +93,6 @@ export function initWhiteboard(win) {
   let currentStroke = null;
   let activeShape = null;
   let pendingNotePlacement = false;
-  let cleanupChannel = null;
 
   const state = loadState();
 
@@ -289,16 +290,11 @@ export function initWhiteboard(win) {
     }
   }
 
-  const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
+  const channel = app.createBroadcastChannel(CHANNEL_NAME);
   if (channel) {
-    const handler = (event) => handleMessage(event.data);
-    channel.addEventListener("message", handler);
-    cleanupChannel = () => {
-      channel.removeEventListener("message", handler);
-      channel.close?.();
-    };
+    app.listen(channel, "message", (event) => handleMessage(event.data));
   }
-  const unsubscribe = subscribe("whiteboard:message", handleMessage);
+  const unsubscribe = app.registerDisposable(subscribe("whiteboard:message", handleMessage));
 
   function mergeState(remoteState) {
     if (!remoteState) return;
@@ -480,11 +476,7 @@ export function initWhiteboard(win) {
     pendingNotePlacement = tool === "note";
   }
 
-  const disposables = [];
-  const listen = (target, type, listener) => {
-    target?.addEventListener(type, listener);
-    disposables.push(() => target?.removeEventListener(type, listener));
-  };
+  const listen = (target, type, listener) => app.listen(target, type, listener);
 
   toolButtons.forEach((btn) => {
     listen(btn, "click", () => selectTool(btn.dataset.tool));
@@ -514,7 +506,7 @@ export function initWhiteboard(win) {
 
   listen(window, "resize", resizeCanvas);
 
-  const cursorInterval = setInterval(cleanupCursors, 1500);
+  const cursorInterval = app.setInterval(cleanupCursors, 1500);
 
   resizeCanvas();
   redraw();
@@ -525,10 +517,10 @@ export function initWhiteboard(win) {
 
   return {
     dispose() {
-      cleanupChannel?.();
+      app.clearInterval(cursorInterval);
+      app.unregisterDisposable(unsubscribe);
       unsubscribe();
-      clearInterval(cursorInterval);
-      while (disposables.length) disposables.pop()();
+      app.dispose();
     }
   };
 }
