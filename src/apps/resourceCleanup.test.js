@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { BaseApp } from "./base/BaseApp.js";
+import { FileManagerApp } from "./fileManager.js";
 
 const readApp = (file) => readFileSync(new URL(file, import.meta.url), "utf8");
 
@@ -96,6 +97,162 @@ test("BaseApp disposes animation frames, abort controllers, media streams, and b
   }
 });
 
+class FileManagerTestElement {
+  constructor({ action = null } = {}) {
+    this.children = [];
+    this.classList = { add() {}, remove() {} };
+    this.dataset = action ? { action } : {};
+    this.listeners = new Map();
+    this.style = {};
+    this.textContent = "";
+    this.innerText = "";
+    this.innerHTML = "";
+  }
+
+  addEventListener(type, listener) {
+    if (!this.listeners.has(type)) this.listeners.set(type, []);
+    this.listeners.get(type).push(listener);
+  }
+
+  removeEventListener(type, listener) {
+    const listeners = this.listeners.get(type) || [];
+    this.listeners.set(
+      type,
+      listeners.filter((candidate) => candidate !== listener)
+    );
+  }
+
+  appendChild(child) {
+    this.children.push(child);
+    return child;
+  }
+
+  closest(selector) {
+    if (selector === "[data-action]" && this.dataset.action) return this;
+    return null;
+  }
+
+  dispatchEvent(event) {
+    event.target ??= this;
+    for (const listener of [...(this.listeners.get(event.type) || [])]) {
+      listener(event);
+    }
+  }
+
+  listenerCount(type) {
+    return this.listeners.get(type)?.length || 0;
+  }
+}
+
+function createFileManagerWindow() {
+  const elements = {
+    "#file-tree-root": new FileManagerTestElement(),
+    "#file-list-view": new FileManagerTestElement(),
+    "#file-list-header": new FileManagerTestElement(),
+    ".winfile-tree .winfile-pane-header": new FileManagerTestElement(),
+    '[data-action="import-file-system"]': new FileManagerTestElement({
+      action: "import-file-system"
+    })
+  };
+  const winEl = new FileManagerTestElement();
+  winEl.querySelector = (selector) => elements[selector] || null;
+  winEl.querySelectorAll = () => [];
+  winEl.contains = () => true;
+  return { winEl, elements };
+}
+
+test("FileManagerApp dispose unregisters toolbar and import listeners", async () => {
+  const originalDocument = globalThis.document;
+  const calls = [];
+  const { winEl, elements } = createFileManagerWindow();
+  const actionTriggers = Object.fromEntries(
+    [
+      "create-folder",
+      "export-file-system",
+      "install-manifest",
+      "uninstall-manifest",
+      "mount-local-folder"
+    ].map((action) => [action, new FileManagerTestElement({ action })])
+  );
+  const services = {
+    fileSystemActions: {
+      createFolder: (trigger) => calls.push(["create-folder", trigger]),
+      exportFileSystem: () => calls.push(["export-file-system"]),
+      installSelectedManifest: (trigger) =>
+        calls.push(["install-manifest", trigger]),
+      uninstallManifest: (trigger) => calls.push(["uninstall-manifest", trigger]),
+      mountLocalFolder: (trigger) => calls.push(["mount-local-folder", trigger]),
+      importFileSystem: (event) =>
+        calls.push(["import-file-system", event.target])
+    }
+  };
+
+  globalThis.document = {
+    createElement: () => new FileManagerTestElement()
+  };
+
+  try {
+    const app = new FileManagerApp({ windowEl: winEl, services });
+    await app.mount();
+
+    assert.equal(winEl.listenerCount("click"), 1);
+    assert.equal(
+      elements['[data-action="import-file-system"]'].listenerCount("change"),
+      1
+    );
+
+    for (const trigger of Object.values(actionTriggers)) {
+      winEl.dispatchEvent({ type: "click", target: trigger });
+    }
+    elements['[data-action="import-file-system"]'].dispatchEvent({
+      type: "change"
+    });
+
+    assert.deepEqual(
+      calls.map(([action]) => action),
+      [
+        "create-folder",
+        "export-file-system",
+        "install-manifest",
+        "uninstall-manifest",
+        "mount-local-folder",
+        "import-file-system"
+      ]
+    );
+    assert.equal(calls[0][1], actionTriggers["create-folder"]);
+    assert.equal(calls[2][1], actionTriggers["install-manifest"]);
+    assert.equal(calls[3][1], actionTriggers["uninstall-manifest"]);
+    assert.equal(calls[4][1], actionTriggers["mount-local-folder"]);
+    assert.equal(calls[5][1], elements['[data-action="import-file-system"]']);
+
+    app.dispose();
+
+    assert.equal(winEl.listenerCount("click"), 0);
+    assert.equal(
+      elements['[data-action="import-file-system"]'].listenerCount("change"),
+      0
+    );
+
+    winEl.dispatchEvent({ type: "click", target: actionTriggers["create-folder"] });
+    elements['[data-action="import-file-system"]'].dispatchEvent({
+      type: "change"
+    });
+
+    assert.deepEqual(
+      calls.map(([action]) => action),
+      [
+        "create-folder",
+        "export-file-system",
+        "install-manifest",
+        "uninstall-manifest",
+        "mount-local-folder",
+        "import-file-system"
+      ]
+    );
+  } finally {
+    globalThis.document = originalDocument;
+  }
+});
 test("BaseApp cleanup completion gate covers migrated resource categories", () => {
   const expectations = {
     "whiteboard.js": {
