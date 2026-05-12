@@ -11,32 +11,9 @@ class TestClassApp {
 }
 
 function createRegistryHarness() {
-  const calls = [];
-  const initializer = (...args) => calls.push({ kind: "initializer", args });
-  const controlInitializer = (...args) => calls.push({ kind: "control", args });
-  const contentProvider = (initData, services) => ({ initData, services, kind: "content" });
-  const runtimeInitializer = (...args) => calls.push({ kind: "runtime", args });
-
   const registry = new AppRegistry({
     controlPanelContext: { panel: true },
-    runtimeInitializerResolver: (type) => (type === "runtime-only" ? runtimeInitializer : null),
     manifest: {
-      initApp: {
-        type: "initApp",
-        title: "Initializer App",
-        initializer: "init"
-      },
-      controlApp: {
-        type: "controlApp",
-        title: "Control App",
-        initializer: "controlInit",
-        usesControlPanelContext: true
-      },
-      contentApp: {
-        type: "contentApp",
-        title: "Content App",
-        contentProvider: "content"
-      },
       classApp: {
         type: "classApp",
         title: "Class App",
@@ -48,98 +25,50 @@ function createRegistryHarness() {
       }
     },
     bindings: {
-      initializers: { init: initializer, controlInit: controlInitializer },
-      contentProviders: { content: contentProvider },
-      appClasses: { TestClassApp },
-      initializerKeys: {},
-      contentProviderKeys: {}
+      appClasses: { TestClassApp }
     }
   });
 
-  return { calls, contentProvider, controlInitializer, initializer, registry, runtimeInitializer };
+  return { registry };
 }
 
-test("manifest apps resolve a content provider or initializer", () => {
-  const registry = new AppRegistry({ runtimeInitializerResolver: () => null });
+test("manifest apps resolve through app classes", () => {
+  const registry = new AppRegistry();
 
   for (const definition of APP_DEFINITIONS) {
-    const initializer = registry.initializers[definition.type] || null;
-    const contentProvider = registry.contentProviders[definition.type] || null;
-
-    assert.ok(
-      initializer || contentProvider || definition.appClass,
-      `${definition.type} should resolve an initializer, content provider, or app class`
+    assert.ok(definition.appClass, `${definition.type} should declare an appClass`);
+    assert.equal(
+      typeof registry.manifest[definition.type]?.appClass,
+      "function",
+      `${definition.type} should resolve an app class binding`
     );
   }
 });
 
-test("custom manifests resolve initializer and control-panel initializer bindings", () => {
-  const { calls, controlInitializer, initializer, registry } = createRegistryHarness();
-
-  assert.equal(registry.manifest.initApp.initializer, initializer);
-  assert.equal(registry.initializers.initApp, initializer);
-
-  const controlWrapped = registry.initializers.controlApp;
-  assert.notEqual(controlWrapped, controlInitializer);
-  controlWrapped("window", "data", "wm", "services");
-
-  assert.deepEqual(calls, [
-    {
-      kind: "control",
-      args: [{ panel: true }, "window", "data", "wm", "services"]
-    }
-  ]);
-});
-
-test("content providers are exposed and used by LegacyFunctionApp instances", () => {
-  const { contentProvider, registry } = createRegistryHarness();
-  const services = { answer: 42 };
-  const app = registry.createApp("contentApp", { initData: { file: "readme" }, services });
-
-  assert.equal(registry.contentProviders.contentApp, contentProvider);
-  assert.equal(app.constructor.name, "LegacyFunctionApp");
-  assert.deepEqual(app.getWindowContent(), {
-    initData: { file: "readme" },
-    services,
-    kind: "content"
-  });
-});
-
-test("runtime initializer lookup backs apps that are absent from the manifest", () => {
-  const { calls, registry, runtimeInitializer } = createRegistryHarness();
-  const app = registry.createApp("runtime-only", {
-    windowEl: "window",
-    initData: "payload",
-    services: { windowManager: "wm" }
-  });
-
-  assert.equal(registry.resolve("runtime-only"), runtimeInitializer);
-  app.mount();
-  assert.deepEqual(calls, [
-    { kind: "runtime", args: ["window", "payload", "wm", { windowManager: "wm" }] }
-  ]);
-});
-
-test("appClass entries construct the registered class with host arguments", () => {
+test("appClass entries construct the registered class with host arguments and control panel context", () => {
   const { registry } = createRegistryHarness();
   const args = { windowEl: "window", initData: { doc: 1 }, services: { fs: true } };
   const app = registry.createApp("classApp", args);
 
   assert.equal(app.constructor, TestClassApp);
-  assert.deepEqual(app.args, args);
+  assert.deepEqual(app.args, {
+    ...args,
+    services: {
+      fs: true,
+      controlPanelContext: { panel: true }
+    }
+  });
 });
 
-test("missing apps without runtime initializers return null", () => {
+test("missing apps and metadata-only entries without app classes return null", () => {
   const { registry } = createRegistryHarness();
 
-  assert.equal(registry.resolve("missing"), null);
   assert.equal(registry.createApp("missing"), null);
   assert.equal(registry.createApp("emptyApp"), null);
 });
 
-
 test("BaseApp migrations are resolved through app classes", () => {
-  const registry = new AppRegistry({ runtimeInitializerResolver: () => null });
+  const registry = new AppRegistry();
 
   for (const [type, className] of [
     ["notepad", "NotepadApp"],
@@ -157,22 +86,10 @@ test("BaseApp migrations are resolved through app classes", () => {
     const app = registry.createApp(type, { initData: "hello" });
 
     assert.equal(app?.constructor.name, className);
-    assert.equal(registry.initializers[type], undefined);
-    assert.equal(registry.contentProviders[type], undefined);
   }
 });
 
-test("BaseApp manifest entries do not keep legacy manifest wiring", () => {
-  const migratedTypes = [
-    "tracker",
-    "midisequencer",
-    "netnews",
-    "messenger",
-    "whiteboard",
-    "rss",
-    "mplayer",
-    "soundrec"
-  ];
+test("manifest entries do not keep legacy initializer or content-provider wiring", () => {
   const legacyWiringFields = [
     "initializer",
     "initializerKey",
@@ -180,17 +97,13 @@ test("BaseApp manifest entries do not keep legacy manifest wiring", () => {
     "contentProviderKey"
   ];
 
-  for (const type of migratedTypes) {
-    assert.ok(APP_MANIFEST[type]?.appClass, `${type} should use appClass after migration`);
-  }
-
-  for (const definition of APP_DEFINITIONS.filter(({ appClass }) => appClass)) {
+  for (const definition of APP_DEFINITIONS) {
     const legacyFields = legacyWiringFields.filter((field) => definition[field]);
 
     assert.deepEqual(
       legacyFields,
       [],
-      `${definition.type} uses appClass and must not keep legacy wiring: ${legacyFields.join(", ")}`
+      `${definition.type} must not use legacy runtime wiring: ${legacyFields.join(", ")}`
     );
   }
 });
@@ -205,7 +118,7 @@ test("manifest executable names point at valid app types", () => {
   }
 });
 
-test("manifest runtime bindings fail fast when a key is missing", () => {
+test("manifest runtime bindings fail fast when an app class is missing", () => {
   assert.throws(
     () =>
       new AppRegistry({
@@ -217,17 +130,13 @@ test("manifest runtime bindings fail fast when a key is missing", () => {
             height: 100,
             icon: "broken",
             label: "Broken",
-            initializer: "missingInitializer"
+            appClass: "MissingApp"
           }
         },
         bindings: {
-          initializers: {},
-          contentProviders: {},
-          appClasses: {},
-          initializerKeys: {},
-          contentProviderKeys: {}
+          appClasses: {}
         }
       }),
-    /Missing app runtime bindings: broken\.initializer: missingInitializer/
+    /Missing app runtime bindings: broken\.appClass: MissingApp/
   );
 });

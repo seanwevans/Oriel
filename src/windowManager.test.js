@@ -274,7 +274,7 @@ function createTestWindowManager() {
   return wm;
 }
 
-function createOpenWindowManager({ appInstance = null, initializer = null } = {}) {
+function createOpenWindowManager({ appInstance = null } = {}) {
   const wm = createTestWindowManager();
   const kernel = createTestKernel();
   wm.desktop = new FakeElement("div");
@@ -286,12 +286,6 @@ function createOpenWindowManager({ appInstance = null, initializer = null } = {}
     createApp(_type, args) {
       wm.createAppArgs = args;
       return appInstance;
-    },
-    resolve() {
-      return initializer;
-    },
-    getRuntimeInitializer() {
-      return initializer;
     }
   };
   wm.appHost = {
@@ -438,12 +432,6 @@ test("openWindow generates unique IDs when Date.now is fixed", () => {
     wm.appRegistry = {
       createApp() {
         return null;
-      },
-      resolve() {
-        return null;
-      },
-      getRuntimeInitializer() {
-        return false;
       }
     };
     wm.appHost = {
