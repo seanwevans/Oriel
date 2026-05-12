@@ -1,8 +1,5 @@
-import { loadDesktopState, persistDesktopState } from "./state.js";
-import { getWallpaperSettings } from "./wallpaper.js";
 import { refreshAllTaskManagers } from "./apps/taskman.js";
 import { browserSessions } from "./networking.js";
-import { getCurrentThemeCustom } from "./apps/controlPanel.js";
 import { AppRegistry } from "./core/AppRegistry.js";
 import { AppHost } from "./core/AppHost.js";
 import { publish, subscribe } from "./eventBus.js";
@@ -17,6 +14,14 @@ import {
 } from "./apps/programManager.js";
 import { screensaverContext } from "./apps/screensaver.js";
 import { getWindowBodyContainer } from "./windowContent.js";
+import { WindowDragResizeController } from "./window/WindowDragResizeController.js";
+import { WindowLayoutService } from "./window/WindowLayoutService.js";
+import { WindowStatePersistence } from "./window/WindowStatePersistence.js";
+import {
+  addKeyboardActivation,
+  createWindowDOM as buildWindowDOM,
+  setupMenuBar as setupWindowMenuBar
+} from "./window/windowDom.js";
 
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
@@ -30,25 +35,20 @@ export class WindowManager {
     this.nextWindowId = 1;
     this.highestZ = 100;
     this.isRestoring = false;
-    this.dragState = {
-      isDragging: false,
-      initialX: 0,
-      initialY: 0,
-      offX: 0,
-      offY: 0,
-      currentWin: null
-    };
-    this.resizeState = {
-      isResizing: false,
-      currentWin: null,
-      handleType: null,
-      initialX: 0,
-      initialY: 0,
-      initialW: 0,
-      initialH: 0,
-      initialL: 0,
-      initialT: 0
-    };
+    this.statePersistence = new WindowStatePersistence({
+      getWindows: () => this.windows,
+      getHighestZ: () => this.highestZ,
+      isRestoring: () => this.isRestoring
+    });
+    this.dragResizeController = new WindowDragResizeController({
+      focusWindow: (id) => this.focusWindow(id),
+      saveDesktopState: () => this.saveDesktopState()
+    });
+    this.layoutService = new WindowLayoutService({
+      getWindows: () => this.windows,
+      getDesktop: () => this.desktop,
+      saveDesktopState: () => this.saveDesktopState()
+    });
     this.appRegistry = new AppRegistry({ controlPanelContext });
     this.appHost = new AppHost({
       onMountError: ({ err, winEl, type }) => {
@@ -86,186 +86,29 @@ export class WindowManager {
       this.openWindow("progman", "Program Manager", 500, 480);
   }
   addKeyboardActivation(el, handler) {
-    if (!el) return;
-    el.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        handler();
-      }
-    });
+    addKeyboardActivation(el, handler);
   }
   setupMenuBar(win) {
-    const menuBar = win.querySelector(".menu-bar");
-    if (!menuBar) return;
-    const items = Array.from(menuBar.querySelectorAll(".menu-item"));
-    if (!items.length) return;
-
-    menuBar.setAttribute("role", "menubar");
-    let focusedIndex = 0;
-
-    const focusItem = (idx) => {
-      const safeIndex = ((idx % items.length) + items.length) % items.length;
-      focusedIndex = safeIndex;
-      items.forEach((item, i) => {
-        item.tabIndex = i === safeIndex ? 0 : -1;
-      });
-      items[safeIndex].focus();
-    };
-
-    items.forEach((item, idx) => {
-      item.setAttribute("role", "menuitem");
-      item.tabIndex = idx === 0 ? 0 : -1;
-      item.addEventListener("focus", () => {
-        focusedIndex = idx;
-      });
-      item.addEventListener("click", () => {
-        focusedIndex = idx;
-        focusItem(idx);
-      });
-      item.addEventListener("keydown", (e) => {
-        const key = e.key;
-        if (key === "ArrowRight") {
-          e.preventDefault();
-          focusItem(focusedIndex + 1);
-        } else if (key === "ArrowLeft") {
-          e.preventDefault();
-          focusItem(focusedIndex - 1);
-        } else if (key === "Home") {
-          e.preventDefault();
-          focusItem(0);
-        } else if (key === "End") {
-          e.preventDefault();
-          focusItem(items.length - 1);
-        } else if (key === "Enter" || key === " ") {
-          e.preventDefault();
-          item.click();
-        } else if (key === "Escape") {
-          e.preventDefault();
-          item.blur();
-        }
-      });
-    });
+    setupWindowMenuBar(win);
   }
   createWindowDOM(id, type, title, width, height, content, stateOverrides = {}) {
-    const win = document.createElement("div");
-    win.classList.add("window");
-    const resolvedWidth =
-      typeof width === "number" ? `${width}px` : width || width === 0 ? width : "";
-    const resolvedHeight =
-      typeof height === "number" ? `${height}px` : height || height === 0 ? height : "";
-    win.setAttribute("role", "dialog");
-    win.setAttribute("aria-label", title);
-    const resolvedLeft =
-      stateOverrides.left !== undefined
-        ? stateOverrides.left
-        : `${40 + this.windows.length * 20}px`;
-    const resolvedTop =
-      stateOverrides.top !== undefined
-        ? stateOverrides.top
-        : `${40 + this.windows.length * 20}px`;
-    win.style.width = resolvedWidth;
-    win.style.height = resolvedHeight;
-    win.style.left = typeof resolvedLeft === "number" ? `${resolvedLeft}px` : resolvedLeft;
-    win.style.top = typeof resolvedTop === "number" ? `${resolvedTop}px` : resolvedTop;
-    win.dataset.id = id;
-    win.dataset.appType = type;
-    win.dataset.title = title;
-
-    const resizeHandles = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
-    resizeHandles.forEach((handleType) => {
-      const resizer = document.createElement("div");
-      resizer.classList.add("resizer", handleType);
-      resizer.dataset.resize = handleType;
-      win.appendChild(resizer);
+    return buildWindowDOM({
+      id,
+      type,
+      title,
+      width,
+      height,
+      content,
+      stateOverrides,
+      windowCount: this.windows.length,
+      onClose: (windowId) => this.closeWindow(windowId),
+      onMinimize: (windowId) => this.minimizeWindow(windowId),
+      onMaximize: (windowId) => this.maximizeWindow(windowId),
+      onFocus: (windowId) => this.focusWindow(windowId),
+      onStartDrag: (event, winEl) => this.startDrag(event, winEl),
+      onStartResize: (event, winEl, resizeType) =>
+        this.startResize(event, winEl, resizeType)
     });
-
-    const titleBar = document.createElement("div");
-    titleBar.classList.add("title-bar");
-
-    const closeBtn = document.createElement("div");
-    closeBtn.classList.add("sys-box");
-    closeBtn.textContent = "-";
-    closeBtn.addEventListener("click", () => this.closeWindow(id));
-    titleBar.appendChild(closeBtn);
-
-    const titleText = document.createElement("div");
-    titleText.classList.add("title-bar-text");
-    titleText.textContent = title;
-    titleBar.appendChild(titleText);
-
-    const controls = document.createElement("div");
-    controls.classList.add("win-controls-right");
-
-    const minimizeBtn = document.createElement("div");
-    minimizeBtn.classList.add("win-btn");
-    minimizeBtn.textContent = "▼";
-    minimizeBtn.addEventListener("click", () => this.minimizeWindow(id));
-    controls.appendChild(minimizeBtn);
-
-    const maximizeBtn = document.createElement("div");
-    maximizeBtn.classList.add("win-btn");
-    maximizeBtn.textContent = "▲";
-    maximizeBtn.addEventListener("click", () => this.maximizeWindow(id));
-    controls.appendChild(maximizeBtn);
-
-    titleBar.appendChild(controls);
-    win.appendChild(titleBar);
-
-    const menuBar = document.createElement("div");
-    menuBar.classList.add("menu-bar");
-    ["File", "Edit", "Help"].forEach((label) => {
-      const menuItem = document.createElement("div");
-      menuItem.classList.add("menu-item");
-      menuItem.textContent = label;
-      menuBar.appendChild(menuItem);
-    });
-    win.appendChild(menuBar);
-
-    const windowBody = document.createElement("div");
-    windowBody.classList.add("window-body");
-    win.appendChild(windowBody);
-    const contentArea = getWindowBodyContainer(win);
-    if (contentArea) {
-      if (typeof content === "string") {
-        contentArea.innerHTML = content;
-      } else if (content instanceof Node) {
-        contentArea.appendChild(content);
-      }
-    }
-    // Drag Start
-    titleBar.addEventListener("mousedown", (e) => {
-      if (
-        e.target.classList.contains("sys-box") ||
-        e.target.classList.contains("win-btn")
-      )
-        return;
-      this.startDrag(e, win);
-    });
-    // Accessibility: make window controls keyboard operable
-    closeBtn.setAttribute("role", "button");
-    closeBtn.setAttribute("aria-label", `Close ${title}`);
-    closeBtn.tabIndex = 0;
-    this.addKeyboardActivation(closeBtn, () => this.closeWindow(id));
-
-    minimizeBtn.setAttribute("role", "button");
-    minimizeBtn.setAttribute("aria-label", `Minimize ${title}`);
-    minimizeBtn.tabIndex = 0;
-    this.addKeyboardActivation(minimizeBtn, () => this.minimizeWindow(id));
-
-    maximizeBtn.setAttribute("role", "button");
-    maximizeBtn.setAttribute("aria-label", `Maximize ${title}`);
-    maximizeBtn.tabIndex = 0;
-    this.addKeyboardActivation(maximizeBtn, () => this.maximizeWindow(id));
-    this.setupMenuBar(win);
-    // Resize Start
-    win.querySelectorAll(".resizer").forEach((r) => {
-      r.addEventListener("mousedown", (e) =>
-        this.startResize(e, win, r.dataset.resize)
-      );
-    });
-    // Focus on click
-    win.addEventListener("mousedown", () => this.focusWindow(id));
-    return win;
   }
   generateWindowId() {
     if (!Number.isInteger(this.nextWindowId) || this.nextWindowId < 1) {
@@ -351,27 +194,15 @@ export class WindowManager {
     kernel.registerProcess(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
-    if (appInstance) {
-      const mountResult = this.appHost.mountInstance({ appInstance, winEl, winObj, type });
-      if (mountResult && typeof mountResult.then === "function") {
-        winObj.pendingMountPromise = mountResult;
-        winEl.pendingMountPromise = mountResult;
-        mountResult.finally(() => {
-          if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
-        });
-      }
-    } else if (initializer) {
-      const mountResult = this.appHost.mount({ initializer, winEl, winObj, initData, wmInstance: this, type });
-      if (mountResult && typeof mountResult.then === "function") {
-        winObj.pendingMountPromise = mountResult;
-        winEl.pendingMountPromise = mountResult;
-        mountResult.finally(() => {
-          if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
-        });
-      }
-    } else if (!content) {
-      this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
-    }
+    this._mountWindowApp({
+      appInstance,
+      initializer,
+      winEl,
+      winObj,
+      initData,
+      type,
+      hasContent: Boolean(content)
+    });
     // Refresh logic
     refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
@@ -508,77 +339,23 @@ export class WindowManager {
   }
   // Drag Logic
   startDrag(e, winEl) {
-    if (e.target.closest(".win-btn") || e.target.closest(".sys-box")) return;
-    this.dragState.isDragging = true;
-    this.dragState.currentWin = winEl;
-    this.dragState.initialX = e.clientX;
-    this.dragState.initialY = e.clientY;
-    const rect = winEl.getBoundingClientRect();
-    this.dragState.offX = winEl.offsetLeft;
-    this.dragState.offY = winEl.offsetTop;
-    this.focusWindow(winEl.dataset.id);
+    this.dragResizeController.startDrag(e, winEl);
   }
   onDrag(e) {
-    if (!this.dragState.isDragging) return;
-    const dx = e.clientX - this.dragState.initialX;
-    const dy = e.clientY - this.dragState.initialY;
-    this.dragState.currentWin.style.left = this.dragState.offX + dx + "px";
-    this.dragState.currentWin.style.top = this.dragState.offY + dy + "px";
+    this.dragResizeController.onDrag(e);
   }
   endDrag() {
-    this.dragState.isDragging = false;
-    this.dragState.currentWin = null;
-    this.saveDesktopState();
+    this.dragResizeController.endDrag();
   }
   // Resize Logic
   startResize(e, winEl, type) {
-    e.stopPropagation();
-    e.preventDefault();
-    this.resizeState.isResizing = true;
-    this.resizeState.currentWin = winEl;
-    this.resizeState.handleType = type;
-    this.resizeState.initialX = e.clientX;
-    this.resizeState.initialY = e.clientY;
-    const rect = winEl.getBoundingClientRect();
-    this.resizeState.initialW = rect.width;
-    this.resizeState.initialH = rect.height;
-    this.resizeState.initialL = rect.left;
-    this.resizeState.initialT = rect.top;
-    this.focusWindow(winEl.dataset.id);
+    this.dragResizeController.startResize(e, winEl, type);
   }
   onResize(e) {
-    if (!this.resizeState.isResizing) return;
-    const dx = e.clientX - this.resizeState.initialX;
-    const dy = e.clientY - this.resizeState.initialY;
-    const type = this.resizeState.handleType;
-    const win = this.resizeState.currentWin;
-    let newW = this.resizeState.initialW;
-    let newH = this.resizeState.initialH;
-    let newL = this.resizeState.initialL;
-    let newT = this.resizeState.initialT;
-    if (type.includes("e")) newW += dx;
-    if (type.includes("s")) newH += dy;
-    if (type.includes("w")) {
-      newW -= dx;
-      newL += dx;
-    }
-    if (type.includes("n")) {
-      newH -= dy;
-      newT += dy;
-    }
-    if (newW > 100) {
-      win.style.width = newW + "px";
-      win.style.left = newL + "px";
-    }
-    if (newH > 100) {
-      win.style.height = newH + "px";
-      win.style.top = newT + "px";
-    }
+    this.dragResizeController.onResize(e);
   }
   endResize() {
-    this.resizeState.isResizing = false;
-    this.resizeState.currentWin = null;
-    this.saveDesktopState();
+    this.dragResizeController.endResize();
   }
   restoreWindows(windowsState = []) {
     windowsState.forEach((winState) => {
@@ -611,35 +388,21 @@ export class WindowManager {
       );
     });
   }
+  getStatePersistence() {
+    if (!this.statePersistence) {
+      this.statePersistence = new WindowStatePersistence({
+        getWindows: () => this.windows,
+        getHighestZ: () => this.highestZ,
+        isRestoring: () => this.isRestoring
+      });
+    }
+    return this.statePersistence;
+  }
   getWindowStateSnapshot() {
-    return this.windows.map((w) => {
-      const rect = this.getWindowRectSnapshot(w);
-      return {
-        id: w.id,
-        type: w.type,
-        title: w.title,
-        left: rect.left,
-        top: rect.top,
-        width: rect.width,
-        height: rect.height,
-        minimized: w.minimized,
-        maximized: w.maximized,
-        prevRect: w.prevRect,
-        zIndex: parseInt(w.el.style.zIndex || `${this.highestZ}`, 10)
-      };
-    });
+    return this.getStatePersistence().getWindowStateSnapshot();
   }
   getWindowRectSnapshot(win) {
-    if (win.minimized && win.lastRect) return win.lastRect;
-    const rect = win.el.getBoundingClientRect();
-    const snapshot = {
-      left: win.el.offsetLeft,
-      top: win.el.offsetTop,
-      width: Math.round(rect.width),
-      height: Math.round(rect.height)
-    };
-    win.lastRect = snapshot;
-    return snapshot;
+    return this.getStatePersistence().getWindowRectSnapshot(win);
   }
   getTopWindowByZ({ includeMinimized = false } = {}) {
     const candidates = includeMinimized
@@ -653,51 +416,10 @@ export class WindowManager {
     });
   }
   cascadeWindows() {
-    const openWins = this.windows
-      .filter((w) => !w.minimized)
-      .sort(
-        (a, b) =>
-          parseInt(a.el.style.zIndex || "0", 10) -
-          parseInt(b.el.style.zIndex || "0", 10)
-      );
-    if (!openWins.length) return;
-
-    const desktopRect = this.desktop.getBoundingClientRect();
-    const width = Math.floor(desktopRect.width * 0.8);
-    const height = Math.floor(desktopRect.height * 0.8);
-
-    openWins.forEach((win, idx) => {
-      win.maximized = false;
-      win.prevRect = null;
-      win.el.style.width = `${width}px`;
-      win.el.style.height = `${height}px`;
-      win.el.style.left = `${idx * 20}px`;
-      win.el.style.top = `${idx * 20}px`;
-    });
-    this.saveDesktopState();
+    this.layoutService.cascadeWindows();
   }
   tileWindows() {
-    const openWins = this.windows.filter((w) => !w.minimized);
-    if (!openWins.length) return;
-
-    const desktopRect = this.desktop.getBoundingClientRect();
-    const count = openWins.length;
-    const cols = Math.ceil(Math.sqrt(count));
-    const rows = Math.ceil(count / cols);
-    const width = Math.floor(desktopRect.width / cols);
-    const height = Math.floor(desktopRect.height / rows);
-
-    openWins.forEach((win, idx) => {
-      const row = Math.floor(idx / cols);
-      const col = idx % cols;
-      win.maximized = false;
-      win.prevRect = null;
-      win.el.style.width = `${width}px`;
-      win.el.style.height = `${height}px`;
-      win.el.style.left = `${col * width}px`;
-      win.el.style.top = `${row * height}px`;
-    });
-    this.saveDesktopState();
+    this.layoutService.tileWindows();
   }
   handleWindowShortcuts(event) {
     const active = this.getTopWindowByZ();
@@ -722,15 +444,7 @@ export class WindowManager {
     return getProgramManagerDefaults(type);
   }
   saveDesktopState() {
-    if (this.isRestoring) return;
-    const existing = loadDesktopState();
-    const state = {
-      ...existing,
-      windows: this.getWindowStateSnapshot(),
-      wallpaper: getWallpaperSettings(),
-      themeCustom: getCurrentThemeCustom()
-    };
-    persistDesktopState(state);
+    this.getStatePersistence().saveDesktopState();
   }
   // Helper: Icons
   getIconForType(type) {
@@ -738,6 +452,32 @@ export class WindowManager {
   }
   getIconElementForType(type) {
     return getProgramManagerIconElement(type);
+  }
+  _mountWindowApp({ appInstance, initializer, winEl, winObj, initData, type, hasContent }) {
+    let mountResult = null;
+    if (appInstance) {
+      mountResult = this.appHost.mountInstance({ appInstance, winEl, winObj, type });
+    } else if (initializer) {
+      mountResult = this.appHost.mount({
+        initializer,
+        winEl,
+        winObj,
+        initData,
+        wmInstance: this,
+        type
+      });
+    } else if (!hasContent) {
+      this.renderRuntimeError(winEl, new Error(`No initializer registered for ${type}`));
+      return;
+    }
+
+    if (mountResult && typeof mountResult.then === "function") {
+      winObj.pendingMountPromise = mountResult;
+      winEl.pendingMountPromise = mountResult;
+      mountResult.finally(() => {
+        if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
+      });
+    }
   }
   renderRuntimeError(winEl, err) {
     const contentArea = getWindowBodyContainer(winEl);
