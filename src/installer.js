@@ -181,8 +181,10 @@ async function loadInitializerFromEntry(manifest, entryPath) {
     throw new Error("Entry hash does not match manifest signature/hash.");
   }
 
-  const blob = new Blob([source], { type: "text/javascript" });
-  const url = URL.createObjectURL(blob);
+  const isNodeRuntime = typeof process !== "undefined" && !!process.versions?.node;
+  const url = isNodeRuntime
+    ? `data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`
+    : URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
   try {
     const module = await import(url);
     const exportName = manifest.export || "default";
@@ -192,7 +194,7 @@ async function loadInitializerFromEntry(manifest, entryPath) {
     }
     return { initializer, hash, path };
   } finally {
-    URL.revokeObjectURL(url);
+    if (!isNodeRuntime) URL.revokeObjectURL(url);
   }
 }
 

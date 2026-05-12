@@ -247,6 +247,8 @@ globalThis.document = {
 
 const { WindowManager } = await import("./windowManager.js");
 const { createRuntimeIconElement } = await import("./apps/programManager.js");
+const { installFromManifestPath } = await import("./installer.js");
+const { MOCK_FS } = await import("./filesystem.js");
 
 test.after(() => {
   globalThis.document = originalDocument;
@@ -291,9 +293,12 @@ function createOpenWindowManager({ appInstance = null } = {}) {
   wm.appHost = {
     mountCalls: [],
     unmountCalls: [],
-    mount({ winObj }) {
+    mount({ initializer, winEl, winObj, initData, wmInstance, services, type }) {
       this.mountCalls.push(winObj.id);
-      return null;
+      const result = initializer?.(winEl, initData, wmInstance, services, type) ?? null;
+      winObj.appInstance = result || null;
+      winEl.appInstance = winObj.appInstance;
+      return result;
     },
     mountInstance({ appInstance: mountedInstance, winEl, winObj }) {
       this.mountCalls.push(winObj.id);
@@ -513,6 +518,49 @@ test("openWindow renders app content, registers a process, and persists state", 
   assert.equal(wm.saveCalls, 1);
   assert.equal(appInstance.windowEl, win.el);
   assert.equal(win.appInstance, appInstance);
+});
+
+test("openWindow mounts installed runtime apps", async () => {
+  MOCK_FS["C\\"].children.RUNTIME = {
+    type: "dir",
+    children: {
+      APP: {
+        type: "dir",
+        children: {
+          "MANIFEST.JSON": {
+            type: "file",
+            content: JSON.stringify({
+              id: "runtime-test-app",
+              name: "Runtime Test App",
+              version: "1.0.0",
+              entry: "APP.JS",
+              permissions: []
+            })
+          },
+          "APP.JS": {
+            type: "file",
+            content: `export default function init(win, initData) {
+              const marker = document.createElement("div");
+              marker.className = "runtime-marker";
+              marker.textContent = initData.message;
+              win.appendChild(marker);
+              return { mounted: true };
+            }`
+          }
+        }
+      }
+    }
+  };
+  await installFromManifestPath("C\\RUNTIME\\APP\\MANIFEST.JSON");
+  const wm = createOpenWindowManager();
+
+  const win = wm.openWindow("runtime-test-app", "Runtime Test App", 320, 240, {
+    message: "installed runtime launched"
+  });
+
+  assert.deepEqual(wm.appHost.mountCalls, [win.id]);
+  assert.equal(win.appInstance.mounted, true);
+  assert.equal(win.el.querySelector(".runtime-marker").textContent, "installed runtime launched");
 });
 
 test("openWindow tracks async app mount promises until resolution", async () => {
