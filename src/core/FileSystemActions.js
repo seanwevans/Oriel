@@ -75,28 +75,17 @@ export class FileSystemActions {
     }
 
     const rawName = typeof name === "string" ? name : "";
-    if (rawName) {
-      if (/[. ]$/.test(rawName)) {
-        return {
-          success: false,
-          message: "Folder names cannot end with a period or space."
-        };
-      }
-      if (INVALID_FOLDER_CHARS.test(rawName)) {
-        return {
-          success: false,
-          message:
-            "Folder names cannot contain \\ / : * ? \" < > |. Remove these characters and try again."
-        };
-      }
-    }
-
     const trimmedName = rawName.trim();
-    if (trimmedName && RESERVED_FOLDER_NAMES.has(this.normalizeFolderName(trimmedName))) {
+    if (trimmedName && isRestrictedFileSystemName(trimmedName)) {
       return {
         success: false,
-        message:
-          "That folder name is reserved by the system. Choose a different name and try again."
+        message: "That folder name is not allowed. Choose a different name and try again."
+      };
+    }
+    if (rawName && /[. ]$/.test(rawName)) {
+      return {
+        success: false,
+        message: "Folder names cannot end with a period or space."
       };
     }
 
