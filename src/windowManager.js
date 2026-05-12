@@ -154,10 +154,7 @@ export class WindowManager {
       typeof appInstance?.getWindowContent === "function"
         ? appInstance.getWindowContent()
         : "";
-    const initializer = appInstance ? null : this.appRegistry.resolve(type);
-    if (!content && this.appRegistry.getRuntimeInitializer(type)) {
-      content = `<div class="runtime-app" data-app="${type}">Loading ${title}...</div>`;
-    }
+    const initializer = null;
     const winEl = this.createWindowDOM(
       id,
       type,
