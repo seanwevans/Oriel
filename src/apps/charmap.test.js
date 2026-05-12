@@ -54,10 +54,11 @@ function createCharMapWindow(value) {
   return { button, input, windowElement };
 }
 
-test("Character Map Clear button is wired to the scoped helper", () => {
+test("Character Map content leaves Clear button wiring to the app lifecycle", () => {
   const content = getCharMapContent();
 
-  assert.match(content, /onclick="clearCharMap\(this\)"/);
+  assert.match(content, /id="char-clear-btn"/);
+  assert.doesNotMatch(content, /onclick=/);
   assert.doesNotMatch(content, /document\.getElementById\('char-copy-input'\)\.value = ''/);
 });
 

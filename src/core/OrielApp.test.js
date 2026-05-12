@@ -69,6 +69,7 @@ let originalSetInterval;
 let originalClearInterval;
 let CompilerApp;
 let ConsoleApp;
+let ALLOWED_WINDOW_GLOBALS;
 let OrielApp;
 let PythonApp;
 
@@ -89,7 +90,7 @@ before(async () => {
   globalThis.setInterval = () => 0;
   globalThis.clearInterval = () => {};
 
-  ({ OrielApp } = await import("./OrielApp.js"));
+  ({ ALLOWED_WINDOW_GLOBALS, OrielApp } = await import("./OrielApp.js"));
   ({ CompilerApp, ConsoleApp, PythonApp } = await import("../apps/console.js"));
 });
 
@@ -384,14 +385,28 @@ test("start waits for filesystem and installer readiness before desktop and scre
   assert.equal(constructedWindowManager.initialState, initialDesktopState);
   assert.equal(constructedWindowManager.services.kernel, app.kernel);
   assert.equal(constructedWindowManager.services.windowManager, constructedWindowManager);
-  assert.equal(globalThis.window.wm, constructedWindowManager);
+  assert.equal(globalThis.window.wm, undefined);
   assert.equal(globalThis.window.handleConsoleKey, undefined);
   assert.equal(globalThis.window.runCompiler, undefined);
   assert.equal(globalThis.window.runPython, undefined);
-  assert.equal(typeof globalThis.window.openCPDesktop, "function");
-  assert.equal(typeof globalThis.window.applyWallpaperSettings, "function");
-  assert.equal(typeof globalThis.window.submitLockPassphrase, "function");
-  assert.equal(typeof globalThis.window.getBrowserPlaceholder, "function");
+  assert.equal(globalThis.window.openCPDesktop, undefined);
+  assert.equal(globalThis.window.applyWallpaperSettings, undefined);
+  assert.equal(globalThis.window.submitLockPassphrase, undefined);
+  assert.equal(globalThis.window.getBrowserPlaceholder, undefined);
+  const globalsExportedByShell = Object.keys(globalThis.window).filter((key) =>
+    ALLOWED_WINDOW_GLOBALS.includes(key)
+  );
+  assert.deepEqual(globalsExportedByShell, ["kernel"]);
+});
+
+
+test("documents allowed shell window globals", () => {
+  assert.deepEqual([...ALLOWED_WINDOW_GLOBALS], ["kernel"]);
+
+  const exportedGlobals = Object.keys(globalThis.window).filter((key) =>
+    ALLOWED_WINDOW_GLOBALS.includes(key)
+  );
+  assert.deepEqual(exportedGlobals, []);
 });
 
 function createImportHarness() {

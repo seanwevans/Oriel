@@ -1,4 +1,4 @@
-export function initCharMap(w) {
+export function initCharMap(w, _initData = null, _windowManager = null, _services = {}, app = null) {
   const g = w.querySelector("#char-grid"),
     ip = w.querySelector("#char-copy-input"),
     preview = w.querySelector(".char-preview"),
@@ -6,6 +6,7 @@ export function initCharMap(w) {
     fontSelect = w.querySelector("#char-font-select");
 
   let activeCell = null;
+  const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
 
   const applyFont = (fontValue) => {
     g.style.fontFamily = fontValue;
@@ -30,14 +31,16 @@ export function initCharMap(w) {
     d.innerText = c;
     d.dataset.char = c;
     d.dataset.code = i;
-    d.onclick = () => {
+    listen(d, "click", () => {
       ip.value += c;
       setSelection(d);
-    };
+    });
     g.appendChild(d);
   }
 
-  fontSelect?.addEventListener("change", (e) => applyFont(e.target.value));
+  listen(fontSelect, "change", (e) => applyFont(e.target.value));
+  listen(w.querySelector("#char-copy-btn"), "click", (e) => copyCharMap(e.currentTarget));
+  listen(w.querySelector("#char-clear-btn"), "click", (e) => clearCharMap(e.currentTarget));
   setSelection(g.querySelector('[data-code="65"]') || g.querySelector(".char-cell"));
   applyFont(fontSelect?.value || "'Times New Roman', serif");
 }
@@ -73,9 +76,9 @@ export function getCharMapContent() {
                 <label>Characters to copy:</label>
                 <div class="copy-row">
                   <input type="text" class="char-input" id="char-copy-input" readonly>
-                  <button class="task-btn" onclick="copyCharMap(this)" style="width:60px">Copy</button>
+                  <button class="task-btn" id="char-copy-btn" type="button" style="width:60px">Copy</button>
                 </div>
-                <button class="task-btn" onclick="clearCharMap(this)">Clear</button>
+                <button class="task-btn" id="char-clear-btn" type="button">Clear</button>
               </div>
             </div>`;
 

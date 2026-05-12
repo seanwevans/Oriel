@@ -96,7 +96,8 @@ function getPhotoshopContent() {
       `;
 }
 
-function initPhotoshop(w) {
+function initPhotoshop(w, _initData = null, _windowManager = null, _services = {}, app = null) {
+  const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
   const canvas = w.querySelector(".ps-canvas");
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#ffffff";
@@ -115,11 +116,11 @@ function initPhotoshop(w) {
     sw.className = "ps-swatch";
     sw.title = c;
     sw.style.background = c;
-    sw.onclick = () => {
+    listen(sw, "click", () => {
       w.querySelector(".ps-color-primary").value = c;
       w.ps.primary = c;
       updatePsStatus(w);
-    };
+    });
     swatchContainer.appendChild(sw);
   });
 
@@ -136,34 +137,34 @@ function initPhotoshop(w) {
   };
 
   w.querySelectorAll(".ps-tool").forEach((btn) => {
-    btn.addEventListener("click", () => setPsTool(btn, btn.dataset.tool));
+    listen(btn, "click", () => setPsTool(btn, btn.dataset.tool));
   });
   setPsTool(w.querySelector('.ps-tool[data-tool="brush"]'), "brush");
 
   const sizeSlider = w.querySelector(".ps-size-slider");
-  sizeSlider.addEventListener("input", (e) => {
+  listen(sizeSlider, "input", (e) => {
     w.ps.size = parseInt(e.target.value, 10) || 1;
     updatePsStatus(w);
   });
 
-  w.querySelector(".ps-color-primary").addEventListener("input", (e) => {
+  listen(w.querySelector(".ps-color-primary"), "input", (e) => {
     w.ps.primary = e.target.value;
     updatePsStatus(w);
   });
-  w.querySelector(".ps-color-secondary").addEventListener("input", (e) => {
+  listen(w.querySelector(".ps-color-secondary"), "input", (e) => {
     w.ps.secondary = e.target.value;
     updatePsStatus(w);
   });
 
-  w.querySelector("#ps-new").addEventListener("click", () => psNewDocument(w.querySelector("#ps-new")));
-  w.querySelector("#ps-open").addEventListener("click", () => psTriggerOpen(w.querySelector("#ps-open")));
-  w.querySelector("#ps-export").addEventListener("click", () => psExport(w.querySelector("#ps-export")));
+  listen(w.querySelector("#ps-new"), "click", () => psNewDocument(w.querySelector("#ps-new")));
+  listen(w.querySelector("#ps-open"), "click", () => psTriggerOpen(w.querySelector("#ps-open")));
+  listen(w.querySelector("#ps-export"), "click", () => psExport(w.querySelector("#ps-export")));
   w.querySelectorAll("[data-filter]").forEach((btn) => {
-    btn.addEventListener("click", () => psApplyFilter(btn, btn.dataset.filter));
+    listen(btn, "click", () => psApplyFilter(btn, btn.dataset.filter));
   });
 
   const fileInput = w.querySelector(".ps-file-input");
-  fileInput.addEventListener("change", (e) => {
+  listen(fileInput, "change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -196,7 +197,7 @@ function initPhotoshop(w) {
     if (w.ps) w.ps.drawing = false;
   };
 
-  canvas.addEventListener("mousedown", (e) => {
+  listen(canvas, "mousedown", (e) => {
     const { x, y } = getPos(e);
     if (["fill", "marquee", "lasso", "wand", "crop", "move", "zoom"].includes(w.ps.tool)) {
       if (w.ps.tool === "fill") {
@@ -224,7 +225,7 @@ function initPhotoshop(w) {
     }
   });
 
-  canvas.addEventListener("mousemove", (e) => {
+  listen(canvas, "mousemove", (e) => {
     const { x, y } = getPos(e);
     w.querySelector(".ps-x-label").textContent = Math.round(x);
     w.querySelector(".ps-y-label").textContent = Math.round(y);
@@ -240,7 +241,7 @@ function initPhotoshop(w) {
     }
   });
 
-  canvas.addEventListener("mouseup", (e) => {
+  listen(canvas, "mouseup", (e) => {
     if (!w.ps.drawing) return;
     const { x, y } = getPos(e);
     ctx.strokeStyle = w.ps.primary;
@@ -268,8 +269,8 @@ function initPhotoshop(w) {
     stopDrawing();
   });
 
-  canvas.addEventListener("mouseleave", stopDrawing);
-  window.addEventListener("mouseup", stopDrawing);
+  listen(canvas, "mouseleave", stopDrawing);
+  listen(window, "mouseup", stopDrawing);
 
   updatePsStatus(w);
 }
