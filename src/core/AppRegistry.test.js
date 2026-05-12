@@ -154,6 +154,25 @@ test("BaseApp migrations are resolved through app classes", () => {
   }
 });
 
+test("BaseApp manifest entries do not keep legacy manifest wiring", () => {
+  const legacyWiringFields = [
+    "initializer",
+    "initializerKey",
+    "contentProvider",
+    "contentProviderKey"
+  ];
+
+  for (const definition of APP_DEFINITIONS.filter(({ appClass }) => appClass)) {
+    const legacyFields = legacyWiringFields.filter((field) => definition[field]);
+
+    assert.deepEqual(
+      legacyFields,
+      [],
+      `${definition.type} uses appClass and must not keep legacy wiring: ${legacyFields.join(", ")}`
+    );
+  }
+});
+
 test("manifest executable names point at valid app types", () => {
   const executableEntries = getExecutableEntries();
 
