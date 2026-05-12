@@ -1,6 +1,8 @@
 import { DEFAULT_SPLASH_IMAGE, DEFAULT_WALLPAPER } from "../defaults.js";
 import { loadDesktopState } from "../state.js";
-import { applyWallpaperSettings } from "../wallpaper.js";
+import { applyWallpaperSettings, getWallpaperSettings } from "../wallpaper.js";
+import * as audioActions from "../audio.js";
+import * as networkActions from "../networking.js";
 import {
   MOCK_FS,
   exportFileSystemAsJson,
@@ -50,6 +52,7 @@ import { bootstrapInstallations } from "../installer.js";
 import { FileSystemActions } from "./FileSystemActions.js";
 import { DesktopController } from "./DesktopController.js";
 import { DesktopImportController } from "./DesktopImportController.js";
+import { createSystemServices, updateSystemServices } from "./systemServices.js";
 
 export class OrielApp {
   constructor({
@@ -67,7 +70,8 @@ export class OrielApp {
     },
     state = { loadDesktopState },
     wallpaper = { applyWallpaperSettings },
-    audio = {}
+    audio = audioActions,
+    network = networkActions
   } = {}) {
     this.WindowManager = WindowManager;
     this.SimulatedKernel = SimulatedKernel;
@@ -75,6 +79,24 @@ export class OrielApp {
     this.state = state;
     this.wallpaper = wallpaper;
     this.audio = audio;
+    this.network = network;
+
+    this.services = createSystemServices({
+      windowManager: null,
+      kernel: null,
+      publish,
+      subscribe,
+      filesystem: this.fs,
+      fileSystemActions: null,
+      wallpaper: {
+        ...this.wallpaper,
+        getWallpaperSettings,
+        applyWallpaperSettings: (...args) => applyWallpaperSettings(...args, this.services)
+      },
+      audio: this.audio,
+      network: this.network,
+      alertUser: (message) => alert(message)
+    });
 
     this.windowManager = null;
     this.dom = {};
@@ -103,7 +125,8 @@ export class OrielApp {
       console.warn("Failed to bootstrap installed apps", err);
     });
 
-    this.kernel = new this.SimulatedKernel(() => refreshAllProcessViews({ kernel: this.kernel }));
+    this.kernel = new this.SimulatedKernel(() => refreshAllProcessViews(this.services));
+    updateSystemServices(this.services, { kernel: this.kernel });
 
     const initialDesktopState = this.state.loadDesktopState();
     this.initialDesktopState = initialDesktopState;
@@ -148,16 +171,17 @@ export class OrielApp {
       filesystem: this.fs,
       publish
     });
+
+    updateSystemServices(this.services, { fileSystemActions: this.fileSystemActions });
   }
 
   #bootDesktop() {
     if (this.windowManager) return this.windowManager;
     this.windowManager = new this.WindowManager(this.initialDesktopState, {
-      services: {
-        fileSystemActions: this.fileSystemActions,
-        alertUser: (message) => alert(message)
-      }
+      services: this.services
     });
+    updateSystemServices(this.services, { windowManager: this.windowManager });
+    // Temporary debugging/compatibility alias while production callers migrate to services.windowManager.
     window.wm = this.windowManager;
     return this.windowManager;
   }
@@ -187,8 +211,9 @@ export class OrielApp {
   }
 
   #registerWindowGlobals() {
+    // Temporary debugging/compatibility alias while production callers migrate to services.kernel.
     window.kernel = this.kernel;
-    registerConsoleCommands();
+    registerConsoleCommands(this.services);
 
     window.handleConsoleKey = handleConsoleKey;
     window.copyCharMap = copyCharMap;
@@ -208,7 +233,7 @@ export class OrielApp {
     window.psFillCanvas = psFillCanvas;
 
     const openCPDesktopWithContext = (target, override) =>
-      openCPDesktop(controlPanelContext, target, override);
+      openCPDesktop(controlPanelContext, target, override, this.services);
     const openCPScreensaverWithContext = (target, override) =>
       openCPScreensaver(controlPanelContext, target, override);
     const applyScreensaverWithContext = (target) => applyScreensaver(controlPanelContext, target);
@@ -219,9 +244,10 @@ export class OrielApp {
     window.openCPScreensaver = openCPScreensaverWithContext;
     window.openCPSound = openCPSound;
     window.openCPFonts = openCPFonts;
-    window.openCPDefaults = openCPDefaults;
+    window.openCPDefaults = (target, override) => openCPDefaults(target, override, this.services);
     window.applyTheme = applyTheme;
-    window.setWallpaper = setWallpaper;
+    window.setWallpaper = (target) => setWallpaper(target, this.services);
+    window.applyWallpaperSettings = (...args) => applyWallpaperSettings(...args, this.services);
     window.previewScreensaver = previewScreensaverWithContext;
     window.applyScreensaver = applyScreensaverWithContext;
     window.applyFontSelection = applyFontSelection;

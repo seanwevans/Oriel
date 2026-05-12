@@ -1,9 +1,9 @@
 let selT = {};
 
-const getKernel = (services = {}) => services.kernel || window.kernel;
+const getKernel = (services = {}) => services.kernel || null;
 
 function refreshTaskList(listEl, winId, manager) {
-  const wmRef = manager || window.wm;
+  const wmRef = manager;
   if (!wmRef || !listEl) return;
   listEl.innerHTML = "";
   wmRef.windows.forEach((w) => {
@@ -57,7 +57,7 @@ export function initTaskMan(win, _initData, manager, services = {}) {
 }
 
 export function refreshAllTaskManagers(manager) {
-  const wmRef = manager || window.wm;
+  const wmRef = manager;
   if (!wmRef) return;
   document.querySelectorAll(".window").forEach((w) => {
     if (w.dataset.appType === "taskman") {

@@ -3,6 +3,7 @@ import { browserSessions } from "./apps/browser.js";
 import { AppRegistry } from "./core/AppRegistry.js";
 import { AppHost } from "./core/AppHost.js";
 import { publish, subscribe } from "./eventBus.js";
+import { createSystemServices, updateSystemServices } from "./core/systemServices.js";
 import {
   getAvailablePrograms as getProgramManagerApps,
   getIconForType as getProgramManagerIcon,
@@ -49,7 +50,14 @@ export class WindowManager {
       getDesktop: () => this.desktop,
       saveDesktopState: () => this.saveDesktopState()
     });
-    this.appServices = services;
+    const compatibilityKernel = services.kernel || globalThis.kernel || globalThis.window?.kernel || null;
+    this.services = updateSystemServices(createSystemServices({
+      publish,
+      subscribe,
+      kernel: compatibilityKernel,
+      ...services
+    }), { windowManager: this });
+    this.appServices = this.services;
     this.appRegistry = new AppRegistry({ controlPanelContext });
     this.appHost = new AppHost({
       onMountError: ({ err, winEl, type }) => {
@@ -136,13 +144,7 @@ export class WindowManager {
     const defaults = getProgramManagerDefaults(type) || {};
     const resolvedWidth = w || defaults.width || 500;
     const resolvedHeight = h || defaults.height || 400;
-    const services = {
-      ...this.appServices,
-      windowManager: this,
-      kernel,
-      publish,
-      subscribe
-    };
+    const services = this.services || createSystemServices({ windowManager: this, kernel: globalThis.kernel || globalThis.window?.kernel || null, publish, subscribe });
     const appInstance = this.appRegistry.createApp(type, {
       windowEl: null,
       initData,
@@ -193,7 +195,7 @@ export class WindowManager {
     }
     this.windows.push(winObj);
     // Register Process
-    kernel.registerProcess(id, title);
+    services.kernel?.registerProcess?.(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
     this._mountWindowApp({
@@ -225,7 +227,7 @@ export class WindowManager {
       this.windows.splice(index, 1);
       delete browserSessions[id];
       // Kill Process
-      kernel.unregisterProcess(id);
+      this.services?.kernel?.unregisterProcess?.(id);
       refreshAllTaskManagers(this);
       this.saveDesktopState();
     }
@@ -466,7 +468,7 @@ export class WindowManager {
         winObj,
         initData,
         wmInstance: this,
-        services,
+        services: this.services || createSystemServices({ windowManager: this, kernel: globalThis.kernel || globalThis.window?.kernel || null, publish, subscribe }),
         type
       });
     } else if (!hasContent) {
@@ -499,13 +501,7 @@ export class WindowManager {
     const app = registry.createApp(type, {
       windowEl: null,
       initData,
-      services: {
-        ...this.appServices,
-        windowManager: this,
-        kernel: globalThis.kernel || null,
-        publish,
-        subscribe
-      }
+      services: this.services || createSystemServices({ windowManager: this, kernel: globalThis.kernel || globalThis.window?.kernel || null, publish, subscribe })
     });
     return typeof app?.getWindowContent === "function" ? app.getWindowContent() : "";
   }
