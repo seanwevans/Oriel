@@ -544,7 +544,7 @@ test("RSS preview only exposes normalized HTTP(S) item links", async () => {
   console.error = () => {};
 
   try {
-    networking.initRssReader(win);
+    new networking.RssApp({ windowEl: win }).mount();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const listEl = win.elements.get(".rss-list");

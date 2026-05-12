@@ -195,11 +195,3 @@ export class MediaPlayerApp extends BaseApp {
   }
 }
 
-export function initMediaPlayer(w) {
-  const app = new MediaPlayerApp({ windowEl: w });
-  return app.mount();
-}
-
-export function getMediaPlayerContent() {
-  return new MediaPlayerApp().getWindowContent();
-}

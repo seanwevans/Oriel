@@ -152,11 +152,3 @@ export class SoundRecorderApp extends BaseApp {
   }
 }
 
-export function initSoundRecorder(w) {
-  const app = new SoundRecorderApp({ windowEl: w });
-  return app.mount();
-}
-
-export function getSoundRecContent() {
-  return new SoundRecorderApp().getWindowContent();
-}
