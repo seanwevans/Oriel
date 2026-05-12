@@ -1,10 +1,6 @@
 import { NETNEWS_GROUPS } from "../defaults/netnews.js";
-import {
-  fetchGroupedRssFeeds,
-  formatRssDate,
-  normalizeHttpUrl,
-  stripHtmlText
-} from "../networking.js";
+import { normalizeHttpUrl, stripHtmlText } from "../network/config.js";
+import { fetchGroupedRssFeeds, formatRssDate } from "../network/rssClient.js";
 import { getAppState, updateAppState } from "../state.js";
 
 export function getNetNewsContent() {

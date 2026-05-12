@@ -1,4 +1,4 @@
-import { subscribeToNetworkEvents } from "../networking.js";
+import { subscribeToNetworkEvents } from "../network/trackedFetch.js";
 
 function formatTime(ts) {
   try {

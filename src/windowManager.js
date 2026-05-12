@@ -1,5 +1,5 @@
 import { refreshAllTaskManagers } from "./apps/taskman.js";
-import { browserSessions } from "./networking.js";
+import { browserSessions } from "./apps/browser.js";
 import { AppRegistry } from "./core/AppRegistry.js";
 import { AppHost } from "./core/AppHost.js";
 import { publish, subscribe } from "./eventBus.js";

@@ -60,17 +60,11 @@ import { getCodePenContent, initCodePen } from "./codepen.js";
 import { getCalcContent, initCalc } from "./calc.js";
 import { getReadmeContent } from "./readme.js";
 import { getClipboardContent } from "./clipboard.js";
-import { getRssReaderContent } from "./rss.js";
+import { getRssReaderContent, initRssReader } from "./rss.js";
 import { getProgramManagerContent } from "./programManager.js";
-import {
-  getBrowserContent,
-  getRadioContent,
-  getRadioGardenContent,
-  initBrowser,
-  initRadio,
-  initRadioGarden,
-  initRssReader
-} from "../networking.js";
+import { getBrowserContent, initBrowser } from "./browser.js";
+import { getRadioGardenContent, initRadioGarden } from "./radioGarden.js";
+import { getRadioContent, initRadio } from "./radio.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "initializer", group: "initializers", target: "initializer" },

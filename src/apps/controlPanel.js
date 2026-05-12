@@ -12,7 +12,7 @@ import {
   getNetworkDefaults,
   resetNetworkDefaults,
   updateNetworkDefaults
-} from "../networking.js";
+} from "../network/config.js";
 import { publish } from "../eventBus.js";
 import {
   getWindowBodyContainer,
