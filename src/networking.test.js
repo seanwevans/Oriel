@@ -96,6 +96,15 @@ test("overrides can be cleared without resetting defaults", () => {
   assert.deepEqual(JSON.parse(stored), {});
 });
 
+test("config helpers normalize only HTTP(S) URLs and strip script markup", () => {
+  assert.equal(networking.normalizeHttpUrl("example.com/path"), "https://example.com/path");
+  assert.equal(networking.normalizeHttpUrl("localhost:5173/app"), "https://localhost:5173/app");
+  assert.equal(networking.normalizeHttpUrl("https://example.test"), "https://example.test");
+  assert.equal(networking.normalizeHttpUrl("ftp://example.test/file"), null);
+  assert.equal(networking.normalizeHttpUrl("   "), null);
+  assert.equal(networking.stripScriptTags("<p>Safe</p><script>alert(1)</script>"), "<p>Safe</p>");
+});
+
 test("RSS proxy text responses are read without attempting JSON first", async () => {
   const xml = "<?xml version=\"1.0\"?><rss><channel><title>Example</title></channel></rss>";
   const response = new Response(xml, {
@@ -118,6 +127,150 @@ test("RSS proxy JSON envelopes return their contents field", async () => {
   assert.equal(text, xml);
 });
 
+test("parseRssXml extracts channel metadata, Atom links, dates, and stripped summaries", () => {
+  const previousDOMParser = global.DOMParser;
+  const previousDocument = global.document;
+  global.DOMParser = installRssDomParser([
+    {
+      title: "Story One",
+      link: "https://example.test/story-one",
+      pubDate: "Tue, 12 May 2026 10:00:00 GMT",
+      description: "<p>Hello <strong>feed</strong></p><script>bad()</script>"
+    },
+    {
+      title: "Story Two",
+      href: "https://example.test/story-two",
+      updated: "2026-05-12T11:00:00Z",
+      summary: "Atom summary"
+    }
+  ]);
+  global.document = {
+    createElement: () => new FakeElement()
+  };
+
+  try {
+    const parsed = networking.parseRssXml("<rss></rss>");
+
+    assert.equal(parsed.title, "Example Feed");
+    assert.deepEqual(parsed.items, [
+      {
+        title: "Story One",
+        link: "https://example.test/story-one",
+        date: "Tue, 12 May 2026 10:00:00 GMT",
+        summary: "Hello feed"
+      },
+      {
+        title: "Story Two",
+        link: "https://example.test/story-two",
+        date: "2026-05-12T11:00:00Z",
+        summary: "Atom summary"
+      }
+    ]);
+  } finally {
+    if (previousDOMParser === undefined) delete global.DOMParser;
+    else global.DOMParser = previousDOMParser;
+    if (previousDocument === undefined) delete global.document;
+    else global.document = previousDocument;
+  }
+});
+
+test("fetchRssFeed proxies normalized URLs and returns parsed feed metadata", async () => {
+  const previousDOMParser = global.DOMParser;
+  const previousDocument = global.document;
+  const previousFetch = global.fetch;
+  const requested = [];
+  global.DOMParser = installRssDomParser([
+    { title: "Fetched", link: "https://example.test/fetched", description: "Fetched summary" }
+  ]);
+  global.document = { createElement: () => new FakeElement() };
+  global.fetch = async (url, options) => {
+    requested.push({ url, options });
+    return new Response("<rss></rss>", { status: 200 });
+  };
+
+  try {
+    const signal = AbortSignal.timeout(1000);
+    const parsed = await networking.fetchRssFeed("example.test/feed.xml", { signal });
+
+    assert.equal(requested.length, 1);
+    assert.equal(
+      requested[0].url,
+      `${networking.RSS_PROXY_ROOT}${encodeURIComponent("https://example.test/feed.xml")}`
+    );
+    assert.equal(requested[0].options.signal, signal);
+    assert.equal(parsed.sourceUrl, "https://example.test/feed.xml");
+    assert.equal(parsed.items[0].title, "Fetched");
+  } finally {
+    if (previousDOMParser === undefined) delete global.DOMParser;
+    else global.DOMParser = previousDOMParser;
+    if (previousDocument === undefined) delete global.document;
+    else global.document = previousDocument;
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
+test("trackedFetch publishes request and response activity with compact previews", async () => {
+  const previousFetch = global.fetch;
+  const events = [];
+  const unsubscribe = networking.subscribeToNetworkEvents((event) => events.push(event));
+  global.fetch = async () =>
+    new Response("Response body", {
+      status: 201,
+      headers: { "content-type": "text/plain" }
+    });
+
+  try {
+    const response = await networking.trackedFetch("https://api.example.test/items", {
+      method: "post",
+      body: "Request body"
+    });
+
+    assert.equal(response.status, 201);
+    assert.equal(events.length, 2);
+    assert.equal(events[0].phase, "request");
+    assert.equal(events[0].method, "POST");
+    assert.equal(events[0].bodyPreview, "Request body");
+    assert.equal(events[1].phase, "response");
+    assert.equal(events[1].id, events[0].id);
+    assert.equal(events[1].status, 201);
+    assert.equal(events[1].ok, true);
+    assert.equal(events[1].bodyPreview, "Response body");
+    assert.equal(events[1].contentType, "text/plain");
+  } finally {
+    unsubscribe();
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
+test("trackedFetch publishes an error activity before rethrowing", async () => {
+  const previousFetch = global.fetch;
+  const events = [];
+  const unsubscribe = networking.subscribeToNetworkEvents((event) => events.push(event));
+  global.fetch = async () => {
+    throw new Error("network down");
+  };
+
+  try {
+    await assert.rejects(
+      () => networking.trackedFetch(new Request("https://api.example.test/fail")),
+      /network down/
+    );
+    assert.equal(events.length, 2);
+    assert.equal(events[0].phase, "request");
+    assert.equal(events[1].phase, "error");
+    assert.equal(events[1].id, events[0].id);
+    assert.equal(events[1].status, "error");
+    assert.equal(events[1].ok, false);
+    assert.equal(events[1].error, "network down");
+  } finally {
+    unsubscribe();
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
 class FakeElement {
   constructor(className = "") {
     this.className = className;
@@ -137,7 +290,9 @@ class FakeElement {
   set innerHTML(value) {
     this._innerHTML = value;
     this.children = [];
-    this.textContent = String(value || "").replace(/<[^>]*>/g, "");
+    this.textContent = String(value || "")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<[^>]*>/g, "");
   }
 
   get innerHTML() {
@@ -297,7 +452,10 @@ function installRssDomParser(feedItems) {
           if (selector !== "item, entry") return [];
           return feedItems.map((item) => ({
             querySelector(itemSelector) {
-              if (itemSelector === "link[href]") return null;
+              if (itemSelector === "link[href]") {
+                if (!item.href) return null;
+                return { getAttribute: (name) => (name === "href" ? item.href : null) };
+              }
               if (item[itemSelector] === undefined) return null;
               return { textContent: item[itemSelector] };
             }
