@@ -88,6 +88,18 @@ Oriel features a vast library of pre-installed applications spanning several cat
 * **Radio:** Global station streaming via Radio Garden and Radio Browser.
 * **News:** RSS Reader and NetNews (Usenet-style) readers.
 
+## 🧑‍💻 Developer Notes
+
+### Migrating an app to `BaseApp`
+
+Use this checklist as the completion gate before deleting `LegacyFunctionApp` and `LEGACY_CLEANUP_KEYS`:
+
+- [ ] Implement an app class that extends `BaseApp` and moves static window markup into `getWindowContent()`.
+- [ ] Keep `getWindowContent()` side-effect free; move DOM listeners, timers, network requests, media setup, animation loops, and other runtime work into `mount()`.
+- [ ] Register every cleanup path through `dispose()` or `BaseApp` helpers such as `listen()`, `setInterval()`, `requestAnimationFrame()`, `trackObjectUrl()`, `trackMediaElement()`, and `trackAbortController()`.
+- [ ] Update the manifest entry to use `appClass` and remove legacy `initializer`, `initializerKey`, `contentProvider`, and `contentProviderKey` wiring for that app.
+- [ ] Add or update a lifecycle regression test that proves resources owned by the app are released on `dispose()`. Cover the relevant resource category, especially timers, animation frames, media/object URLs, and network `AbortController` usage.
+
 ## ⚙️ Configuration
 
 Many network-dependent features can be configured via environment variables in a `.env` file without changing the source code:

@@ -6,6 +6,44 @@ import { BaseApp } from "./base/BaseApp.js";
 
 const readApp = (file) => readFileSync(new URL(file, import.meta.url), "utf8");
 
+test("BaseApp disposes timers and object URLs", () => {
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const originalRevokeObjectURL = URL.revokeObjectURL;
+
+  let nextTimerId = 1;
+  const clearedIntervals = [];
+  const clearedTimeouts = [];
+  const revokedObjectUrls = [];
+
+  globalThis.setInterval = () => nextTimerId++;
+  globalThis.clearInterval = (id) => clearedIntervals.push(id);
+  globalThis.setTimeout = () => nextTimerId++;
+  globalThis.clearTimeout = (id) => clearedTimeouts.push(id);
+  URL.revokeObjectURL = (url) => revokedObjectUrls.push(url);
+
+  try {
+    const app = new BaseApp();
+    const intervalId = app.setInterval(() => {}, 1000);
+    const timeoutId = app.setTimeout(() => {}, 1000);
+    app.trackObjectUrl("blob:oriel-test");
+
+    app.dispose();
+
+    assert.deepEqual(clearedIntervals, [intervalId]);
+    assert.deepEqual(clearedTimeouts, [timeoutId]);
+    assert.deepEqual(revokedObjectUrls, ["blob:oriel-test"]);
+  } finally {
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+    URL.revokeObjectURL = originalRevokeObjectURL;
+  }
+});
+
 test("BaseApp disposes animation frames, abort controllers, media streams, and broadcast channels", () => {
   const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
   const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
@@ -55,6 +93,44 @@ test("BaseApp disposes animation frames, abort controllers, media streams, and b
     globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
     globalThis.AbortController = originalAbortController;
     globalThis.BroadcastChannel = originalBroadcastChannel;
+  }
+});
+
+test("BaseApp cleanup completion gate covers migrated resource categories", () => {
+  const expectations = {
+    "whiteboard.js": {
+      category: "timer-backed",
+      patterns: [/new BaseApp\(/, /app\.setInterval\(/, /app\.dispose\(\)/]
+    },
+    "soundRecorder.js": {
+      category: "animation-frame",
+      patterns: [/new BaseApp\(/, /app\.requestAnimationFrame\(/, /app\.dispose\(\)/]
+    },
+    "mediaPlayer.js": {
+      category: "media/object-URL",
+      patterns: [
+        /new BaseApp\(/,
+        /app\.trackObjectUrl\(/,
+        /video\.removeAttribute\("src"\)/,
+        /app\.dispose\(\)/
+      ]
+    },
+    "rss.js": {
+      category: "network/AbortController",
+      patterns: [
+        /new BaseApp\(/,
+        /app\.trackAbortController\(/,
+        /trackedFetch\([^,]+, \{ signal \}\)/,
+        /app\.dispose\(\)/
+      ]
+    }
+  };
+
+  for (const [file, { category, patterns }] of Object.entries(expectations)) {
+    const source = readApp(file);
+    for (const pattern of patterns) {
+      assert.match(source, pattern, `${file} should keep ${category} cleanup under BaseApp lifecycle`);
+    }
   }
 });
 
