@@ -9,7 +9,8 @@ export function getWallpaperSettings() {
 export function applyWallpaperSettings(
   url = DEFAULT_WALLPAPER,
   mode = "cover",
-  persist = false
+  persist = false,
+  services = {}
 ) {
   wallpaperSettings = { url, mode };
   const body = document.body;
@@ -32,7 +33,7 @@ export function applyWallpaperSettings(
     body.style.backgroundImage = "none";
   }
 
-  if (persist && window.wm) {
-    window.wm.saveDesktopState();
+  if (persist) {
+    services.windowManager?.saveDesktopState?.();
   }
 }

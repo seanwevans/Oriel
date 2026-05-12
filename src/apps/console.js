@@ -13,7 +13,9 @@ import {
 } from "../keyValueStore.js";
 import { BaseApp } from "./base/BaseApp.js";
 
-const getKernel = () => window.kernel;
+let consoleServices = {};
+
+const getKernel = () => consoleServices.kernel || null;
 
 class ConsoleApp extends BaseApp {
   mount() {
@@ -28,8 +30,9 @@ class ConsoleApp extends BaseApp {
   }
 }
 
-function initConsole(w) {
-  const app = new ConsoleApp({ windowEl: w });
+function initConsole(w, _initData = null, _manager = null, services = {}) {
+  consoleServices = services;
+  const app = new ConsoleApp({ windowEl: w, services });
   app.mount();
   return app;
 }
@@ -339,7 +342,8 @@ function registerDefaultConsoleCommands() {
   });
 }
 
-function registerConsoleCommands() {
+function registerConsoleCommands(services = {}) {
+  consoleServices = services;
   registerDefaultConsoleCommands();
 }
 

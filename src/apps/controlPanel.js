@@ -130,11 +130,11 @@ function handleThemeInputChange(container) {
   publish("theme:change", { theme: "custom", values: theme });
 }
 
-function setWallpaper(target) {
+function setWallpaper(target, services = {}) {
   const scope = resolveControlPanelScope(target);
   const url = scope.querySelector?.("#bg-url")?.value || "";
   const mode = scope.querySelector?.("#bg-mode")?.value || "cover";
-  applyWallpaperSettings(url, mode, true);
+  applyWallpaperSettings(url, mode, true, services);
 }
 
 function captureScreensaverForm(context, target) {
@@ -182,7 +182,7 @@ function previewScreensaver(context, target) {
   context?.screensaver?.start?.(chosen);
 }
 
-function openCPDesktop(context, el, containerOverride) {
+function openCPDesktop(context, el, containerOverride, services = {}) {
   let targetContainer = containerOverride;
   if (!targetContainer && el?.classList?.contains("cp-view-area")) {
     targetContainer = el;
@@ -215,8 +215,8 @@ function openCPDesktop(context, el, containerOverride) {
                 <option value="fill">Fill</option>
             </select>
             <div style="display:flex; gap:6px; justify-content:flex-end;">
-                <button class="task-btn" onclick="applyWallpaperSettings('${DEFAULT_WALLPAPER}', 'cover', true)">Reset</button>
-                <button class="task-btn" onclick="setWallpaper(this)">Apply</button>
+                <button class="task-btn" id="cp-wallpaper-reset">Reset</button>
+                <button class="task-btn" id="cp-wallpaper-apply">Apply</button>
             </div>
         </div>
         <div class="cp-section">
@@ -232,6 +232,13 @@ function openCPDesktop(context, el, containerOverride) {
   const mode = body.querySelector("#bg-mode");
   const current = getWallpaperSettings().mode || "cover";
   if (mode) mode.value = current;
+
+  body.querySelector("#cp-wallpaper-reset")?.addEventListener("click", () => {
+    applyWallpaperSettings(DEFAULT_WALLPAPER, "cover", true, services);
+  });
+  body.querySelector("#cp-wallpaper-apply")?.addEventListener("click", (event) => {
+    setWallpaper(event.currentTarget, services);
+  });
 }
 
 function openCPScreensaver(context, target, containerOverride) {
@@ -399,7 +406,7 @@ function openCPSound(target, containerOverride) {
   });
 }
 
-function openCPDefaults(target, containerOverride) {
+function openCPDefaults(target, containerOverride, services = {}) {
   let targetContainer = containerOverride;
   if (!targetContainer && target?.classList?.contains("cp-view-area")) {
     targetContainer = target;
@@ -481,7 +488,7 @@ function openCPDefaults(target, containerOverride) {
   body.querySelector("#cp-default-wallpaper-save")?.addEventListener("click", () => {
     const url = body.querySelector("#cp-default-wallpaper-url")?.value || DEFAULT_WALLPAPER;
     const mode = body.querySelector("#cp-default-wallpaper-mode")?.value || "cover";
-    applyWallpaperSettings(url, mode, true);
+    applyWallpaperSettings(url, mode, true, services);
     setWallpaperStatus("Wallpaper defaults saved.");
   });
 
@@ -659,7 +666,7 @@ function openCPColor(target, containerOverride) {
   });
 }
 
-function initControlPanel(context, w, _initData, windowManager) {
+function initControlPanel(context, w, _initData, windowManager, services = {}) {
   const menu = w.querySelector(".menu-bar");
   const body = getWindowBodyContainer(w);
   if (!menu || !body) return;
@@ -706,12 +713,12 @@ function initControlPanel(context, w, _initData, windowManager) {
 
   const switchView = (view) => {
     setActive(view);
-    if (view === "desktop") openCPDesktop(context, viewArea);
+    if (view === "desktop") openCPDesktop(context, viewArea, null, services);
     else if (view === "color") openCPColor(viewArea);
     else if (view === "screensaver") openCPScreensaver(context, viewArea);
     else if (view === "sound") openCPSound(viewArea);
     else if (view === "fonts") openCPFonts(viewArea);
-    else if (view === "defaults") openCPDefaults(viewArea);
+    else if (view === "defaults") openCPDefaults(viewArea, null, services);
     else renderHome();
   };
 

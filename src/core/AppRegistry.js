@@ -30,8 +30,8 @@ export class AppRegistry {
     const { initializer } = definition;
     if (!initializer) return null;
     if (!definition.usesControlPanelContext) return initializer;
-    return (windowEl, initData, wmInstance) =>
-      initializer(this.controlPanelContext, windowEl, initData, wmInstance);
+    return (windowEl, initData, wmInstance, services) =>
+      initializer(this.controlPanelContext, windowEl, initData, wmInstance, services);
   }
 
   createContentProviders() {
