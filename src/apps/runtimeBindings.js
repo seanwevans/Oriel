@@ -1,6 +1,6 @@
 import { getMinecraftRoot, initMinecraft } from "./minecraft.js";
 import { getN64Root, initN64 } from "./n64.js";
-import { getNotepadContent, initNotepad, NotepadApp } from "./notepad.js";
+import { NotepadApp } from "./notepad.js";
 import { getCardfileContent, initCardfile } from "./cardfile.js";
 import { getClockContent, initClock } from "./clock.js";
 import { getDiscordContent, initDiscord } from "./discord.js";
@@ -115,7 +115,6 @@ export const runtimeBindings = {
     initMinesweeper,
     initN64,
     initNetNews,
-    initNotepad,
     initPacketLab,
     initPaint,
     initPapersPlease,
@@ -177,7 +176,6 @@ export const runtimeBindings = {
     getMinesContent,
     getN64Root,
     getNetNewsContent,
-    getNotepadContent,
     getPacketLabContent,
     getPaintRoot,
     getPapersContent,

@@ -10,7 +10,7 @@ export const APP_MANIFEST = {
     showInProgramManager: false,
     contentProviderKey: "programManager"
   },
-  notepad: { type: "notepad", title: "Notepad", width: 300, height: 200, icon: "notepad", label: "Notepad", executableName: "NOTEPAD.EXE", initializer: "initNotepad", contentProvider: "getNotepadContent", appClass: "NotepadApp" },
+  notepad: { type: "notepad", title: "Notepad", width: 300, height: 200, icon: "notepad", label: "Notepad", executableName: "NOTEPAD.EXE", appClass: "NotepadApp" },
   write: { type: "write", title: "Write", width: 500, height: 400, icon: "write", label: "Write", executableName: "WRITE.EXE", initializer: "initWrite", contentProvider: "getWriteContent" },
   codepen: { type: "codepen", title: "CodePen Runner", width: 900, height: 640, icon: "codepen", label: "CodePen", executableName: "CODEPEN.EXE", initializer: "initCodePen", contentProviderKey: "codepen" },
   winfile: { type: "winfile", title: "File Manager", width: 500, height: 350, icon: "winfile", label: "File Mgr", executableName: "WINFILE.EXE", initializer: "initFileManager", contentProvider: "getWinFileContent" },
