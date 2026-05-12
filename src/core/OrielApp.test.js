@@ -164,7 +164,7 @@ function createImportHarness() {
 async function importFileSystem(json) {
   const { alerts, app, replaceCalls } = createImportHarness();
   await app.start();
-  globalThis.window.importFileSystem({
+  app.fileSystemActions.importFileSystem({
     target: { files: [{ content: json }], value: "selected" }
   });
   await Promise.resolve();

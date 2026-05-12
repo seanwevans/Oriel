@@ -39,7 +39,8 @@ export class LegacyFunctionApp extends BaseApp {
     return this.initializer(
       this.windowEl,
       this.initData,
-      this.services.windowManager
+      this.services.windowManager,
+      this.services
     );
   }
 }

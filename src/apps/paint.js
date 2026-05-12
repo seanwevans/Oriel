@@ -3,9 +3,9 @@ export function getPaintRoot(options = {}) {
     <div class="paint-layout">
       <div class="paint-main">
         <div class="paint-tools">
-          <button type="button" class="tool-btn active" data-tool="brush" onclick="selectPaintTool(this, 'brush')" aria-label="Brush tool">✎</button>
-          <button type="button" class="tool-btn" data-tool="eraser" onclick="selectPaintTool(this, 'eraser')" aria-label="Eraser tool">E</button>
-          <button type="button" class="tool-btn" style="color:red; font-size:12px;" onclick="clearPaint(this)" aria-label="Clear canvas">CLR</button>
+          <button type="button" class="tool-btn active" data-tool="brush" aria-label="Brush tool">✎</button>
+          <button type="button" class="tool-btn" data-tool="eraser" aria-label="Eraser tool">E</button>
+          <button type="button" class="tool-btn" data-action="clear-paint" style="color:red; font-size:12px;" aria-label="Clear canvas">CLR</button>
         </div>
         <div class="paint-canvas-container">
           <canvas class="paint-canvas" width="600" height="400"></canvas>
@@ -51,22 +51,28 @@ export function initPaint(w) {
     const s = document.createElement("div");
     s.className = "color-swatch";
     s.style.background = x;
-    s.onclick = () => {
+    s.addEventListener("click", () => {
       w.querySelectorAll(".color-swatch").forEach((z) =>
         z.classList.remove("active")
       );
       s.classList.add("active");
       w.pS.c = x;
-    };
+    });
     p.appendChild(s);
   });
-  c.onmousedown = (e) => {
+
+  w.querySelectorAll(".tool-btn[data-tool]").forEach((button) => {
+    button.addEventListener("click", () => selectPaintTool(button, button.dataset.tool));
+  });
+  w.querySelector('[data-action="clear-paint"]')?.addEventListener("click", () => clearPaint(w));
+
+  c.addEventListener("mousedown", (e) => {
     w.pS.d = true;
     const r = c.getBoundingClientRect();
     w.pS.lx = e.clientX - r.left;
     w.pS.ly = e.clientY - r.top;
-  };
-  c.onmousemove = (e) => {
+  });
+  c.addEventListener("mousemove", (e) => {
     if (!w.pS.d) return;
     const r = c.getBoundingClientRect(),
       x = e.clientX - r.left,
@@ -79,9 +85,16 @@ export function initPaint(w) {
     ctx.stroke();
     w.pS.lx = x;
     w.pS.ly = y;
-  };
-  window.onmouseup = () => {
+  });
+
+  const stopDrawing = () => {
     if (w.pS) w.pS.d = false;
+  };
+  window.addEventListener("mouseup", stopDrawing);
+  return {
+    dispose() {
+      window.removeEventListener("mouseup", stopDrawing);
+    }
   };
 }
 
@@ -92,7 +105,7 @@ export function selectPaintTool(el, t) {
   w.pS.t = t;
 }
 
-export function clearPaint(el) {
-  const c = el.closest(".window").querySelector("canvas");
+export function clearPaint(win) {
+  const c = win.querySelector("canvas");
   c.getContext("2d").fillRect(0, 0, c.width, c.height);
 }

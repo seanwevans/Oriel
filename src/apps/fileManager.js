@@ -19,15 +19,15 @@ function getWinFileContent() {
                 style="width:80px;height:18px;font-size:11px;"
                 placeholder="Folder Name"
               >
-              <button class="task-btn" onclick="createFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
-              <button class="task-btn" onclick="exportFileSystem()" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
+              <button class="task-btn" data-action="create-folder" style="height:20px;font-size:11px;padding:0 4px;">New Dir</button>
+              <button class="task-btn" data-action="export-file-system" style="height:20px;font-size:11px;padding:0 4px;">Export</button>
               <label class="task-btn file-btn" style="height:20px;font-size:11px;padding:0 4px;">
                 Import
-                <input type="file" accept="application/json" onchange="importFileSystem(event)">
+                <input type="file" accept="application/json" data-action="import-file-system">
               </label>
-              <button class="task-btn" onclick="installSelectedManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Install</button>
-              <button class="task-btn" onclick="uninstallManifest(this)" style="height:20px;font-size:11px;padding:0 4px;">Uninstall</button>
-              <button class="task-btn" onclick="mountLocalFolder(this)" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
+              <button class="task-btn" data-action="install-manifest" style="height:20px;font-size:11px;padding:0 4px;">Install</button>
+              <button class="task-btn" data-action="uninstall-manifest" style="height:20px;font-size:11px;padding:0 4px;">Uninstall</button>
+              <button class="task-btn" data-action="mount-local-folder" style="height:20px;font-size:11px;padding:0 4px;">MountLocal</button>
               <span>C\\</span>
             </div>
           </div>
@@ -52,13 +52,43 @@ class FileManagerApp extends BaseApp {
     this.windowEl.cP = defaultDrive;
     this.windowEl.cD = MOCK_FS[defaultDrive];
     this.windowEl.currentDirObj = this.windowEl.cD;
+    this.windowEl.windowManager = this.services.windowManager;
+    this.#bindToolbarActions();
     await rFT(this.windowEl);
     await rFL(this.windowEl);
   }
+
+  #bindToolbarActions() {
+    const actions = this.services.fileSystemActions;
+    if (!actions) return;
+
+    this.windowEl.addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-action]");
+      if (!trigger || !this.windowEl.contains(trigger)) return;
+
+      const handlers = {
+        "create-folder": () => actions.createFolder(trigger),
+        "export-file-system": () => actions.exportFileSystem(),
+        "install-manifest": () => actions.installSelectedManifest(trigger),
+        "uninstall-manifest": () => actions.uninstallManifest(trigger),
+        "mount-local-folder": () => actions.mountLocalFolder(trigger)
+      };
+
+      handlers[trigger.dataset.action]?.();
+    });
+
+    this.windowEl
+      .querySelector('[data-action="import-file-system"]')
+      ?.addEventListener("change", (event) => actions.importFileSystem(event));
+  }
 }
 
-async function initFileManager(w) {
-  const app = new FileManagerApp({ windowEl: w });
+async function initFileManager(w, initData, manager, services = {}) {
+  const app = new FileManagerApp({
+    windowEl: w,
+    initData,
+    services: { ...services, windowManager: manager }
+  });
   await app.mount();
   return app;
 }
@@ -73,7 +103,7 @@ function readFileAsDataUrl(file) {
   });
 }
 
-async function openNativeFile(node, displayName) {
+async function openNativeFile(node, displayName, windowManager) {
   const handle = node?.nativeHandle;
   if (!handle?.getFile) throw new Error("Native file handle unavailable.");
 
@@ -84,7 +114,7 @@ async function openNativeFile(node, displayName) {
 
   if (textExts.includes(ext)) {
     const text = await file.text();
-    wm.openWindow("notepad", name, 400, 300, {
+    windowManager?.openWindow("notepad", name, 400, 300, {
       text,
       nativeFileHandle: handle,
       fileName: name
@@ -94,18 +124,18 @@ async function openNativeFile(node, displayName) {
 
   if (file.type.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
     const src = await readFileAsDataUrl(file);
-    wm.openWindow("imageviewer", name, 720, 540, { name, src });
+    windowManager?.openWindow("imageviewer", name, 720, 540, { name, src });
     return;
   }
 
   if (file.type === "application/pdf" || ext === "pdf") {
     const src = await readFileAsDataUrl(file);
-    wm.openWindow("pdfreader", name, 700, 500, { name, src });
+    windowManager?.openWindow("pdfreader", name, 700, 500, { name, src });
     return;
   }
 
   const buffer = new Uint8Array(await file.arrayBuffer());
-  wm.openWindow("hexedit", name, 640, 520, buffer);
+  windowManager?.openWindow("hexedit", name, 640, 520, buffer);
 }
 
 function appendIconLabel(parent, iconMarkup, labelText) {
@@ -188,7 +218,7 @@ async function rFL(w) {
             await rFT(w);
             await rFL(w);
           } else if (i.nativeHandle) {
-            openNativeFile(i, k).catch((err) => {
+            openNativeFile(i, k, w.windowManager).catch((err) => {
               alert(`Unable to open file: ${err.message}`);
             });
           } else if (i.app) {
@@ -200,7 +230,7 @@ async function rFL(w) {
                   : i.app === "beatmaker"
                     ? { w: 720, h: 420 }
                     : { w: 400, h: 300 };
-            wm.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
+            w.windowManager?.openWindow(i.app, i.app.toUpperCase(), size.w, size.h, i.content);
           }
         };
         r.onclick = () => {

@@ -1,6 +1,6 @@
 let selT = {};
 
-const getKernel = () => window.kernel;
+const getKernel = (services = {}) => services.kernel || window.kernel;
 
 function refreshTaskList(listEl, winId, manager) {
   const wmRef = manager || window.wm;
@@ -18,8 +18,8 @@ function refreshTaskList(listEl, winId, manager) {
   });
 }
 
-function refreshProcessView(viewEl) {
-  const kernelRef = getKernel();
+function refreshProcessView(viewEl, services = {}) {
+  const kernelRef = getKernel(services);
   if (!viewEl || !kernelRef) return;
   viewEl.innerHTML =
     '<div class="queue-header">PID  | PRI | STATE   | CPU TIME | TASK</div>';
@@ -40,9 +40,20 @@ function refreshProcessView(viewEl) {
   });
 }
 
-export function initTaskMan(win, manager) {
-  refreshTaskList(win.querySelector("#task-list"), win.dataset.id, manager);
-  refreshProcessView(win.querySelector("#task-queue-view"));
+export function initTaskMan(win, _initData, manager, services = {}) {
+  const wmRef = services.windowManager || manager;
+  refreshTaskList(win.querySelector("#task-list"), win.dataset.id, wmRef);
+  refreshProcessView(win.querySelector("#task-queue-view"), services);
+
+  win.querySelector('[data-action="switch-task"]')?.addEventListener("click", () => {
+    switchTask(win, wmRef);
+  });
+  win.querySelector('[data-action="end-task"]')?.addEventListener("click", () => {
+    endTask(win, wmRef);
+  });
+  win.querySelector('[data-action="cancel-taskman"]')?.addEventListener("click", () => {
+    wmRef?.closeWindow(win.dataset.id);
+  });
 }
 
 export function refreshAllTaskManagers(manager) {
@@ -56,32 +67,31 @@ export function refreshAllTaskManagers(manager) {
   });
 }
 
-export function refreshAllProcessViews() {
+export function refreshAllProcessViews(services = {}) {
   document.querySelectorAll(".window").forEach((w) => {
     if (w.dataset.appType === "taskman") {
       const view = w.querySelector("#task-queue-view");
-      if (view) refreshProcessView(view);
+      if (view) refreshProcessView(view, services);
     }
   });
 }
 
-export function switchTask(e) {
-  const winId = e.target.closest(".window").dataset.id;
+export function switchTask(win, manager) {
+  const winId = win?.dataset.id;
   const targetId = selT[winId];
   if (targetId) {
-    window.wm?.restoreWindow(targetId);
-    window.wm?.focusWindow(targetId);
-    window.wm?.closeWindow(winId);
+    manager?.restoreWindow(targetId);
+    manager?.focusWindow(targetId);
+    manager?.closeWindow(winId);
   }
 }
 
-export function endTask(e) {
-  const winId = e.target.closest(".window").dataset.id;
+export function endTask(win, manager) {
+  const winId = win?.dataset.id;
   const targetId = selT[winId];
-  if (targetId) window.wm?.closeWindow(targetId);
+  if (targetId) manager?.closeWindow(targetId);
 }
 
 export function getTaskManContent() {
-    return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" onclick="switchTask(event)">Switch To</button><button class="task-btn" onclick="endTask(event)">End Task</button><button class="task-btn" onclick="wm.closeWindow(this.closest('.window').dataset.id)">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
-
+  return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" data-action="switch-task">Switch To</button><button class="task-btn" data-action="end-task">End Task</button><button class="task-btn" data-action="cancel-taskman">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
 }

@@ -9,6 +9,7 @@ let mineStartTime = null;
 let mineFlags = 0;
 
 export function initMinesweeper(w) {
+  w.querySelector('[data-action="reset-mines"]')?.addEventListener("click", () => resetMines(w));
   resetMines(w);
 
   return {
@@ -19,7 +20,7 @@ export function initMinesweeper(w) {
 }
 
 export function resetMines(w) {
-  const win = w || document.querySelector(".window.active");
+  const win = w;
   if (!win) return;
 
   const g = win.querySelector("#mines-grid");
@@ -51,8 +52,8 @@ export function resetMines(w) {
   for (let i = 0; i < mines.length; i++) {
     const c = document.createElement("div");
     c.className = "mine-cell";
-    c.onclick = () => clickMine(i, g, win);
-    c.oncontextmenu = (e) => toggleMineFlag(e, i, g, win);
+    c.addEventListener("click", () => clickMine(i, g, win));
+    c.addEventListener("contextmenu", (e) => toggleMineFlag(e, i, g, win));
     g.appendChild(c);
   }
 }
@@ -217,6 +218,6 @@ function stopMinesTimer() {
 }
 
 export function getMinesContent() {
-    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" onclick="resetMines()">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
+    return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" data-action="reset-mines">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
 
 }

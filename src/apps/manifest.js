@@ -15,7 +15,7 @@ export const APP_MANIFEST = {
   codepen: { type: "codepen", title: "CodePen Runner", width: 900, height: 640, icon: "codepen", label: "CodePen", executableName: "CODEPEN.EXE", initializer: "initCodePen", contentProviderKey: "codepen" },
   winfile: { type: "winfile", title: "File Manager", width: 500, height: 350, icon: "winfile", label: "File Mgr", executableName: "WINFILE.EXE", initializer: "initFileManager", contentProvider: "getWinFileContent" },
   cardfile: { type: "cardfile", title: "Cardfile", width: 350, height: 400, icon: "cardfile", label: "Cardfile", executableName: "CARDFILE.EXE", initializer: "initCardfile", contentProvider: "getCardfileContent" },
-  calc: { type: "calc", title: "Calculator", width: 220, height: 250, icon: "calc", label: "Calculator", executableName: "CALC.EXE", contentProvider: "getCalcContent" },
+  calc: { type: "calc", title: "Calculator", width: 220, height: 250, icon: "calc", label: "Calculator", executableName: "CALC.EXE", initializer: "initCalc", contentProvider: "getCalcContent" },
   mines: { type: "mines", title: "Minesweeper", width: 240, height: 320, icon: "mines", label: "Minesweeper", executableName: "WINMINE.EXE", initializer: "initMinesweeper", contentProvider: "getMinesContent" },
   kakuro: { type: "kakuro", title: "Kakuro", width: 320, height: 380, icon: "kakuro", label: "Kakuro", executableName: "KAKURO.EXE", initializer: "initKakuro", contentProvider: "getKakuroContent" },
   solitaire: { type: "solitaire", title: "Solitaire", width: 600, height: 450, icon: "solitaire", label: "Solitaire", executableName: "SOL.EXE", initializer: "initSolitaire", contentProvider: "getSolitaireContent" },

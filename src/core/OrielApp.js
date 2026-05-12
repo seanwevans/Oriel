@@ -13,11 +13,7 @@ import {
 } from "../filesystem.js";
 import { publish, subscribe } from "../eventBus.js";
 import { getNetworkDefaults, refreshNetworkedWindows } from "../networking.js";
-import {
-  endTask,
-  refreshAllProcessViews,
-  switchTask
-} from "../apps/taskman.js";
+import { refreshAllProcessViews } from "../apps/taskman.js";
 import { initScreensaver, hideUnlockPrompt, submitLockPassphrase } from "../apps/screensaver.js";
 import {
   applyFontSelection,
@@ -34,14 +30,11 @@ import {
   setWallpaper
 } from "../apps/controlPanel.js";
 import {
-  calcInput,
   handleConsoleKey,
   registerConsoleCommands,
   runCompiler,
   runPython
 } from "../apps/console.js";
-import { resetMines } from "../apps/minesweeper.js";
-import { selectPaintTool, clearPaint } from "../apps/paint.js";
 import { clearCharMap, copyCharMap } from "../apps/charmap.js";
 import { addDbRecord, deleteDbRecord, exportDbToCsv } from "../apps/database.js";
 import {
@@ -110,7 +103,7 @@ export class OrielApp {
       console.warn("Failed to bootstrap installed apps", err);
     });
 
-    this.kernel = new this.SimulatedKernel(() => refreshAllProcessViews());
+    this.kernel = new this.SimulatedKernel(() => refreshAllProcessViews({ kernel: this.kernel }));
 
     const initialDesktopState = this.state.loadDesktopState();
     this.initialDesktopState = initialDesktopState;
@@ -159,7 +152,12 @@ export class OrielApp {
 
   #bootDesktop() {
     if (this.windowManager) return this.windowManager;
-    this.windowManager = new this.WindowManager(this.initialDesktopState);
+    this.windowManager = new this.WindowManager(this.initialDesktopState, {
+      services: {
+        fileSystemActions: this.fileSystemActions,
+        alertUser: (message) => alert(message)
+      }
+    });
     window.wm = this.windowManager;
     return this.windowManager;
   }
@@ -192,30 +190,11 @@ export class OrielApp {
     window.kernel = this.kernel;
     registerConsoleCommands();
 
-    window.createFolder = this.fileSystemActions.createFolder.bind(this.fileSystemActions);
-    window.switchTask = switchTask;
-    window.endTask = endTask;
-
     window.handleConsoleKey = handleConsoleKey;
-    window.calcInput = calcInput;
-    window.resetMines = resetMines;
-    window.selectPaintTool = selectPaintTool;
-    window.clearPaint = clearPaint;
     window.copyCharMap = copyCharMap;
     window.clearCharMap = clearCharMap;
     window.runCompiler = runCompiler;
     window.runPython = runPython;
-    window.exportFileSystem = this.fileSystemActions.exportFileSystem.bind(
-      this.fileSystemActions
-    );
-    window.importFileSystem = this.fileSystemActions.importFileSystem.bind(this.fileSystemActions);
-    window.installSelectedManifest = this.fileSystemActions.installSelectedManifest.bind(
-      this.fileSystemActions
-    );
-    window.uninstallManifest = this.fileSystemActions.uninstallManifest.bind(
-      this.fileSystemActions
-    );
-    window.mountLocalFolder = this.fileSystemActions.mountLocalFolder.bind(this.fileSystemActions);
 
     window.addDbRecord = addDbRecord;
     window.exportDbToCsv = exportDbToCsv;
