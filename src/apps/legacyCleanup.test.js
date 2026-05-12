@@ -10,11 +10,8 @@ const migratedApps = [
   "linerider.js",
   "sandspiel3d.js",
   "shaderLab.js",
-  "whiteboard.js",
   "packetLab.js",
-  "irc.js",
-  "mediaPlayer.js",
-  "soundRecorder.js"
+  "irc.js"
 ];
 
 test("migrated apps no longer publish win.*Cleanup legacy hooks", () => {

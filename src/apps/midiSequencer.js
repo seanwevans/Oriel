@@ -28,7 +28,8 @@ const DEFAULT_TRACKS = [
   { id: "accent", name: "Accent", color: "#00c853", oscillator: "sine" }
 ];
 
-export function getMidiSequencerContent() {
+export class MidiSequencerApp extends BaseApp {
+  getWindowContent() {
   return `
     <div class="midi-sequencer">
       <div class="midi-toolbar">
@@ -54,10 +55,12 @@ export function getMidiSequencerContent() {
       </div>
     </div>
   `;
-}
 
-export function initMidiSequencer(win) {
-  const app = new BaseApp();
+  }
+
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const playBtn = win.querySelector("#midi-play");
   const stopBtn = win.querySelector("#midi-stop");
   const clearBtn = win.querySelector("#midi-clear");
@@ -374,10 +377,28 @@ export function initMidiSequencer(win) {
   updateTempoLabel();
   rebuildGrid();
 
-  return {
-    dispose() {
+
+    this._dispose = () => {
       stopPlayback();
-      app.dispose();
-    }
-  };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getMidiSequencerContent() {
+  return new MidiSequencerApp().getWindowContent();
+}
+
+export function initMidiSequencer(win) {
+  const app = new MidiSequencerApp({ windowEl: win });
+  return app.mount();
 }

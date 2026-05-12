@@ -59,7 +59,8 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-export function getMessengerContent() {
+export class MessengerApp extends BaseApp {
+  getWindowContent() {
   return `
     <div class="messenger">
       <div class="messenger-toolbar">
@@ -75,10 +76,12 @@ export function getMessengerContent() {
       </form>
     </div>
   `;
-}
 
-export function initMessenger(win) {
-  const app = new BaseApp({ windowEl: win });
+  }
+
+  mount() {
+    const win = this.windowEl;
+    const app = this;
   const logEl = win.querySelector(".messenger-log");
   const input = win.querySelector(".messenger-message");
   const sendBtn = win.querySelector(".messenger-send");
@@ -200,5 +203,23 @@ export function initMessenger(win) {
   // Ask peers for their history so new windows can hydrate quickly.
   broadcast({ type: "history:request", from: clientId });
 
-  return app;
+  return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function getMessengerContent() {
+  return new MessengerApp().getWindowContent();
+}
+
+export function initMessenger(win) {
+  const app = new MessengerApp({ windowEl: win });
+  return app.mount();
 }

@@ -100,28 +100,28 @@ test("BaseApp cleanup completion gate covers migrated resource categories", () =
   const expectations = {
     "whiteboard.js": {
       category: "timer-backed",
-      patterns: [/new BaseApp\(/, /app\.setInterval\(/, /app\.dispose\(\)/]
+      patterns: [/(?:extends BaseApp|new BaseApp\()/, /app\.setInterval\(/, /(?:super\.dispose\(\)|app\.dispose\(\))/]
     },
     "soundRecorder.js": {
       category: "animation-frame",
-      patterns: [/new BaseApp\(/, /app\.requestAnimationFrame\(/, /app\.dispose\(\)/]
+      patterns: [/(?:extends BaseApp|new BaseApp\()/, /app\.requestAnimationFrame\(/, /(?:super\.dispose\(\)|app\.dispose\(\))/]
     },
     "mediaPlayer.js": {
       category: "media/object-URL",
       patterns: [
-        /new BaseApp\(/,
+        /(?:extends BaseApp|new BaseApp\()/,
         /app\.trackObjectUrl\(/,
         /video\.removeAttribute\("src"\)/,
-        /app\.dispose\(\)/
+        /(?:super\.dispose\(\)|app\.dispose\(\))/
       ]
     },
     "rss.js": {
       category: "network/AbortController",
       patterns: [
-        /new BaseApp\(/,
+        /(?:extends BaseApp|new BaseApp\()/,
         /app\.trackAbortController\(/,
         /trackedFetch\([^,]+, \{ signal \}\)/,
-        /app\.dispose\(\)/
+        /(?:super\.dispose\(\)|app\.dispose\(\))/
       ]
     }
   };
@@ -136,11 +136,11 @@ test("BaseApp cleanup completion gate covers migrated resource categories", () =
 
 test("high-risk legacy apps use BaseApp helpers for listeners, timers, and external resources", () => {
   const expectations = {
-    "whiteboard.js": [/new BaseApp\(/, /app\.createBroadcastChannel\(/, /app\.setInterval\(/, /app\.listen\(/],
-    "soundRecorder.js": [/new BaseApp\(/, /app\.requestAnimationFrame\(/, /app\.trackMediaStream\(/, /app\.trackAudioContext\(/, /app\.trackObjectUrl\(/],
-    "mediaPlayer.js": [/new BaseApp\(/, /app\.setInterval\(/, /app\.trackObjectUrl\(/, /app\.listen\(/],
-    "tracker.js": [/new BaseApp\(/, /app\.setInterval\(/, /app\.setTimeout\(/, /app\.trackAudioContext\(/, /app\.trackObjectUrl\(/],
-    "midiSequencer.js": [/new BaseApp\(/, /app\.setInterval\(/, /app\.setTimeout\(/, /app\.trackAudioContext\(/, /app\.listen\(/]
+    "whiteboard.js": [/(?:extends BaseApp|new BaseApp\()/, /app\.createBroadcastChannel\(/, /app\.setInterval\(/, /app\.listen\(/],
+    "soundRecorder.js": [/(?:extends BaseApp|new BaseApp\()/, /app\.requestAnimationFrame\(/, /app\.trackMediaStream\(/, /app\.trackAudioContext\(/, /app\.trackObjectUrl\(/],
+    "mediaPlayer.js": [/(?:extends BaseApp|new BaseApp\()/, /app\.setInterval\(/, /app\.trackObjectUrl\(/, /app\.listen\(/],
+    "tracker.js": [/(?:extends BaseApp|new BaseApp\()/, /app\.setInterval\(/, /app\.setTimeout\(/, /app\.trackAudioContext\(/, /app\.trackObjectUrl\(/],
+    "midiSequencer.js": [/(?:extends BaseApp|new BaseApp\()/, /app\.setInterval\(/, /app\.setTimeout\(/, /app\.trackAudioContext\(/, /app\.listen\(/]
   };
 
   for (const [file, patterns] of Object.entries(expectations)) {
@@ -148,7 +148,7 @@ test("high-risk legacy apps use BaseApp helpers for listeners, timers, and exter
     for (const pattern of patterns) {
       assert.match(source, pattern, `${file} should use ${pattern}`);
     }
-    assert.match(source, /dispose[\s\S]*app\.dispose\(\)/, `${file} should flush BaseApp disposables`);
+    assert.match(source, /dispose[\s\S]*(?:super\.dispose\(\)|app\.dispose\(\))/, `${file} should flush BaseApp disposables`);
   }
 });
 
@@ -167,7 +167,7 @@ test("animation-frame apps cancel outstanding frames in dispose", () => {
   for (const file of animationApps) {
     const source = readApp(file);
     assert.match(source, /requestAnimationFrame\(/, `${file} should be an animation-frame app`);
-    assert.match(source, /return\s+\{[\s\S]*dispose|return\s+\{\s*dispose:/, `${file} should return a disposable owner`);
-    assert.match(source, /cancelAnimationFrame|app\.dispose\(\)/, `${file} should cancel frames during cleanup`);
+    assert.match(source, /return\s+\{[\s\S]*dispose|return\s+\{\s*dispose:|return\s+this/, `${file} should return a disposable owner`);
+    assert.match(source, /cancelAnimationFrame|super\.dispose\(\)|app\.dispose\(\)/, `${file} should cancel frames during cleanup`);
   }
 });

@@ -8,7 +8,7 @@ import { getSpotifyContent, initSpotify } from "./spotify.js";
 import { getIRCContent, initIRC } from "./irc.js";
 import { getBbsContent, initBbs } from "./bbsDialer.js";
 import { getEmailContent, initEmail } from "./email.js";
-import { getMessengerContent, initMessenger } from "./messenger.js";
+import { MessengerApp, getMessengerContent, initMessenger } from "./messenger.js";
 import { getRetroAIContent, initRetroAI } from "./retroAI.js";
 import { getKakuroContent, initKakuro } from "./kakuro.js";
 import { getMarkdownContent, initMarkdownViewer } from "./markdown.js";
@@ -22,27 +22,27 @@ import { getVmContent, initVm } from "./vm.js";
 import { getWriteContent, initWrite } from "./write.js";
 import { getSandspielRoot, initSandspiel } from "./sandspiel.js";
 import { getSandspiel3DRoot, initSandspiel3d } from "./sandspiel3d.js";
-import { getWhiteboardRoot, initWhiteboard } from "./whiteboard.js";
+import { WhiteboardApp, getWhiteboardRoot, initWhiteboard } from "./whiteboard.js";
 import { getImageViewerContent, initImageViewer } from "./imageViewer.js";
 import { getReversiContent, initReversi } from "./reversi.js";
 import { getSolitaireContent, initSolitaire } from "./solitaire.js";
 import { getSudokuContent, initSudoku } from "./sudoku.js";
 import { getCharMapContent, initCharMap } from "./charmap.js";
 import { getBeatMakerContent, initBeatMaker } from "./beatMaker.js";
-import { getMidiSequencerContent, initMidiSequencer } from "./midiSequencer.js";
+import { MidiSequencerApp, getMidiSequencerContent, initMidiSequencer } from "./midiSequencer.js";
 import { getDatabaseContent, initDatabase } from "./database.js";
-import { getMediaPlayerContent, initMediaPlayer } from "./mediaPlayer.js";
+import { MediaPlayerApp, getMediaPlayerContent, initMediaPlayer } from "./mediaPlayer.js";
 import { getTaskManContent, initTaskMan } from "./taskman.js";
 import { getResetContent, initReset } from "./reset.js";
 import { getHexEditorContent, initHexEditor } from "./hexEditor.js";
-import { getSoundRecContent, initSoundRecorder } from "./soundRecorder.js";
+import { SoundRecorderApp, getSoundRecContent, initSoundRecorder } from "./soundRecorder.js";
 import { getDoomContent, initDoom } from "./doom.js";
 import { FileManagerApp, getWinFileContent, initFileManager } from "./fileManager.js";
 import { ConsoleApp, getCompilerContent, getConsoleContent, getPythonContent, initConsole } from "./console.js";
 import { getPhotoshopContent, initPhotoshop } from "./photoshop.js";
 import { getLineRiderContent, initLineRider } from "./linerider.js";
 import { getSimCityContent, initSimCity } from "./simcity.js";
-import { getNetNewsContent, initNetNews } from "./netnews.js";
+import { NetNewsApp, getNetNewsContent, initNetNews } from "./netnews.js";
 import { getSkiFreeContent, initSkiFree } from "./skifree.js";
 import { getPinballContent, initPinball } from "./pinball.js";
 import { getAngryBirdsContent, initAngryBirds } from "./angrybirds.js";
@@ -51,7 +51,7 @@ import { getMafiaContent, initMafia } from "./mafia.js";
 import { getPacketLabContent, initPacketLab } from "./packetLab.js";
 import { getApiClientContent, initApiClient } from "./apiClient.js";
 import { getTi83Root, initTi83 } from "./ti83.js";
-import { getTrackerContent, initTracker } from "./tracker.js";
+import { TrackerApp, getTrackerContent, initTracker } from "./tracker.js";
 import { getControlPanelContent, initControlPanel } from "./controlPanel.js";
 import { getChessContent, initChess } from "./chess.js";
 import { getPapersContent, initPapersPlease } from "./papersPlease.js";
@@ -60,7 +60,7 @@ import { getCodePenContent, initCodePen } from "./codepen.js";
 import { getCalcContent, initCalc } from "./calc.js";
 import { getReadmeContent } from "./readme.js";
 import { getClipboardContent } from "./clipboard.js";
-import { getRssReaderContent, initRssReader } from "./rss.js";
+import { RssApp, getRssReaderContent, initRssReader } from "./rss.js";
 import { getProgramManagerContent } from "./programManager.js";
 import { getBrowserContent, initBrowser } from "./browser.js";
 import { getRadioGardenContent, initRadioGarden } from "./radioGarden.js";
@@ -204,7 +204,15 @@ export const runtimeBindings = {
   appClasses: {
     ConsoleApp,
     FileManagerApp,
-    NotepadApp
+    MediaPlayerApp,
+    MessengerApp,
+    MidiSequencerApp,
+    NetNewsApp,
+    NotepadApp,
+    RssApp,
+    SoundRecorderApp,
+    TrackerApp,
+    WhiteboardApp
   },
   initializerKeys: {
     browser: initBrowser,

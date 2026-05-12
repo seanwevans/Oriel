@@ -1,8 +1,16 @@
 import { registerMediaElement } from "../audio.js";
 import { BaseApp } from "./base/BaseApp.js";
 
-export function initSoundRecorder(w) {
-  const app = new BaseApp();
+export class SoundRecorderApp extends BaseApp {
+  getWindowContent() {
+    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
+
+
+  }
+
+  mount() {
+    const w = this.windowEl;
+    const app = this;
   const canvas = w.querySelector(".sound-wave-canvas");
   const ctx = canvas.getContext("2d");
   const status = w.querySelector("#sound-status");
@@ -115,7 +123,8 @@ export function initSoundRecorder(w) {
   app.listen(stopBtn, "click", onStop);
   app.listen(playBtn, "click", onPlay);
 
-  const dispose = () => {
+
+    this._dispose = () => {
     if (disposed) return;
     disposed = true;
     if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
@@ -128,13 +137,26 @@ export function initSoundRecorder(w) {
     app.cancelAnimationFrame(animationId);
     if (source) source.disconnect();
     revokeAudioUrl();
-    app.dispose();
-  };
 
-  return { dispose };
+    };
+
+    return this;
+
+  }
+
+  dispose() {
+    const dispose = this._dispose;
+    this._dispose = null;
+    if (dispose) dispose();
+    super.dispose();
+  }
+}
+
+export function initSoundRecorder(w) {
+  const app = new SoundRecorderApp({ windowEl: w });
+  return app.mount();
 }
 
 export function getSoundRecContent() {
-    return `<div class="sound-rec-layout"><div class="sound-vis"><canvas class="sound-wave-canvas" width="246" height="56"></canvas></div><div class="sound-controls"><div class="media-btn" id="btn-rec" title="Record"><div class="symbol-rec"></div></div><div class="media-btn" id="btn-stop" title="Stop"><div class="symbol-stop"></div></div><div class="media-btn" id="btn-play" title="Play"><div class="symbol-play"></div></div></div><div style="margin-top:5px; font-size:12px;" id="sound-status">Ready</div></div>`;
-
+  return new SoundRecorderApp().getWindowContent();
 }
