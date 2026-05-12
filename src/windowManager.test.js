@@ -274,6 +274,82 @@ function createTestWindowManager() {
   return wm;
 }
 
+function createOpenWindowManager({ appInstance = null, initializer = null } = {}) {
+  const wm = createTestWindowManager();
+  const kernel = createTestKernel();
+  wm.desktop = new FakeElement("div");
+  wm.minimizedContainer = new FakeElement("div");
+  wm.highestZ = 100;
+  wm.isRestoring = false;
+  wm.services = { kernel, windowManager: wm };
+  wm.appRegistry = {
+    createApp(_type, args) {
+      wm.createAppArgs = args;
+      return appInstance;
+    },
+    resolve() {
+      return initializer;
+    },
+    getRuntimeInitializer() {
+      return initializer;
+    }
+  };
+  wm.appHost = {
+    mountCalls: [],
+    unmountCalls: [],
+    mount({ winObj }) {
+      this.mountCalls.push(winObj.id);
+      return null;
+    },
+    mountInstance({ appInstance: mountedInstance, winEl, winObj }) {
+      this.mountCalls.push(winObj.id);
+      mountedInstance.setWindowElement?.(winEl);
+      const result = mountedInstance.mount?.();
+      if (result && typeof result.then === "function") {
+        winObj.appInstance = mountedInstance;
+        winEl.appInstance = mountedInstance;
+        return result.then((resolved) => {
+          winObj.appInstance = resolved || mountedInstance;
+          winEl.appInstance = winObj.appInstance;
+          return winObj.appInstance;
+        });
+      }
+      winObj.appInstance = result || mountedInstance;
+      winEl.appInstance = winObj.appInstance;
+      return winObj.appInstance;
+    },
+    unmount(winObj) {
+      this.unmountCalls.push(winObj.id);
+      winObj.appInstance?.dispose?.();
+      winObj.appInstance = null;
+    }
+  };
+  wm.saveCalls = 0;
+  wm.saveDesktopState = () => {
+    wm.saveCalls += 1;
+  };
+  wm.getIconForType = () => "";
+  wm.getIconElementForType = () => new FakeElement("span");
+  wm.focusWindow = () => {};
+  wm.closeWindow = WindowManager.prototype.closeWindow;
+  wm.minimizeWindow = WindowManager.prototype.minimizeWindow;
+  wm.maximizeWindow = WindowManager.prototype.maximizeWindow;
+  wm.restoreWindow = WindowManager.prototype.restoreWindow;
+  wm.getTopWindowByZ = WindowManager.prototype.getTopWindowByZ;
+  wm.getWindowRectSnapshot = WindowManager.prototype.getWindowRectSnapshot;
+  wm.getStatePersistence = WindowManager.prototype.getStatePersistence;
+  wm.getWindowStateSnapshot = WindowManager.prototype.getWindowStateSnapshot;
+  return wm;
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 test("createWindowDOM renders a hostile title as text, not markup", () => {
   const wm = createTestWindowManager();
   const hostileTitle = "<img src=x onerror=alert(1)>";
@@ -418,6 +494,157 @@ test("openWindow generates unique IDs when Date.now is fixed", () => {
     Date.now = originalDateNow;
     testKernel.processes = [];
   }
+});
+
+test("openWindow renders app content, registers a process, and persists state", () => {
+  const appInstance = {
+    getWindowContent() {
+      const content = new FakeElement("section");
+      content.textContent = "Mounted content";
+      return content;
+    },
+    mount() {
+      return this;
+    },
+    setWindowElement(winEl) {
+      this.windowEl = winEl;
+    }
+  };
+  const wm = createOpenWindowManager({ appInstance });
+
+  const win = wm.openWindow("notes", "Notes", 320, 240, { text: "hello" });
+
+  assert.equal(win.id, "win-1");
+  assert.equal(win.type, "notes");
+  assert.equal(wm.desktop.children[0], win.el);
+  assert.equal(wm.createAppArgs.initData.text, "hello");
+  assert.equal(wm.createAppArgs.services.windowManager, wm);
+  assert.deepEqual(wm.services.kernel.processes, [
+    { pid: "win-1", name: "Notes", state: "READY", priority: 1, cpuTime: 0 }
+  ]);
+  assert.equal(wm.saveCalls, 1);
+  assert.equal(appInstance.windowEl, win.el);
+  assert.equal(win.appInstance, appInstance);
+});
+
+test("openWindow tracks async app mount promises until resolution", async () => {
+  const ready = deferred();
+  const resolvedInstance = { mounted: true };
+  const appInstance = {
+    getWindowContent: () => "Loading",
+    mount: () => ready.promise,
+    setWindowElement(winEl) {
+      this.windowEl = winEl;
+    }
+  };
+  const wm = createOpenWindowManager({ appInstance });
+
+  const win = wm.openWindow("async", "Async", 320, 240);
+
+  assert.equal(win.pendingMountPromise, win.el.pendingMountPromise);
+  assert.ok(win.pendingMountPromise instanceof Promise);
+  assert.equal(win.appInstance, appInstance);
+
+  ready.resolve(resolvedInstance);
+  await win.pendingMountPromise;
+  assert.equal(win.appInstance, resolvedInstance);
+});
+
+test("closeWindow unmounts apps, removes windows, unregisters processes, and saves", () => {
+  let disposed = false;
+  const appInstance = {
+    getWindowContent: () => "Closable",
+    mount: () => appInstance,
+    dispose: () => {
+      disposed = true;
+    }
+  };
+  const wm = createOpenWindowManager({ appInstance });
+  const win = wm.openWindow("close-me", "Close Me", 320, 240);
+  wm.saveCalls = 0;
+
+  wm.closeWindow(win.id);
+
+  assert.equal(disposed, true);
+  assert.deepEqual(wm.appHost.unmountCalls, [win.id]);
+  assert.equal(wm.desktop.children.includes(win.el), false);
+  assert.equal(wm.windows.length, 0);
+  assert.deepEqual(wm.services.kernel.processes, []);
+  assert.equal(wm.saveCalls, 1);
+});
+
+test("state snapshots persist minimized last geometry and active z-index", () => {
+  const wm = createOpenWindowManager();
+  wm.highestZ = 123;
+  const winEl = wm.createWindowDOM("snap", "notes", "Snap", 320, 240, "");
+  winEl.style.left = "20px";
+  winEl.style.top = "30px";
+  winEl.style.width = "320px";
+  winEl.style.height = "240px";
+  winEl.style.zIndex = "222";
+  const win = {
+    id: "snap",
+    el: winEl,
+    type: "notes",
+    title: "Snap",
+    minimized: true,
+    maximized: false,
+    prevRect: null,
+    lastRect: { left: 7, top: 8, width: 90, height: 91 }
+  };
+  wm.windows = [win];
+
+  assert.deepEqual(wm.getWindowStateSnapshot(), [
+    {
+      id: "snap",
+      type: "notes",
+      title: "Snap",
+      left: 7,
+      top: 8,
+      width: 90,
+      height: 91,
+      minimized: true,
+      maximized: false,
+      prevRect: null,
+      zIndex: 222
+    }
+  ]);
+});
+
+test("restored minimized and maximized windows apply saved state overrides", () => {
+  const wm = createOpenWindowManager();
+  wm.getProgramDefaults = () => ({ title: "Restored", width: 500, height: 400 });
+  const minimized = [];
+  const maximized = [];
+  wm.minimizeWindow = (id) => minimized.push(id);
+  wm.maximizeWindow = (id) => maximized.push(id);
+  wm.openWindow = WindowManager.prototype.openWindow;
+
+  wm.restoreWindows([
+    {
+      id: "restored-a",
+      type: "notes",
+      title: "Restored A",
+      left: 11,
+      top: 12,
+      width: 333,
+      height: 222,
+      minimized: true,
+      maximized: true,
+      prevRect: { left: "1px" },
+      zIndex: 444
+    }
+  ]);
+
+  assert.equal(wm.windows[0].id, "restored-a");
+  assert.equal(wm.windows[0].el.style.left, "11px");
+  assert.equal(wm.windows[0].el.style.top, "12px");
+  assert.equal(wm.windows[0].el.style.width, "333px");
+  assert.equal(wm.windows[0].el.style.height, "222px");
+  assert.equal(wm.windows[0].el.style.zIndex, 444);
+  assert.deepEqual(wm.windows[0].prevRect, { left: "1px" });
+  assert.deepEqual(maximized, ["restored-a"]);
+  assert.deepEqual(minimized, ["restored-a"]);
 });
 
 test("renderRuntimeError renders hostile error messages as text", () => {

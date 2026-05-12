@@ -125,6 +125,129 @@ function createFakeWindow() {
   };
 }
 
+function deferred() {
+  let resolve;
+  const promise = new Promise((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
+test("start waits for filesystem and installer readiness before desktop and screensaver boot", async () => {
+  const order = [];
+  const fsReady = deferred();
+  const installerReady = deferred();
+  const initialDesktopState = {
+    wallpaper: { url: "wallpaper.png", mode: "contain" },
+    themeCustom: null
+  };
+  const filesystem = {
+    MOCK_FS: { "C\\": { type: "dir", children: {} } },
+    exportFileSystemAsJson: async () => "{}",
+    hydrateNativeDirectory: async (node) => node,
+    isNativeFsSupported: () => false,
+    mountNativeFolder: async () => null,
+    replaceFileSystem: async () => {},
+    saveFileSystem: async () => {},
+    fileSystemReady: fsReady.promise.then(() => order.push("filesystem ready"))
+  };
+  let constructedWindowManager = null;
+
+  class TestKernel {
+    constructor(refreshProcesses) {
+      this.refreshProcesses = refreshProcesses;
+      order.push("kernel");
+    }
+
+    registerCommand() {}
+  }
+
+  class TestWindowManager {
+    constructor(initialState, { services }) {
+      this.initialState = initialState;
+      this.services = services;
+      this.windows = [];
+      constructedWindowManager = this;
+      order.push("window manager");
+    }
+  }
+
+  const app = new OrielApp({
+    WindowManager: TestWindowManager,
+    SimulatedKernel: TestKernel,
+    filesystem,
+    state: {
+      loadDesktopState() {
+        order.push("desktop state");
+        return initialDesktopState;
+      }
+    },
+    wallpaper: {
+      applyWallpaperSettings(url, mode) {
+        order.push(`wallpaper ${url} ${mode}`);
+      }
+    },
+    installer: {
+      bootstrapInstallations() {
+        order.push("installer bootstrap");
+        return installerReady.promise.then(() => order.push("installer ready"));
+      }
+    },
+    screensaver: {
+      initScreensaver() {
+        order.push("screensaver");
+      }
+    }
+  });
+
+  const startPromise = app.start();
+  await Promise.resolve();
+
+  assert.deepEqual(order, [
+    "installer bootstrap",
+    "kernel",
+    "desktop state",
+    "wallpaper wallpaper.png contain"
+  ]);
+  assert.equal(globalThis.window.kernel, app.kernel);
+  assert.equal(globalThis.window.wm, undefined);
+
+  fsReady.resolve();
+  await Promise.resolve();
+  assert.deepEqual(order, [
+    "installer bootstrap",
+    "kernel",
+    "desktop state",
+    "wallpaper wallpaper.png contain",
+    "filesystem ready"
+  ]);
+  assert.equal(globalThis.window.wm, undefined);
+
+  installerReady.resolve();
+  await startPromise;
+
+  assert.deepEqual(order, [
+    "installer bootstrap",
+    "kernel",
+    "desktop state",
+    "wallpaper wallpaper.png contain",
+    "filesystem ready",
+    "installer ready",
+    "window manager",
+    "screensaver"
+  ]);
+  assert.equal(app.windowManager, constructedWindowManager);
+  assert.equal(constructedWindowManager.initialState, initialDesktopState);
+  assert.equal(constructedWindowManager.services.kernel, app.kernel);
+  assert.equal(constructedWindowManager.services.windowManager, constructedWindowManager);
+  assert.equal(globalThis.window.wm, constructedWindowManager);
+  assert.equal(typeof globalThis.window.handleConsoleKey, "function");
+  assert.equal(typeof globalThis.window.openCPDesktop, "function");
+  assert.equal(typeof globalThis.window.applyWallpaperSettings, "function");
+  assert.equal(typeof globalThis.window.submitLockPassphrase, "function");
+  assert.equal(typeof globalThis.window.getBrowserPlaceholder, "function");
+});
+
 function createImportHarness() {
   const alerts = [];
   const replaceCalls = [];

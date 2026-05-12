@@ -71,7 +71,9 @@ export class OrielApp {
     state = { loadDesktopState },
     wallpaper = { applyWallpaperSettings },
     audio = audioActions,
-    network = networkActions
+    network = networkActions,
+    installer = { bootstrapInstallations },
+    screensaver = { initScreensaver }
   } = {}) {
     this.WindowManager = WindowManager;
     this.SimulatedKernel = SimulatedKernel;
@@ -80,6 +82,8 @@ export class OrielApp {
     this.wallpaper = wallpaper;
     this.audio = audio;
     this.network = network;
+    this.installer = installer;
+    this.screensaver = screensaver;
 
     this.services = createSystemServices({
       windowManager: null,
@@ -121,7 +125,7 @@ export class OrielApp {
     subscribe("fs:change", () => this.fileSystemActions?.refreshOpenFileManagers());
     subscribe("network:config-update", refreshNetworkedWindows);
 
-    this.installerReady = bootstrapInstallations().catch((err) => {
+    this.installerReady = this.installer.bootstrapInstallations().catch((err) => {
       console.warn("Failed to bootstrap installed apps", err);
     });
 
@@ -145,7 +149,7 @@ export class OrielApp {
     this.#bootDesktop();
     this.desktopController.initDesktopContextMenu();
     this.#initSplash();
-    initScreensaver();
+    this.screensaver.initScreensaver();
     this.desktopImportController.initDragAndDropImport();
   }
 
