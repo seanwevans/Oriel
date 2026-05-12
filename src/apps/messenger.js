@@ -78,7 +78,7 @@ export function getMessengerContent() {
 }
 
 export function initMessenger(win) {
-  const app = new BaseApp();
+  const app = new BaseApp({ windowEl: win });
   const logEl = win.querySelector(".messenger-log");
   const input = win.querySelector(".messenger-message");
   const sendBtn = win.querySelector(".messenger-send");
@@ -147,7 +147,7 @@ export function initMessenger(win) {
     }
   }
 
-  const unsubscribe = app.registerDisposable(subscribe("messenger:event", handleIncoming));
+  app.registerDisposable(subscribe("messenger:event", handleIncoming));
   const handleChannelMessage = (event) => handleIncoming(event.data);
   if (channel) {
     app.listen(channel, "message", handleChannelMessage);
@@ -200,16 +200,5 @@ export function initMessenger(win) {
   // Ask peers for their history so new windows can hydrate quickly.
   broadcast({ type: "history:request", from: clientId });
 
-  let disposed = false;
-  function dispose() {
-    if (disposed) return;
-    disposed = true;
-    app.unregisterDisposable(unsubscribe);
-    unsubscribe();
-    app.dispose();
-  }
-
-  app.listen(win, "app:destroy", dispose);
-
-  return { dispose };
+  return app;
 }

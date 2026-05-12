@@ -9,6 +9,10 @@
  *   subscribe. Apps should use these injected dependencies instead of importing
  *   host singletons when possible.
  *
+ * Apps expose only these lifecycle hooks to host code; the host must not know
+ * app-specific cleanup names, DOM events such as legacy app:destroy, or other
+ * compatibility shims.
+ *
  * Subclasses implement these lifecycle hooks:
  * - getWindowContent(): return the initial DOM node or HTML string for the
  *   window body. It must not register listeners, timers, or external resources.

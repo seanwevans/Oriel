@@ -5,6 +5,72 @@ import { initMessenger } from "../apps/messenger.js";
 import { publish } from "../eventBus.js";
 import { AppHost } from "./AppHost.js";
 
+test("mountInstance mounts a class app and assigns the window element before mount", () => {
+  const calls = [];
+  const winEl = {};
+  const winObj = { el: winEl };
+
+  class TestApp {
+    setWindowElement(windowEl) {
+      calls.push(["setWindowElement", windowEl]);
+      this.windowEl = windowEl;
+    }
+
+    mount() {
+      calls.push(["mount", this.windowEl]);
+      return this;
+    }
+  }
+
+  const appInstance = new TestApp();
+  const mountedAppInstance = new AppHost().mountInstance({
+    appInstance,
+    winEl,
+    winObj,
+    type: "class-app"
+  });
+
+  assert.equal(mountedAppInstance, appInstance);
+  assert.equal(winObj.appInstance, appInstance);
+  assert.equal(winEl.appInstance, appInstance);
+  assert.deepEqual(calls, [
+    ["setWindowElement", winEl],
+    ["mount", winEl]
+  ]);
+});
+
+test("mountInstance awaits an async class app mount result", async () => {
+  const winEl = {};
+  const winObj = { el: winEl };
+  const resolvedAppInstance = { dispose() {} };
+
+  class AsyncTestApp {
+    mount() {
+      return Promise.resolve(resolvedAppInstance);
+    }
+
+    dispose() {}
+  }
+
+  const initialAppInstance = new AsyncTestApp();
+  const pendingMountPromise = new AppHost().mountInstance({
+    appInstance: initialAppInstance,
+    winEl,
+    winObj,
+    type: "async-class-app"
+  });
+
+  assert.equal(winObj.appInstance, initialAppInstance);
+  assert.equal(winEl.appInstance, initialAppInstance);
+  assert.equal(winObj.pendingMountPromise, pendingMountPromise);
+
+  assert.equal(await pendingMountPromise, resolvedAppInstance);
+  assert.equal(winObj.appInstance, resolvedAppInstance);
+  assert.equal(winEl.appInstance, resolvedAppInstance);
+  assert.equal(winObj.pendingMountPromise, null);
+  assert.equal(winEl.pendingMountPromise, null);
+});
+
 test("mount reports asynchronous initializer rejection", async () => {
   const winEl = {};
   const winObj = {};
@@ -187,16 +253,6 @@ test("mountInstance disposes asynchronous mount result that resolves after unmou
   assert.equal(winEl.pendingMountPromise, null);
 });
 
-test("unmount dispatches app:destroy for event-based apps without dispose", () => {
-  const events = [];
-  const winEl = new MessengerTestElement();
-  winEl.addEventListener("app:destroy", (event) => events.push(event.type));
-
-  new AppHost().unmount({ el: winEl, appInstance: null });
-
-  assert.deepEqual(events, ["app:destroy"]);
-});
-
 test("unmount no longer invokes win.*Cleanup legacy hooks", () => {
   const calls = [];
   const winEl = new MessengerTestElement();
@@ -240,21 +296,25 @@ test("unmount disposes each migrated app through its app instance", () => {
   assert.deepEqual(disposed, migratedTypes);
 });
 
-test("unmount prefers app dispose over app:destroy to avoid duplicate cleanup", () => {
+test("unmount disposes app instances idempotently", () => {
   const calls = [];
-  const winEl = new MessengerTestElement();
-  winEl.addEventListener("app:destroy", () => calls.push("event"));
-
-  new AppHost().unmount({
+  const winEl = {};
+  const winObj = {
     el: winEl,
     appInstance: {
       dispose() {
         calls.push("dispose");
       }
     }
-  });
+  };
+  const appHost = new AppHost();
+
+  appHost.unmount(winObj);
+  appHost.unmount(winObj);
 
   assert.deepEqual(calls, ["dispose"]);
+  assert.equal(winObj.appInstance, null);
+  assert.equal(winEl.appInstance, null);
 });
 
 test("closing Messenger through AppHost unsubscribes and closes BroadcastChannel", () => {
@@ -320,6 +380,7 @@ test("closing Messenger through AppHost unsubscribes and closes BroadcastChannel
     });
     assert.equal(winObj.appInstance, appInstance);
     assert.equal(channels.length, 1);
+    assert.equal(winEl.listeners.get("app:destroy")?.length || 0, 0);
 
     appHost.unmount(winObj);
 
