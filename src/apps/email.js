@@ -1,4 +1,4 @@
-import { getNetworkDefaults } from "../networking.js";
+import { getNetworkDefaults } from "../network/config.js";
 import { DEFAULT_SPLASH_IMAGE, DEFAULT_WALLPAPER } from "../defaults.js";
 
 const DEMO_MESSAGES = [

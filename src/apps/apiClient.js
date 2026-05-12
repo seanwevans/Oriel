@@ -1,4 +1,5 @@
-import { normalizeHttpUrl, trackedFetch } from "../networking.js";
+import { normalizeHttpUrl } from "../network/config.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 
 function parseHeaders(raw) {
   return (raw || "")

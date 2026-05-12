@@ -12,7 +12,7 @@ import {
   fileSystemReady
 } from "../filesystem.js";
 import { publish, subscribe } from "../eventBus.js";
-import { getNetworkDefaults, refreshNetworkedWindows } from "../networking.js";
+import { getNetworkDefaults, refreshNetworkedWindows } from "../network/config.js";
 import { refreshAllProcessViews } from "../apps/taskman.js";
 import { initScreensaver, hideUnlockPrompt, submitLockPassphrase } from "../apps/screensaver.js";
 import {
