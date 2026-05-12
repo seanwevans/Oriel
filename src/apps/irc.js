@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 let ircLibPromise = null;
 
 function loadIrcLibrary() {
@@ -313,4 +314,14 @@ export function initIRC(win) {
       }
     }
   };
+}
+
+export class IrcApp extends BaseApp {
+  getWindowContent() {
+    return getIRCContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initIRC(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

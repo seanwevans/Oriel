@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { PROGRAMS } from "../programs.js";
 import { ICONS } from "../icons.js";
 import { getInstalledPrograms, getManifestForApp } from "../installer.js";
@@ -409,4 +410,10 @@ export function refreshProgramManagerContent(wm) {
       const contentArea = getWindowBodyContainer(win.el);
       if (contentArea) contentArea.replaceChildren(getProgramManagerContent(wm));
     });
+}
+
+export class ProgramManagerApp extends BaseApp {
+  getWindowContent() {
+    return getProgramManagerContent(this.services.windowManager);
+  }
 }

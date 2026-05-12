@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const STORAGE_KEY = "oriel-postgres-config";
 
 const SAMPLE_TABLES = {
@@ -270,4 +271,14 @@ export function initPostgres(win) {
   });
 
   renderResults(resultsEl, parseSimpleSelect(sqlInput?.value || SAMPLE_QUERIES[0].sql));
+}
+
+export class PostgresApp extends BaseApp {
+  getWindowContent() {
+    return getPostgresContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPostgres(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

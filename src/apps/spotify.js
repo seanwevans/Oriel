@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const DEFAULT_SPOTIFY_EMBED = "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M";
 const SPOTIFY_KINDS = ["track", "album", "playlist", "artist", "episode", "show"];
 
@@ -88,4 +89,14 @@ export function initSpotify(win) {
   input?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") updateEmbed(input.value);
   });
+}
+
+export class SpotifyApp extends BaseApp {
+  getWindowContent() {
+    return getSpotifyContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initSpotify(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

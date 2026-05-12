@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getLineRiderContent() {
   return `
                 <div class="linerider-layout">
@@ -260,4 +261,14 @@ export function initLineRider(win) {
       while (disposables.length) disposables.pop()();
     }
   };
+}
+
+export class LineRiderApp extends BaseApp {
+  getWindowContent() {
+    return getLineRiderContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initLineRider(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

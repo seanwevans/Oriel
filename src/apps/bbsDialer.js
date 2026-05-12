@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { getSystemVolume } from "../audio.js";
 
 const ANSI_COLOR_CLASSES = {
@@ -340,4 +341,14 @@ export function initBbs(win) {
       uploadBtn?.removeEventListener("click", handleUpload);
     }
   };
+}
+
+export class BbsApp extends BaseApp {
+  getWindowContent() {
+    return getBbsContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initBbs(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

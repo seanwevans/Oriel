@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const N64_URL = "https://www.neilb.net/n64wasm/";
 
 export function getN64Root() {
@@ -27,4 +28,14 @@ export function initN64(win) {
   iframe.addEventListener("load", () => {
     if (status) status.textContent = "Emulator Ready. Click inside to play.";
   });
+}
+
+export class N64App extends BaseApp {
+  getWindowContent() {
+    return getN64Root(this.initData, this.services);
+  }
+
+  mount() {
+    return initN64(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

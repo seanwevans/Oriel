@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getCannonDuelContent() {
   return `
     <div class="cannonduel-root" tabindex="0">
@@ -297,4 +298,14 @@ export function initCannonDuel(win) {
   draw(0);
 
   return { dispose: cleanup };
+}
+
+export class CannonDuelApp extends BaseApp {
+  getWindowContent() {
+    return getCannonDuelContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initCannonDuel(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

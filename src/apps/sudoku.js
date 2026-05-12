@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initSudoku(w) {
   const puzzles = {
     easy: [
@@ -169,4 +170,14 @@ export function getSudokuContent() {
       </div>
     `;
 
+}
+
+export class SudokuApp extends BaseApp {
+  getWindowContent() {
+    return getSudokuContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initSudoku(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

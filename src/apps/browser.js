@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import {
   BROWSER_FRAME_SANDBOX,
   BROWSER_HOME,
@@ -197,4 +198,14 @@ export function getBrowserContent() {
               </div>
             </div>`;
 
+}
+
+export class BrowserApp extends BaseApp {
+  getWindowContent() {
+    return getBrowserContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initBrowser(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

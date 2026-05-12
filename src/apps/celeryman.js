@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const CELERY_URL = "https://celeryman.alexmeub.com/";
 
 export function getCeleryManContent() {
@@ -51,4 +52,14 @@ export function initCeleryMan(win) {
   openBtn?.addEventListener("click", () => {
     window.open(CELERY_URL, "_blank", "noopener,noreferrer");
   });
+}
+
+export class CeleryManApp extends BaseApp {
+  getWindowContent() {
+    return getCeleryManContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initCeleryMan(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

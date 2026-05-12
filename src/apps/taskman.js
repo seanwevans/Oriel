@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 let selT = {};
 
 const getKernel = (services = {}) => services.kernel || null;
@@ -94,4 +95,14 @@ export function endTask(win, manager) {
 
 export function getTaskManContent() {
   return `<div class="task-mgr-layout"><div class="task-list" id="task-list"></div><div class="task-btns"><button class="task-btn" data-action="switch-task">Switch To</button><button class="task-btn" data-action="end-task">End Task</button><button class="task-btn" data-action="cancel-taskman">Cancel</button></div><div style="font-weight:bold; border-bottom:1px solid gray; margin-bottom:2px;">System Monitor:</div><div class="task-queue-view" id="task-queue-view"></div></div>`;
+}
+
+export class TaskManApp extends BaseApp {
+  getWindowContent() {
+    return getTaskManContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initTaskMan(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

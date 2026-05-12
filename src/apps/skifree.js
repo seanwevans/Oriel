@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getSkiFreeContent() {
   return `
                 <div class="skifree-layout" tabindex="0">
@@ -206,4 +207,14 @@ export function initSkiFree(win) {
       resetBtn.removeEventListener("click", resetGame);
     }
   };
+}
+
+export class SkiFreeApp extends BaseApp {
+  getWindowContent() {
+    return getSkiFreeContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initSkiFree(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

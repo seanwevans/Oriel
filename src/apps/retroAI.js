@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { RETRO_AI_CORPUS } from "../assets/data/retro_ai_corpus.js";
 
 const order = 2;
@@ -165,4 +166,14 @@ export function getRetroAIContent() {
       </div>
     </div>
   `;
+}
+
+export class RetroAIApp extends BaseApp {
+  getWindowContent() {
+    return getRetroAIContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initRetroAI(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

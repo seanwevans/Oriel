@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initClock(w) {
   const canvas = w.querySelector(".clock-canvas");
   const ctx = canvas.getContext("2d");
@@ -92,4 +93,14 @@ export function initClock(w) {
 export function getClockContent() {
     return `<div class="clock-layout" title="Double click to toggle mode"><canvas class="clock-canvas" width="200" height="200"></canvas><div class="clock-digital" style="display:none">12:00</div></div>`;
 
+}
+
+export class ClockApp extends BaseApp {
+  getWindowContent() {
+    return getClockContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initClock(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

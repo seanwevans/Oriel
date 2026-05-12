@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const MINES_ROWS = 9;
 const MINES_COLS = 9;
 const MINES_COUNT = 10;
@@ -220,4 +221,14 @@ function stopMinesTimer() {
 export function getMinesContent() {
     return `<div style="background:#c0c0c0; height:100%; display:flex; flex-direction:column; align-items:center;"><div class="mines-bar" style="width:200px"><div class="mines-lcd" id="mines-count">010</div><div class="mines-face" id="mines-face" data-action="reset-mines">:)</div><div class="mines-lcd" id="mines-timer">000</div></div><div class="mines-grid" id="mines-grid"></div></div>`;
 
+}
+
+export class MinesweeperApp extends BaseApp {
+  getWindowContent() {
+    return getMinesContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initMinesweeper(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

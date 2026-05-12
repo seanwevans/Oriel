@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 let jsDosLoadPromise = null;
 
 function loadJsDos() {
@@ -54,4 +55,14 @@ export function getDoomContent() {
       </div>
     `;
 
+}
+
+export class DoomApp extends BaseApp {
+  getWindowContent() {
+    return getDoomContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initDoom(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

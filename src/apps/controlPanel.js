@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { ICONS } from "../icons.js";
 import { DEFAULT_WALLPAPER } from "../defaults.js";
 import { loadDesktopState, persistDesktopState } from "../state.js";
@@ -781,4 +782,14 @@ export {
 export function getControlPanelContent() {
     return `<div class="control-layout" id="cp-main"><div class="control-icon" data-cp-view="color" role="button" tabindex="0">${ICONS.cp_color}<div class="control-label">Color</div></div><div class="control-icon" data-cp-view="desktop" role="button" tabindex="0">${ICONS.desktop_cp}<div class="control-label">Desktop</div></div><div class="control-icon" data-cp-view="screensaver" role="button" tabindex="0">${ICONS.screensaver}<div class="control-label">Screensaver</div></div><div class="control-icon" data-cp-view="sound" role="button" tabindex="0">${ICONS.volume}<div class="control-label">Sound</div></div><div class="control-icon" data-cp-view="fonts" role="button" tabindex="0"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="4" y="8" width="24" height="16" fill="none" stroke="black"/><text x="16" y="20" font-family="serif" font-size="10" text-anchor="middle">ABC</text></svg><div class="control-label">Fonts</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="10" y="6" width="12" height="20" fill="none" stroke="black"/><circle cx="16" cy="12" r="2" fill="black"/></svg><div class="control-label">Mouse</div></div><div class="control-icon"><svg viewBox="0 0 32 32" class="svg-icon"><rect x="2" y="10" width="28" height="12" fill="none" stroke="black"/></svg><div class="control-label">Keyboard</div></div></div>`;
 
+}
+
+export class ControlPanelApp extends BaseApp {
+  getWindowContent() {
+    return getControlPanelContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initControlPanel(this.services.controlPanelContext || {}, this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

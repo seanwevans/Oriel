@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initSolitaire(w) {
   const SUITS = ["h", "d", "c", "s"];
   const RANKS = [
@@ -374,4 +375,14 @@ export function initSolitaire(w) {
 export function getSolitaireContent() {
     return `<div class="sol-layout"><div class="sol-top"><div class="sol-deck-area"><div class="card-ph" id="sol-stock"></div><div class="card-ph" id="sol-waste"></div></div><div class="sol-foundations"><div class="card-ph" data-suit="h" id="sol-f-h"></div><div class="card-ph" data-suit="d" id="sol-f-d"></div><div class="card-ph" data-suit="c" id="sol-f-c"></div><div class="card-ph" data-suit="s" id="sol-f-s"></div></div></div><div class="sol-tableau" id="sol-tableau"></div></div>`;
 
+}
+
+export class SolitaireApp extends BaseApp {
+  getWindowContent() {
+    return getSolitaireContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initSolitaire(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

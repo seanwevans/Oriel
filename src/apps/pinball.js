@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const WALL_THICKNESS = 12;
 const GRAVITY = 0.25;
 const FRICTION = 0.995;
@@ -365,4 +366,14 @@ export function initPinball(win) {
       resetBtn?.removeEventListener("click", newGame);
     }
   };
+}
+
+export class PinballApp extends BaseApp {
+  getWindowContent() {
+    return getPinballContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPinball(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

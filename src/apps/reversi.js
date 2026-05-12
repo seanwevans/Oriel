@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initReversi(w) {
   const board = w.querySelector("#reversi-board");
   const status = w.querySelector(".reversi-status");
@@ -118,4 +119,14 @@ export function initReversi(w) {
 export function getReversiContent() {
     return `<div class="reversi-layout"><div class="reversi-status">Your Turn (Red)</div><div class="reversi-board" id="reversi-board"></div></div>`;
 
+}
+
+export class ReversiApp extends BaseApp {
+  getWindowContent() {
+    return getReversiContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initReversi(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

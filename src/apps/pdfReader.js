@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { DEFAULT_PDF_DATA_URI } from "../defaults.js";
 
 export function initPdfReader(win, initData) {
@@ -93,4 +94,14 @@ export function getPdfReaderContent(initData) {
 
     return root;
 
+}
+
+export class PdfReaderApp extends BaseApp {
+  getWindowContent() {
+    return getPdfReaderContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPdfReader(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

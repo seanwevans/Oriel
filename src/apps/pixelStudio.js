@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const DEFAULT_COLORS = [
   "#000000",
   "#ffffff",
@@ -399,4 +400,14 @@ export function initPixelStudio(win) {
       win.pixelStudio.cleanupCanvas?.();
     }
   };
+}
+
+export class PixelStudioApp extends BaseApp {
+  getWindowContent() {
+    return getPixelStudioContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initPixelStudio(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

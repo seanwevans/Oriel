@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initCharMap(w, _initData = null, _windowManager = null, _services = {}, app = null) {
   const g = w.querySelector("#char-grid"),
     ip = w.querySelector("#char-copy-input"),
@@ -82,4 +83,14 @@ export function getCharMapContent() {
               </div>
             </div>`;
 
+}
+
+export class CharMapApp extends BaseApp {
+  getWindowContent() {
+    return getCharMapContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initCharMap(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

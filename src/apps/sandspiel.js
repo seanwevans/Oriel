@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const SANDSPIEL_URL = "https://sandspiel.club/";
 
 export function getSandspielRoot() {
@@ -58,5 +59,15 @@ export function initSandspiel(win) {
 
   if (!iframeSrcAttr) {
     loadGame();
+  }
+}
+
+export class SandspielApp extends BaseApp {
+  getWindowContent() {
+    return getSandspielRoot(this.initData, this.services);
+  }
+
+  mount() {
+    return initSandspiel(this.windowEl, this.initData, this.services.windowManager, this.services, this);
   }
 }

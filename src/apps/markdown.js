@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { DEFAULT_MD_SAMPLE } from "../defaults.js";
 
 const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
@@ -220,4 +221,14 @@ export function getMarkdownContent(initData) {
 
     return root;
 
+}
+
+export class MarkdownViewerApp extends BaseApp {
+  getWindowContent() {
+    return getMarkdownContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initMarkdownViewer(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

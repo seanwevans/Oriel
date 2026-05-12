@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 import { loadThree } from "../threeLoader.js";
 
 const GLSL1_VERTEX = `precision highp float;
@@ -339,4 +340,14 @@ export async function initShaderLab(win) {
       renderer.dispose();
     }
   };
+}
+
+export class ShaderLabApp extends BaseApp {
+  getWindowContent() {
+    return getShaderLabRoot(this.initData, this.services);
+  }
+
+  mount() {
+    return initShaderLab(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

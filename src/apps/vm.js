@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function initVm(win) {
   const iframe = win.querySelector(".vm-frame");
   const bootBtn = win.querySelector(".vm-boot");
@@ -52,4 +53,14 @@ export function getVmContent() {
                 </div>
             </div>`;
 
+}
+
+export class VmApp extends BaseApp {
+  getWindowContent() {
+    return getVmContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initVm(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

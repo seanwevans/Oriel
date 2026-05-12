@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 export function getCalcContent() {
   return `<div class="calc-grid">
             <div class="calc-display" id="calc-disp" data-val="0">0</div>
@@ -55,4 +56,14 @@ function calcInput(win, v) {
     }
   } else d.dataset.val = val === "0" && !"+-*/".includes(v) ? v : val + v;
   d.innerText = d.dataset.val;
+}
+
+export class CalcApp extends BaseApp {
+  getWindowContent() {
+    return getCalcContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initCalc(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }

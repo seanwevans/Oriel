@@ -1,3 +1,4 @@
+import { BaseApp } from "./base/BaseApp.js";
 const GRAVITY = 820;
 const GROUND_HEIGHT = 80;
 const MAX_PULL = 120;
@@ -333,4 +334,14 @@ export function initAngryBirds(win) {
   };
 
   return { dispose: cleanup };
+}
+
+export class AngryBirdsApp extends BaseApp {
+  getWindowContent() {
+    return getAngryBirdsContent(this.initData, this.services);
+  }
+
+  mount() {
+    return initAngryBirds(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+  }
 }
