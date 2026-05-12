@@ -1,35 +1,33 @@
-import { APP_DEFINITIONS, APP_MANIFEST } from "../apps/runtimeManifest.js";
+import { APP_MANIFEST } from "../apps/manifest.js";
+import { composeRuntimeManifest, runtimeBindings } from "../apps/runtimeBindings.js";
 import { LegacyFunctionApp } from "../apps/base/BaseApp.js";
-import { getProgramManagerContent } from "../apps/programManager.js";
-import {
-  getBrowserContent,
-  getRadioContent,
-  getRadioGardenContent,
-  initBrowser,
-  initRadio,
-  initRadioGarden,
-  initRssReader
-} from "../networking.js";
 import { getRuntimeInitializer } from "../installer.js";
 
 export class AppRegistry {
-  constructor({ controlPanelContext = {}, runtimeInitializerResolver = getRuntimeInitializer } = {}) {
+  constructor({
+    controlPanelContext = {},
+    runtimeInitializerResolver = getRuntimeInitializer,
+    manifest = APP_MANIFEST,
+    bindings = runtimeBindings
+  } = {}) {
     this.controlPanelContext = controlPanelContext;
     this.runtimeInitializerResolver = runtimeInitializerResolver;
+    this.manifest = composeRuntimeManifest(manifest, bindings);
+    this.definitions = Object.values(this.manifest);
     this.initializers = this.createInitializers();
     this.contentProviders = this.createContentProviders();
   }
 
   createInitializers() {
     return Object.fromEntries(
-      APP_DEFINITIONS
+      this.definitions
         .map((definition) => [definition.type, this.createInitializer(definition)])
         .filter(([, initializer]) => initializer)
     );
   }
 
   createInitializer(definition) {
-    const initializer = definition.initializer || this.getInitializerByKey(definition.initializerKey);
+    const { initializer } = definition;
     if (!initializer) return null;
     if (!definition.usesControlPanelContext) return initializer;
     return (windowEl, initData, wmInstance) =>
@@ -38,39 +36,14 @@ export class AppRegistry {
 
   createContentProviders() {
     return Object.fromEntries(
-      APP_DEFINITIONS
-        .map((definition) => [definition.type, this.createContentProvider(definition)])
+      this.definitions
+        .map((definition) => [definition.type, definition.contentProvider || null])
         .filter(([, contentProvider]) => contentProvider)
     );
   }
 
-  createContentProvider(definition) {
-    if (definition.contentProvider) return definition.contentProvider;
-    if (definition.contentProviderKey === "programManager") {
-      return (_initData, services) => getProgramManagerContent(services.windowManager);
-    }
-    return this.getContentProviderByKey(definition.contentProviderKey);
-  }
-
-  getInitializerByKey(key) {
-    return {
-      browser: initBrowser,
-      radio: initRadio,
-      radiogarden: initRadioGarden,
-      rss: initRssReader
-    }[key] || null;
-  }
-
-  getContentProviderByKey(key) {
-    return {
-      browser: getBrowserContent,
-      radio: getRadioContent,
-      radiogarden: getRadioGardenContent
-    }[key] || null;
-  }
-
   createApp(type, { windowEl = null, initData = null, services = {} } = {}) {
-    const definition = APP_MANIFEST[type] || null;
+    const definition = this.manifest[type] || null;
     if (definition?.appClass) {
       return new definition.appClass({ windowEl, initData, services });
     }
