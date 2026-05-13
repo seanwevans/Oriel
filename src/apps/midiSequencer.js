@@ -129,7 +129,7 @@ export class MidiSequencerApp extends BaseApp {
     headerRow.innerHTML = `<div class="midi-grid-label">Note</div>`;
     for (let i = 0; i < stepCount; i++) {
       const beat = Math.floor(i / 4) + 1;
-      const label = (i % 4 === 0) ? ` ${beat}` : "";
+      const label = (i % 4 === 0) ? `\u00a0${beat}` : "";
       const cell = document.createElement("div");
       cell.className = "midi-grid-cell beat-marker";
       cell.textContent = label;

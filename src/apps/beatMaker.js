@@ -150,7 +150,7 @@ export function initBeatMaker(win) {
     triggerNoise(0.18, 0.7, 1000);
   }
 
-  function triggerHat(time) {
+  function triggerHat() {
     triggerNoise(0.1, 0.4, 6000);
   }
 

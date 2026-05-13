@@ -196,10 +196,8 @@ export function initIRC(win) {
 
       client.on("quit", (event) => {
         if (activeChannel) {
-          // The library doesn't strictly track which channel a quitter was in easily for all users,
-          // but we can check the user list
-          const chan = client.channel(activeChannel);
-          // We refresh users regardless
+          // The library does not reliably expose channel membership for quit events,
+          // so we refresh users regardless and let the client recalculate membership.
           refreshUsers();
           addLog("←", `${event.nick} quit (${event.message})`, "system");
         }

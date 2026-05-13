@@ -43,6 +43,29 @@ npm run build
 
 ```
 
+### Development and Testing Commands
+
+Run the ESLint checks for the vanilla ES module source tree:
+
+```bash
+npm run lint
+
+```
+
+Run the native Node.js test suite:
+
+```bash
+npm test
+
+```
+
+Run the full local verification sequence, including linting, tests, and the production build:
+
+```bash
+npm run check
+
+```
+
 ## 🛠 Core Architecture
 
 The system is designed around a decoupled "App Host" model that provides applications with access to shared system services.

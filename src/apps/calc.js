@@ -45,7 +45,6 @@ function calcInput(win, v) {
       // Evaluate the sanitized expression using Function for isolation.
       // This avoids the broad security risks of eval while still supporting
       // basic arithmetic used by the calculator UI.
-      // eslint-disable-next-line no-new-func
       const result = new Function(`"use strict"; return (${sanitized});`)();
 
       if (!Number.isFinite(result)) throw new Error("Invalid result");
