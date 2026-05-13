@@ -55,7 +55,7 @@ function renderResponseHeaders(container, headers) {
   container.replaceChildren(...nodes);
 }
 
-export function initApiClient(win) {
+export function initApiClient(win, initData, windowManager, services, app) {
   const form = win.querySelector(".httpclient-form");
   const methodSelect = win.querySelector(".httpclient-method");
   const urlInput = win.querySelector(".httpclient-url");
@@ -85,7 +85,21 @@ export function initApiClient(win) {
     previewEl.textContent = "";
   };
 
-  form.addEventListener("submit", async (e) => {
+  let currentRequest = null;
+  let requestToken = 0;
+
+  const createRequestController = () => {
+    if (app?.createAbortController) return app.createAbortController();
+    const controller = new AbortController();
+    if (app?.trackAbortController) return app.trackAbortController(controller);
+    return controller;
+  };
+
+  const isStaleRequest = (token, controller) => {
+    return token !== requestToken || controller.signal.aborted || app?.isDisposed;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const url = normalizeHttpUrl(urlInput.value);
     if (!url) {
@@ -113,11 +127,18 @@ export function initApiClient(win) {
     responseHeadersEl.replaceChildren();
     previewEl.textContent = bodyText ? bodyText.slice(0, 400) : "";
 
+    if (currentRequest) currentRequest.controller.abort();
+    const token = ++requestToken;
+    const controller = createRequestController();
+    currentRequest = { controller, token };
+
     const started = performance.now();
     try {
-      const response = await trackedFetch(url, init);
+      const response = await trackedFetch(url, { ...init, signal: controller.signal });
+      if (isStaleRequest(token, controller)) return;
       const duration = Math.max(1, Math.round(performance.now() - started));
       const { pretty, isJson } = await readResponseBody(response);
+      if (isStaleRequest(token, controller)) return;
       statusEl.textContent = `${response.status} ${response.statusText || ""}`.trim();
       statusEl.classList.toggle("error", !response.ok);
       timingEl.textContent = `${duration} ms · ${response.headers.get("content-type") || "unknown type"}`;
@@ -125,11 +146,19 @@ export function initApiClient(win) {
       responseBodyEl.dataset.format = isJson ? "json" : "text";
       renderResponseHeaders(responseHeadersEl, response.headers);
     } catch (err) {
-      showError(`Request failed: ${err?.message || err}`);
+      if (!isStaleRequest(token, controller)) {
+        showError(`Request failed: ${err?.message || err}`);
+      }
     } finally {
-      setLoading(false);
+      if (!isStaleRequest(token, controller)) {
+        setLoading(false);
+        currentRequest = null;
+      }
     }
-  });
+  };
+
+  if (app?.listen) app.listen(form, "submit", handleSubmit);
+  else form.addEventListener("submit", handleSubmit);
 }
 
 export function getApiClientContent() {
