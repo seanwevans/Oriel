@@ -285,6 +285,83 @@ test("trackedFetch publishes request and response activity with compact previews
   }
 });
 
+test("trackedFetch caps response previews by byte limit", async () => {
+  const previousFetch = global.fetch;
+  const events = [];
+  const unsubscribe = networking.subscribeToNetworkEvents((event) => events.push(event));
+  global.fetch = async () =>
+    new Response("abcdefghijklmnopqrstuvwxyz", {
+      headers: { "content-type": "text/plain" }
+    });
+
+  try {
+    await networking.trackedFetch("https://api.example.test/large", {
+      tracking: { maxResponsePreviewBytes: 10 }
+    });
+
+    assert.equal(events.length, 2);
+    assert.equal(events[1].phase, "response");
+    assert.equal(events[1].bodyPreview, "abcdefghij...");
+  } finally {
+    unsubscribe();
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
+test("trackedFetch skips body previews for likely binary response content types", async () => {
+  const previousFetch = global.fetch;
+  const events = [];
+  const unsubscribe = networking.subscribeToNetworkEvents((event) => events.push(event));
+  const binaryBody = new Uint8Array([0, 1, 2, 3, 4]);
+  global.fetch = async () =>
+    new Response(binaryBody, {
+      headers: { "content-type": "image/png" }
+    });
+
+  try {
+    const response = await networking.trackedFetch("https://api.example.test/image.png");
+
+    assert.equal(events.length, 2);
+    assert.equal(events[1].phase, "response");
+    assert.equal(events[1].bodyPreview, "");
+    assert.equal(events[1].contentType, "image/png");
+    assert.equal((await response.arrayBuffer()).byteLength, binaryBody.byteLength);
+  } finally {
+    unsubscribe();
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
+test("trackedFetch supports disabling response previews with tracking options", async () => {
+  const previousFetch = global.fetch;
+  const events = [];
+  const requested = [];
+  const unsubscribe = networking.subscribeToNetworkEvents((event) => events.push(event));
+  global.fetch = async (url, options) => {
+    requested.push({ url, options });
+    return new Response("Large response body", {
+      headers: { "content-type": "text/plain" }
+    });
+  };
+
+  try {
+    await networking.trackedFetch("https://api.example.test/large", {
+      tracking: { responsePreview: false }
+    });
+
+    assert.equal(events.length, 2);
+    assert.equal(events[1].phase, "response");
+    assert.equal(events[1].bodyPreview, "");
+    assert.equal("tracking" in requested[0].options, false);
+  } finally {
+    unsubscribe();
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
+});
+
 test("trackedFetch publishes an error activity before rethrowing", async () => {
   const previousFetch = global.fetch;
   const events = [];
