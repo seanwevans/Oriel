@@ -3,8 +3,9 @@ import {
   BROWSER_FRAME_SANDBOX,
   BROWSER_HOME,
   BROWSER_PROXY_PREFIX,
+  escapeHtml,
   getNetworkDefaults,
-  stripScriptTags
+  sanitizeBrowserSrcdoc
 } from "../network/config.js";
 import { trackedFetch } from "../network/trackedFetch.js";
 
@@ -101,8 +102,11 @@ export function initBrowser(win, sessions = browserSessions, _windowManager = nu
         setBrowserFrameSrcdoc(frame, `<p>${statusMessage}</p>`);
         return;
       }
-      const text = stripScriptTags(await res.text());
-      setBrowserFrameSrcdoc(frame, text || `<p>Proxy returned an empty response for ${url}.</p>`);
+      const text = sanitizeBrowserSrcdoc(await res.text());
+      setBrowserFrameSrcdoc(
+        frame,
+        text || `<p>Proxy returned an empty response for ${escapeHtml(url)}.</p>`
+      );
       setStatus(`Loaded ${url}`);
     } catch (err) {
       console.error(err);

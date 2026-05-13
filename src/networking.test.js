@@ -137,13 +137,17 @@ test("overrides can be cleared without resetting defaults", () => {
   assert.deepEqual(JSON.parse(stored), {});
 });
 
-test("config helpers normalize only HTTP(S) URLs and strip script markup", () => {
+test("config helpers normalize only HTTP(S) URLs and sanitize browser srcdoc", () => {
   assert.equal(networking.normalizeHttpUrl("example.com/path"), "https://example.com/path");
   assert.equal(networking.normalizeHttpUrl("localhost:5173/app"), "https://localhost:5173/app");
   assert.equal(networking.normalizeHttpUrl("https://example.test"), "https://example.test");
   assert.equal(networking.normalizeHttpUrl("ftp://example.test/file"), null);
   assert.equal(networking.normalizeHttpUrl("   "), null);
   assert.equal(networking.stripScriptTags("<p>Safe</p><script>alert(1)</script>"), "<p>Safe</p>");
+  assert.equal(
+    networking.sanitizeBrowserSrcdoc('<p onload="bad()"><a href="javascript:bad()">Safe</a></p>'),
+    "<p><a>Safe</a></p>"
+  );
 });
 
 test("RSS proxy text responses are read without attempting JSON first", async () => {
@@ -418,7 +422,7 @@ async function waitFor(predicate) {
   }
 }
 
-test("browser iframe is sandboxed before proxied HTML is assigned", async () => {
+test("browser iframe is sandboxed before sanitized proxied HTML is assigned", async () => {
   const previousFetch = global.fetch;
   const win = createBrowserWindow();
   const frame = win.elements.get(".browser-frame");
@@ -429,7 +433,14 @@ test("browser iframe is sandboxed before proxied HTML is assigned", async () => 
   });
 
   global.fetch = async () => new Response(
-    '<main>Safe preview</main><script>globalThis.evil = true;</script>',
+    `<main onclick="globalThis.evil = true">Safe preview</main>
+     <a href="javascript:alert(1)">bad link</a>
+     <meta http-equiv="refresh" content="0; url=javascript:alert(2)">
+     <script>globalThis.evil = true;</script>
+     <style>body { background: url(javascript:alert(3)); }</style>
+     <iframe src="https://evil.example"></iframe>
+     <object data="javascript:alert(4)"></object>
+     <embed src="javascript:alert(5)">`,
     { headers: { "content-type": "text/html" } }
   );
 
@@ -446,6 +457,53 @@ test("browser iframe is sandboxed before proxied HTML is assigned", async () => 
     assert.equal(frame.getAttribute("sandbox").includes("allow-same-origin"), false);
     assert.equal(frame.getAttribute("sandbox").includes("allow-scripts"), false);
     assert.equal(frame.srcdoc.includes("<script"), false);
+    assert.equal(frame.srcdoc.includes("<style"), false);
+    assert.equal(frame.srcdoc.includes("<iframe"), false);
+    assert.equal(frame.srcdoc.includes("<object"), false);
+    assert.equal(frame.srcdoc.includes("<embed"), false);
+    assert.equal(/<meta\b[^>]*http-equiv/i.test(frame.srcdoc), false);
+    assert.equal(/\son[a-z0-9:-]+\s*=/i.test(frame.srcdoc), false);
+    assert.equal(/javascript:/i.test(frame.srcdoc), false);
+  } finally {
+    if (previousFetch === undefined) {
+      delete global.fetch;
+    } else {
+      global.fetch = previousFetch;
+    }
+    resetNetworkDefaults();
+  }
+});
+
+test("browser escapes user-entered URLs in empty proxy fallback messages", async () => {
+  const previousFetch = global.fetch;
+  const win = createBrowserWindow();
+  const frame = win.elements.get(".browser-frame");
+  const urlInput = win.elements.get(".browser-url");
+  const goBtn = win.elements.get('[data-action="go"]');
+  const maliciousUrl = 'https://example.test/?q=<img src=x onerror="alert(1)">';
+
+  updateNetworkDefaults({
+    browserHome: "https://example.test/",
+    browserProxyPrefix: "https://proxy.test/"
+  });
+
+  global.fetch = async () => new Response("", { headers: { "content-type": "text/html" } });
+
+  try {
+    networking.initBrowser(win, {});
+    await waitFor(() => frame.srcdoc.includes("Proxy returned an empty response"));
+
+    urlInput.value = maliciousUrl;
+    goBtn.listeners.click();
+    await waitFor(
+      () =>
+        frame.srcdoc.includes("&lt;img") &&
+        frame.srcdoc.includes("onerror=&quot;alert(1)&quot;")
+    );
+
+    assert.equal(frame.srcdoc.includes(maliciousUrl), false);
+    assert.equal(frame.srcdoc.includes("<img"), false);
+    assert.equal(frame.srcdoc.includes("&lt;img src=x onerror=&quot;"), true);
   } finally {
     if (previousFetch === undefined) {
       delete global.fetch;
