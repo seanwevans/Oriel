@@ -115,6 +115,83 @@ export function normalizeHttpUrl(raw) {
   return trimmed;
 }
 
+
+export function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const BROWSER_UNSAFE_ELEMENTS = "script,style,iframe,object,embed,meta[http-equiv]";
+const BROWSER_JAVASCRIPT_URL_ATTRS = new Set([
+  "href",
+  "src",
+  "xlink:href",
+  "formaction",
+  "action",
+  "poster",
+  "data"
+]);
+
+function isJavascriptUrl(value = "") {
+  return /^[\u0000-\u0020]*javascript:/i.test(String(value).replace(/[\t\n\f\r ]+/g, ""));
+}
+
+function sanitizeBrowserDocument(root) {
+  root.querySelectorAll?.(BROWSER_UNSAFE_ELEMENTS).forEach((node) => node.remove());
+  root.querySelectorAll?.("*").forEach((node) => {
+    Array.from(node.attributes || []).forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith("on") || (BROWSER_JAVASCRIPT_URL_ATTRS.has(name) && isJavascriptUrl(attr.value))) {
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+  return root;
+}
+
+function sanitizeBrowserSrcdocFallback(html) {
+  return String(html || "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "")
+    .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe\s*>/gi, "")
+    .replace(/<object\b[^>]*>[\s\S]*?<\/object\s*>/gi, "")
+    .replace(/<embed\b[^>]*(?:>[\s\S]*?<\/embed\s*>|\/?>)/gi, "")
+    .replace(/<meta\b(?=[^>]*\bhttp-equiv\b)[^>]*>/gi, "")
+    .replace(/\s+on[a-z0-9:-]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(
+      /\s+(href|src|xlink:href|formaction|action|poster|data)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,
+      (match, attrName, attrValue) => {
+        const unquotedValue = attrValue.replace(/^(["'])([\s\S]*)\1$/, "$2");
+        return isJavascriptUrl(unquotedValue) ? "" : match;
+      }
+    );
+}
+
+export function sanitizeBrowserSrcdoc(html) {
+  const source = String(html || "");
+
+  if (typeof document !== "undefined" && document?.createElement) {
+    const template = document.createElement("template");
+    if ("content" in template) {
+      template.innerHTML = source;
+      sanitizeBrowserDocument(template.content);
+      return template.innerHTML;
+    }
+  }
+
+  if (typeof DOMParser !== "undefined") {
+    const parsed = new DOMParser().parseFromString(source, "text/html");
+    sanitizeBrowserDocument(parsed);
+    return parsed.body?.innerHTML || "";
+  }
+
+  return sanitizeBrowserSrcdocFallback(source);
+}
+
 export function stripHtmlText(html) {
   const div = document.createElement("div");
   div.innerHTML = html || "";
