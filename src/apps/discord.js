@@ -1,4 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 export function getDiscordContent() {
   return `
         <div class="discord">
@@ -18,7 +19,7 @@ export function getDiscordContent() {
       `;
 }
 
-export function initDiscord(win) {
+export function initDiscord(win, _initData = null, _manager = null, _services = {}, app = null) {
   const tokenInput = win.querySelector(".discord-token");
   const channelInput = win.querySelector(".discord-channel");
   const fetchBtn = win.querySelector(".discord-fetch");
@@ -81,12 +82,14 @@ export function initDiscord(win) {
 
     setStatus("Fetching messages via Discord API...", "info");
     try {
-      const res = await fetch(
+      const controller = app?.createAbortController?.();
+      const res = await trackedFetch(
         `https://discord.com/api/v10/channels/${encodeURIComponent(fields.channelId)}/messages?limit=20`,
         {
           headers: {
             Authorization: formatAuth(fields.token),
           },
+          ...(controller ? { signal: controller.signal } : {})
         },
       );
 
@@ -118,13 +121,15 @@ export function initDiscord(win) {
 
     setStatus("Sending message...", "info");
     try {
-      const res = await fetch(`https://discord.com/api/v10/channels/${encodeURIComponent(fields.channelId)}/messages`, {
+      const controller = app?.createAbortController?.();
+      const res = await trackedFetch(`https://discord.com/api/v10/channels/${encodeURIComponent(fields.channelId)}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: formatAuth(fields.token),
         },
         body: JSON.stringify({ content }),
+        ...(controller ? { signal: controller.signal } : {})
       });
 
       if (!res.ok) {
@@ -144,13 +149,13 @@ export function initDiscord(win) {
     }
   };
 
-  fetchBtn?.addEventListener("click", fetchMessages);
-  sendBtn?.addEventListener("click", sendMessage);
-  clearBtn?.addEventListener("click", () => {
+  app?.listen?.(fetchBtn, "click", fetchMessages);
+  app?.listen?.(sendBtn, "click", sendMessage);
+  app?.listen?.(clearBtn, "click", () => {
     logEl.innerHTML = "";
     setStatus("Cleared log. Ready to fetch again.", "info");
   });
-  messageInput?.addEventListener("keydown", (e) => {
+  app?.listen?.(messageInput, "keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       sendMessage();

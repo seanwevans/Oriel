@@ -1,4 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 const DEFAULT_NAMES = [
   "Alex", "Bailey", "Casey", "Dakota", "Emery", "Frankie", "Harper", "Indigo",
   "Jordan", "Kai", "Lennon", "Marley", "Nico", "Oakley", "Parker", "Quinn", "Riley",
@@ -113,11 +114,12 @@ function localNarration(state, accusedName) {
   return template.replace("${suspect}", suspect) + ` ${hint}`;
 }
 
-async function callRemoteModel(provider, apiKey, prompt, modelInput) {
+async function callRemoteModel(provider, apiKey, prompt, modelInput, app = null) {
   if (!apiKey) throw new Error("API key required for the selected provider.");
   if (provider === "openai") {
     const model = modelInput || "gpt-4o-mini";
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const controller = app?.createAbortController?.();
+    const res = await trackedFetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -131,19 +133,22 @@ async function callRemoteModel(provider, apiKey, prompt, modelInput) {
         ],
         max_tokens: 220,
         temperature: 0.8
-      })
+      }),
+      ...(controller ? { signal: controller.signal } : {})
     });
     const data = await res.json();
     return data.choices?.[0]?.message?.content?.trim();
   }
   if (provider === "google") {
     const model = modelInput || "gemini-1.5-flash";
-    const res = await fetch(
+    const controller = app?.createAbortController?.();
+    const res = await trackedFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        ...(controller ? { signal: controller.signal } : {})
       }
     );
     const data = await res.json();
@@ -151,14 +156,16 @@ async function callRemoteModel(provider, apiKey, prompt, modelInput) {
   }
   if (provider === "anthropic") {
     const model = modelInput || "claude-3-5-sonnet-latest";
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const controller = app?.createAbortController?.();
+    const res = await trackedFetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01"
       },
-      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 220 })
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 220 }),
+      ...(controller ? { signal: controller.signal } : {})
     });
     const data = await res.json();
     return data?.content?.[0]?.text?.trim();
@@ -195,7 +202,7 @@ function resolveNight(state, accusedName) {
   return { summary: summaryParts.join(" "), killed, saved };
 }
 
-export function initMafia(win) {
+export function initMafia(win, _initData = null, _manager = null, _services = {}, app = null) {
   const logEl = win.querySelector(".mafia-log");
   const rosterEl = win.querySelector(".mafia-roster");
   const suspectSelect = win.querySelector(".mafia-suspect");
@@ -247,7 +254,7 @@ export function initMafia(win) {
 
     try {
       if (provider === "local") narration = localNarration(state, accusedName);
-      else narration = (await callRemoteModel(provider, apiKey, prompt, model)) || "Remote model returned no text.";
+      else narration = (await callRemoteModel(provider, apiKey, prompt, model, app)) || "Remote model returned no text.";
     } catch (err) {
       narration = `AI narrator unavailable: ${err.message}. Using local improv.`;
       narration += ` ${localNarration(state, accusedName)}`;
@@ -259,10 +266,10 @@ export function initMafia(win) {
     updateUi();
   }
 
-  startBtn?.addEventListener("click", startGame);
-  roundBtn?.addEventListener("click", handleRound);
+  app?.listen?.(startBtn, "click", startGame);
+  app?.listen?.(roundBtn, "click", handleRound);
   if (providerSelect) {
-    providerSelect.addEventListener("change", () => {
+    app?.listen?.(providerSelect, "change", () => {
       const requiresKey = providerSelect.value !== "local";
       apiKeyInput.disabled = !requiresKey;
       modelInput.disabled = providerSelect.value === "local";
