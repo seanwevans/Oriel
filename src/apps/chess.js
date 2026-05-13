@@ -1,4 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 let chessLibPromise = null;
 
 function loadChessLibrary() {
@@ -21,12 +22,14 @@ function loadChessLibrary() {
   return chessLibPromise;
 }
 
-function initStockfishEngine(w) {
+function initStockfishEngine(w, app = null) {
   if (w.chessWorkerReady) return Promise.resolve(w.chessWorker);
   if (w.chessWorkerInit) return w.chessWorkerInit;
 
   w.chessWorkerInit = new Promise((resolve, reject) => {
-    fetch("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js")
+    trackedFetch("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js", {
+      ...(app?.createAbortController ? { signal: app.createAbortController().signal } : {})
+    })
       .then((res) => res.blob())
       .then((blob) => {
         const blobUrl = URL.createObjectURL(blob);
@@ -59,7 +62,7 @@ function initStockfishEngine(w) {
   return w.chessWorkerInit;
 }
 
-function initChess(w) {
+function initChess(w, _initData = null, _manager = null, _services = {}, app = null) {
   const boardEl = w.querySelector(".chess-board"),
     statusEl = w.querySelector(".chess-status"),
     movesEl = w.querySelector(".chess-moves"),
@@ -188,7 +191,7 @@ function initChess(w) {
   };
 
   const requestEngineMove = () => {
-    initStockfishEngine(w)
+    initStockfishEngine(w, app)
       .then((worker) => {
         if (disposed) return;
         const listener = (event) => {
@@ -242,22 +245,22 @@ function initChess(w) {
     if (target?.dataset.square) selectSquare(target.dataset.square);
   };
 
-  boardEl.addEventListener("click", handleBoardClick);
+  app?.listen?.(boardEl, "click", handleBoardClick);
 
-  newBtn.onclick = () => {
+  const onNewGame = () => {
     if (!game) return;
     game.reset();
     resetSelection();
-    initStockfishEngine(w).catch(() => {});
+    initStockfishEngine(w, app).catch(() => {});
     syncState(false);
   };
 
-  copyBtn.onclick = () => {
+  const onCopyFen = () => {
     fenInput.select();
     document.execCommand("copy");
   };
 
-  pasteBtn.onclick = async () => {
+  const onPasteFen = async () => {
     if (navigator.clipboard?.readText) {
       try {
         fenInput.value = await navigator.clipboard.readText();
@@ -267,7 +270,7 @@ function initChess(w) {
     }
   };
 
-  loadBtn.onclick = () => {
+  const onLoadFen = () => {
     if (!game) return;
     const fen = fenInput.value.trim();
     try {
@@ -281,14 +284,15 @@ function initChess(w) {
     alert("Invalid FEN string");
   };
 
+  app?.listen?.(newBtn, "click", onNewGame);
+  app?.listen?.(copyBtn, "click", onCopyFen);
+  app?.listen?.(pasteBtn, "click", onPasteFen);
+  app?.listen?.(loadBtn, "click", onLoadFen);
+
   const dispose = () => {
     if (disposed) return;
     disposed = true;
-    boardEl.removeEventListener("click", handleBoardClick);
-    newBtn.onclick = null;
-    copyBtn.onclick = null;
-    pasteBtn.onclick = null;
-    loadBtn.onclick = null;
+    app?.dispose?.();
     if (w.chessWorker) {
       w.chessWorker.terminate();
       w.chessWorker = null;
@@ -307,7 +311,7 @@ function initChess(w) {
       renderBoard();
       renderMoves();
       setStatus("Your move (White)");
-      initStockfishEngine(w)
+      initStockfishEngine(w, app)
         .then(() => {
           if (disposed) dispose();
         })

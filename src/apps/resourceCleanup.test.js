@@ -309,6 +309,25 @@ test("high-risk legacy apps use BaseApp helpers for listeners, timers, and exter
   }
 });
 
+test("high-risk network apps use tracked fetch and lifecycle-scoped aborts", () => {
+  const expectations = {
+    "email.js": [/trackedFetch\(/, /app\?\.createAbortController\?\.\(/, /app\?\.listen\?\.\(syncBtn/],
+    "discord.js": [/trackedFetch\(/, /app\?\.createAbortController\?\.\(/, /app\?\.listen\?\.\(fetchBtn/],
+    "mafia.js": [/trackedFetch\(/, /app\?\.createAbortController\?\.\(/, /app\?\.listen\?\.\(roundBtn/],
+    "console.js": [/trackedFetch\(/, /app\?\.createAbortController\?\.\(/, /this\.listen\(runButton/],
+    "shaderLab.js": [/trackedFetch\(/, /app\?\.createAbortController\?\.\(/, /app\?\.listen\?\.\(loadBtn/],
+    "chess.js": [/trackedFetch\(/, /app\.createAbortController\(\)\.signal/, /app\?\.listen\?\.\(newBtn/]
+  };
+
+  for (const [file, patterns] of Object.entries(expectations)) {
+    const source = readApp(file);
+    assert.doesNotMatch(source, /(?<!tracked)fetch\s*\(/, `${file} should avoid direct fetch calls`);
+    for (const pattern of patterns) {
+      assert.match(source, pattern, `${file} should keep network work observable and disposable`);
+    }
+  }
+});
+
 const animationApps = [
   "angrybirds.js",
   "cannonDuel.js",

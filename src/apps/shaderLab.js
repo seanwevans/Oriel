@@ -1,5 +1,6 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { loadThree } from "../threeLoader.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 
 const GLSL1_VERTEX = `precision highp float;
 void main() {
@@ -171,7 +172,7 @@ function validateShader(gl, fragmentSource, vertexSource, glslVersion) {
   return { ok: true };
 }
 
-export async function initShaderLab(win) {
+export async function initShaderLab(win, _initData = null, _manager = null, _services = {}, app = null) {
   const THREE = await loadThree();
   const canvas = win.querySelector(".shaderlab-canvas");
   const codeArea = win.querySelector(".shaderlab-code");
@@ -244,7 +245,7 @@ export async function initShaderLab(win) {
         uniforms.iResolution.value.x
       )}×${Math.round(uniforms.iResolution.value.y)}`;
 
-    animationId = requestAnimationFrame(render);
+    animationId = app?.requestAnimationFrame?.(render) ?? requestAnimationFrame(render);
   };
 
   const setErrors = (errors) => {
@@ -289,7 +290,10 @@ export async function initShaderLab(win) {
     const preset = PRESETS.find((p) => p.id === id) || PRESETS[0];
     if (!preset) return;
     try {
-      const res = await fetch(preset.url);
+      const controller = app?.createAbortController?.();
+      const res = await trackedFetch(preset.url, {
+        ...(controller ? { signal: controller.signal } : {})
+      });
       const text = await res.text();
       codeArea.value = text;
       applyShader(text);
@@ -300,8 +304,14 @@ export async function initShaderLab(win) {
 
   let debouncedRunFrame = null;
   const debouncedRun = () => {
-    if (debouncedRunFrame) cancelAnimationFrame(debouncedRunFrame);
-    debouncedRunFrame = requestAnimationFrame(() => {
+    if (debouncedRunFrame) {
+      if (app?.cancelAnimationFrame) app.cancelAnimationFrame(debouncedRunFrame);
+      else cancelAnimationFrame(debouncedRunFrame);
+    }
+    debouncedRunFrame = app?.requestAnimationFrame?.(() => {
+      debouncedRunFrame = null;
+      applyShader();
+    }) ?? requestAnimationFrame(() => {
       debouncedRunFrame = null;
       applyShader();
     });
@@ -320,21 +330,21 @@ export async function initShaderLab(win) {
   const onLoadClick = () => loadPreset(presetSelect?.value);
   const onPresetChange = () => loadPreset(presetSelect.value);
 
-  canvas.addEventListener("pointermove", onPointerMove);
-  codeArea.addEventListener("input", debouncedRun);
-  runBtn?.addEventListener("click", onRunClick);
-  loadBtn?.addEventListener("click", onLoadClick);
-  presetSelect?.addEventListener("change", onPresetChange);
+  app?.listen?.(canvas, "pointermove", onPointerMove);
+  app?.listen?.(codeArea, "input", debouncedRun);
+  app?.listen?.(runBtn, "click", onRunClick);
+  app?.listen?.(loadBtn, "click", onLoadClick);
+  app?.listen?.(presetSelect, "change", onPresetChange);
 
   return {
     dispose() {
-      cancelAnimationFrame(animationId);
-      if (debouncedRunFrame) cancelAnimationFrame(debouncedRunFrame);
-      canvas.removeEventListener("pointermove", onPointerMove);
-      codeArea.removeEventListener("input", debouncedRun);
-      runBtn?.removeEventListener("click", onRunClick);
-      loadBtn?.removeEventListener("click", onLoadClick);
-      presetSelect?.removeEventListener("change", onPresetChange);
+      if (app?.cancelAnimationFrame) app.cancelAnimationFrame(animationId);
+      else cancelAnimationFrame(animationId);
+      if (debouncedRunFrame) {
+        if (app?.cancelAnimationFrame) app.cancelAnimationFrame(debouncedRunFrame);
+        else cancelAnimationFrame(debouncedRunFrame);
+      }
+      app?.dispose?.();
       material.dispose();
       geometry.dispose();
       renderer.dispose();

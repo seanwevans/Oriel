@@ -1,4 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 import { getNetworkDefaults } from "../network/config.js";
 import { DEFAULT_SPLASH_IMAGE, DEFAULT_WALLPAPER } from "../defaults.js";
 
@@ -112,14 +113,16 @@ function filterMessages(messages, filter, search, fromFilter) {
   });
 }
 
-async function callMailBridge(endpoint, payload) {
+async function callMailBridge(endpoint, payload, app = null) {
   const target = endpoint?.replace(/\/$/, "");
   if (!target) throw new Error("No mail bridge configured");
 
-  const res = await fetch(target, {
+  const controller = app?.createAbortController?.();
+  const res = await trackedFetch(target, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    ...(controller ? { signal: controller.signal } : {})
   });
 
   if (!res.ok) {
@@ -192,7 +195,7 @@ export function getEmailContent() {
   `;
 }
 
-export function initEmail(win) {
+export function initEmail(win, _initData = null, _manager = null, _services = {}, app = null) {
   const settings = { ...loadSettings() };
   const filterSelect = win.querySelector(".mail-filter");
   const fromFilterInput = win.querySelector(".mail-from-filter");
@@ -314,7 +317,7 @@ export function initEmail(win) {
         (msg.attachments || []).some((a) => a.inline && a.type.startsWith("image/")) ? "🖼️" : ""
       }</div>
       `;
-      row.addEventListener("click", () => {
+      app?.listen?.(row, "click", () => {
         activeId = msg.id;
         msg.unread = false;
         renderList();
@@ -357,7 +360,7 @@ export function initEmail(win) {
         password: cfg.password,
         limit: 50
       };
-      const response = await callMailBridge(cfg.bridge, payload);
+      const response = await callMailBridge(cfg.bridge, payload, app);
       const fetched = Array.isArray(response?.messages) ? response.messages : [];
       messages = (fetched.length ? fetched : DEMO_MESSAGES).map((m, idx) => ({
         ...m,
@@ -410,7 +413,7 @@ export function initEmail(win) {
         password: cfg.password,
         message
       };
-      await callMailBridge(cfg.bridge, payload);
+      await callMailBridge(cfg.bridge, payload, app);
       setComposeStatus("Sent via SMTP bridge.");
     } catch (err) {
       console.error(err);
@@ -426,13 +429,13 @@ export function initEmail(win) {
     }
   };
 
-  filterSelect.addEventListener("change", renderList);
-  fromFilterInput.addEventListener("input", renderList);
-  searchInput.addEventListener("input", renderList);
-  markUnreadBtn?.addEventListener("click", markUnread);
-  syncBtn?.addEventListener("click", syncFromBridge);
-  sendBtn?.addEventListener("click", sendMessage);
-  saveBtn?.addEventListener("click", () => {
+  app?.listen?.(filterSelect, "change", renderList);
+  app?.listen?.(fromFilterInput, "input", renderList);
+  app?.listen?.(searchInput, "input", renderList);
+  app?.listen?.(markUnreadBtn, "click", markUnread);
+  app?.listen?.(syncBtn, "click", syncFromBridge);
+  app?.listen?.(sendBtn, "click", sendMessage);
+  app?.listen?.(saveBtn, "click", () => {
     const next = gatherSettings();
     persistSettings(next);
     setStatus("Saved. Password stays in this session only.");

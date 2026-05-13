@@ -12,6 +12,7 @@ import {
   setKeyValue
 } from "../keyValueStore.js";
 import { BaseApp } from "./base/BaseApp.js";
+import { trackedFetch } from "../network/trackedFetch.js";
 
 let consoleServices = {};
 
@@ -24,6 +25,7 @@ class ConsoleApp extends BaseApp {
 
   mount() {
     consoleServices = this.services || {};
+    this.windowEl.consoleApp = this;
     this.windowEl.consoleState = {
       cwd: "C:\\",
       history: [],
@@ -494,7 +496,9 @@ async function handleConsoleKey(e) {
     }
     state.historyIndex = null;
     e.target.value = "";
-    setTimeout(() => e.target.focus(), 0);
+    const app = win.consoleApp;
+    if (app?.setTimeout) app.setTimeout(() => e.target.focus(), 0);
+    else setTimeout(() => e.target.focus(), 0);
   } else if (e.key === "ArrowUp") {
     e.preventDefault();
     if (!state.history.length) return;
@@ -513,7 +517,7 @@ async function handleConsoleKey(e) {
   }
 }
 
-async function runCompiler(e) {
+async function runCompiler(e, app = null) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#compiler-out");
   const editor = win?.querySelector(".compiler-editor");
@@ -540,13 +544,15 @@ async function runCompiler(e) {
 
   const lines = [];
   try {
-    const res = await fetch("https://godbolt.org/api/compiler/g131/compile", {
+    const controller = app?.createAbortController?.();
+    const res = await trackedFetch("https://godbolt.org/api/compiler/g131/compile", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      ...(controller ? { signal: controller.signal } : {})
     });
 
     if (!res.ok) {
@@ -586,7 +592,7 @@ async function runCompiler(e) {
   renderPre(output, lines.join("\n"));
 }
 
-async function runPython(e) {
+async function runPython(e, app = null) {
   const win = e?.target?.closest(".window") || document.querySelector(".window.active");
   const output = win?.querySelector("#python-out");
   const editor = win?.querySelector(".compiler-editor");
@@ -613,10 +619,12 @@ async function runPython(e) {
   output.innerHTML = `<pre>Sending code to Compiler Explorer...</pre>`;
 
   try {
-    const response = await fetch("https://godbolt.org/api/compiler/python312/compile", {
+    const controller = app?.createAbortController?.();
+    const response = await trackedFetch("https://godbolt.org/api/compiler/python312/compile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      ...(controller ? { signal: controller.signal } : {})
     });
 
     const text = await response.text();
@@ -674,7 +682,7 @@ class CompilerApp extends BaseApp {
   }
 
   run(event) {
-    return runCompiler(event);
+    return runCompiler(event, this);
   }
 }
 
@@ -690,7 +698,7 @@ class PythonApp extends BaseApp {
   }
 
   run(event) {
-    return runPython(event);
+    return runPython(event, this);
   }
 }
 
