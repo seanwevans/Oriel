@@ -417,7 +417,7 @@ export function initEmail(win, _initData = null, _manager = null, _services = {}
       setComposeStatus("Sent via SMTP bridge.");
     } catch (err) {
       console.error(err);
-      setComposeStatus(`Send failed: ${err.message}` || "Send failed", true);
+      setComposeStatus(`Send failed: ${err.message || "Unknown error"}`, true);
     }
   };
 

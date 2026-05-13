@@ -123,7 +123,7 @@ function cashMkdir(argLine, state) {
   const segments = argLine.split(/\s+/).filter(Boolean);
   const created = [];
   for (const seg of segments) {
-    const { path, node } = consolePathFromUnix(seg, state.cwd);
+    const { node } = consolePathFromUnix(seg, state.cwd);
     if (node) return { error: `mkdir: cannot create directory '${seg}': File exists` };
     const parentPath = seg.split("/").slice(0, -1).join("/");
     const { node: parent } = consolePathFromUnix(parentPath || state.cwd, state.cwd);
@@ -143,7 +143,7 @@ function cashTouch(argLine, state) {
   const files = argLine.split(/\s+/).filter(Boolean);
   const created = [];
   for (const file of files) {
-    const { path, node } = consolePathFromUnix(file, state.cwd);
+    const { node } = consolePathFromUnix(file, state.cwd);
     if (node && node.type === "dir") return { error: `touch: ${file}: Is a directory` };
     const parentPath = file.split("/").slice(0, -1).join("/");
     const { node: parent } = consolePathFromUnix(parentPath || state.cwd, state.cwd);
@@ -191,16 +191,13 @@ function cashCp(argLine, state) {
   const sourceName = sourcePath.split(/\\/).filter(Boolean).pop();
   const destResolved = consolePathFromUnix(destArg, state.cwd);
   let destParent = null;
-  let destParentPath = null;
   let destName = null;
 
   if (destResolved.node && destResolved.node.type === "dir") {
     destParent = destResolved.node;
-    destParentPath = destResolved.path;
     destName = sourceName;
   } else {
-    ({ parent: destParent, parentPath: destParentPath, name: destName } =
-      resolveParentAndNameFromUnix(destArg, state.cwd));
+    ({ parent: destParent, name: destName } = resolveParentAndNameFromUnix(destArg, state.cwd));
   }
 
   if (!destParent || destParent.type !== "dir")
@@ -657,7 +654,7 @@ function calcInput(e, v) {
       // Evaluate the sanitized expression using Function for isolation.
       // This avoids the broad security risks of eval while still supporting
       // basic arithmetic used by the calculator UI.
-      // eslint-disable-next-line no-new-func
+ 
       const result = new Function(`"use strict"; return (${sanitized});`)();
 
       if (!Number.isFinite(result)) throw new Error("Invalid result");

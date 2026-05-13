@@ -127,8 +127,8 @@ function initPapersPlease(win) {
   win.querySelector(".papers-approve")?.addEventListener("click", () => finishTraveler(true));
   win.querySelector(".papers-deny")?.addEventListener("click", () => finishTraveler(false));
   win.querySelector(".papers-next")?.addEventListener("click", () => {
-    log("Traveler sent away without judgment.");
-    current = null;
+    current = generateEntrant();
+    log(`Now inspecting ${current.name}.`);
     renderEntrant();
   });
 

@@ -25,7 +25,6 @@ export function midiNoteToFrequency(num) {
 
 function readVarInt(view, state) {
   let result = 0;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const byte = view.getUint8(state.pos++);
     result = (result << 7) + (byte & 0x7f);

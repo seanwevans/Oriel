@@ -1,5 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
-export function getPaintRoot(options = {}) {
+export function getPaintRoot(_options = {}) {
   return `
     <div class="paint-layout">
       <div class="paint-main">
