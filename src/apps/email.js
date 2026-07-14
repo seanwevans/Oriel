@@ -2,6 +2,7 @@ import { BaseApp } from "./base/BaseApp.js";
 import { trackedFetch } from "../network/trackedFetch.js";
 import { getNetworkDefaults } from "../network/config.js";
 import { DEFAULT_SPLASH_IMAGE, DEFAULT_WALLPAPER } from "../defaults.js";
+import { escapeHtml } from "../utils/html.js";
 
 const DEMO_MESSAGES = [
   {
@@ -77,15 +78,6 @@ function persistSettings(settings) {
   const copy = { ...settings };
   delete copy.password;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(copy));
-}
-
-function escapeHtml(text = "") {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 function formatDate(iso) {

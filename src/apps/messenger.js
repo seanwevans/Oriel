@@ -1,5 +1,6 @@
 import { publish, subscribe } from "../eventBus.js";
 import { BaseApp } from "./base/BaseApp.js";
+import { escapeHtml } from "../utils/html.js";
 
 const CHANNEL_NAME = "oriel-messenger";
 const STORAGE_KEY = "oriel-messenger-history";
@@ -50,13 +51,6 @@ function formatTimestamp(ms) {
   const dt = new Date(ms);
   if (Number.isNaN(dt.getTime())) return "";
   return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 export class MessengerApp extends BaseApp {

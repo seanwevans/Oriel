@@ -1,4 +1,7 @@
 import { publish } from "../eventBus.js";
+import { escapeHtml } from "../utils/html.js";
+
+export { escapeHtml };
 
 const env = typeof import.meta !== "undefined" ? import.meta.env || {} : {};
 
@@ -115,15 +118,6 @@ export function normalizeHttpUrl(raw) {
   return trimmed;
 }
 
-
-export function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 const BROWSER_UNSAFE_ELEMENTS = "script,style,iframe,object,embed,meta[http-equiv]";
 const BROWSER_JAVASCRIPT_URL_ATTRS = new Set([

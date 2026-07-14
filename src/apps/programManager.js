@@ -5,22 +5,13 @@ import { getInstalledPrograms, getManifestForApp } from "../installer.js";
 import { getWindowBodyContainer } from "../windowContent.js";
 import { publish } from "../eventBus.js";
 import { getAppState, updateAppState } from "../state.js";
+import { escapeHtml } from "../utils/html.js";
 
 const ALLOWED_ICON_PROTOCOLS = new Set(["https:", "data:"]);
 const PROGRAM_RENAMES_STATE_KEY = "program-manager-renames";
 const PROGRAM_VIEW_STATE_KEY = "program-manager-view";
 const PROGRAM_MANAGER_VIEWS = new Set(["icons", "details"]);
 const MAX_APP_NAME_LENGTH = 64;
-
-
-function escapeAttributeValue(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
 
 function isSafeIconUrl(rawUrl) {
   if (typeof rawUrl !== "string") return false;
@@ -178,8 +169,8 @@ export function createRuntimeIconElement(manifest, type) {
 }
 
 function createRuntimeIconMarkup(manifest, type) {
-  const src = escapeAttributeValue(manifest.icon);
-  const alt = escapeAttributeValue(`${manifest.name || type} icon`);
+  const src = escapeHtml(manifest.icon);
+  const alt = escapeHtml(`${manifest.name || type} icon`);
   return `<img src="${src}" alt="${alt}" class="runtime-icon">`;
 }
 

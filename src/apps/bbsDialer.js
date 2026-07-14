@@ -1,5 +1,6 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { getSystemVolume } from "../audio.js";
+import { escapeHtml } from "../utils/html.js";
 
 const ANSI_COLOR_CLASSES = {
   30: "ansi-black",
@@ -34,10 +35,6 @@ You encounter \x1b[1;31mThe Ferryman\x1b[0m guarding the river.
 Category: \x1b[36mANSI Art History\x1b[0m
 Q: Which escape code resets formatting?\nA) \x1b[32mESC[0m\x1b[0m  B) \x1b[33mESC[7m\x1b[0m  C) \x1b[35mESC[32m\x1b[0m\n`
 };
-
-function escapeHtml(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function ansiToHtml(input) {
   let html = "";
