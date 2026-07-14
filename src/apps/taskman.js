@@ -19,7 +19,7 @@ function refreshTaskList(listEl, winId, manager) {
   });
 }
 
-function refreshProcessView(viewEl, services = {}) {
+export function refreshProcessView(viewEl, services = {}) {
   const kernelRef = getKernel(services);
   if (!viewEl || !kernelRef) return;
   viewEl.innerHTML =
@@ -29,8 +29,9 @@ function refreshProcessView(viewEl, services = {}) {
     row.className = "queue-row";
     const ticks = Math.min(20, Math.floor(p.cpuTime / 1000));
     const cpuBar = "|".repeat(ticks).padEnd(20, " ");
-    // Format ID from "win-123..."
-    const shortId = p.pid.split("-")[1].substring(9);
+    // Window pids look like "win-7"; show the bare number, and fall back to
+    // the full pid for anything the kernel registered under another scheme.
+    const shortId = String(p.pid).replace(/^win-/, "").padEnd(4);
     row.innerText = `${shortId} | ${p.priority
       .toString()
       .padEnd(3)} | ${p.state.padEnd(7)} | ${cpuBar} | ${p.name ?? "Unknown"}`;
