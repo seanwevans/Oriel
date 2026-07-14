@@ -1,18 +1,39 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { ICONS } from "../icons.js";
 
+const CARDS_STORAGE_KEY = "w31-cards";
+
+function loadCards() {
+  try {
+    const raw = localStorage.getItem(CARDS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((card) => card && typeof card === "object")
+          .map((card, idx) => ({
+            id: card.id ?? Date.now() + idx,
+            header: String(card.header ?? ""),
+            content: String(card.content ?? "")
+          }));
+      }
+      console.warn("Ignoring saved cards with unexpected shape");
+    }
+  } catch (err) {
+    console.warn("Failed to parse saved cards", err);
+  }
+  return [
+    {
+      id: 1,
+      header: "Welcome",
+      content: "This is Cardfile."
+    }
+  ];
+}
+
 export function initCardfile(w) {
-  const key = "w31-cards";
-  const stored = localStorage.getItem(key);
-  w.cards = stored
-    ? JSON.parse(stored)
-    : [
-        {
-          id: 1,
-          header: "Welcome",
-          content: "This is Cardfile."
-        }
-      ];
+  const key = CARDS_STORAGE_KEY;
+  w.cards = loadCards();
   if (w.cards.length === 0)
     w.cards.push({
       id: Date.now(),

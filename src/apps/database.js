@@ -23,18 +23,35 @@ function renderDbTable(w, app = null) {
   });
 }
 
+const DB_STORAGE_KEY = "w31-db";
+
+const DEFAULT_DB_RECORDS = [
+  {
+    id: 1,
+    name: "Bill",
+    phone: "555-0199",
+    email: "b@ms.com"
+  }
+];
+
+function loadDbRecords() {
+  try {
+    const raw = localStorage.getItem(DB_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((record) => record && typeof record === "object");
+      }
+      console.warn("Ignoring saved database records with unexpected shape");
+    }
+  } catch (err) {
+    console.warn("Failed to parse saved database records", err);
+  }
+  return DEFAULT_DB_RECORDS.map((record) => ({ ...record }));
+}
+
 export function initDatabase(w, _initData = null, _windowManager = null, _services = {}, app = null) {
-  const d = localStorage.getItem("w31-db");
-  w.dbData = d
-    ? JSON.parse(d)
-    : [
-        {
-          id: 1,
-          name: "Bill",
-          phone: "555-0199",
-          email: "b@ms.com"
-        }
-      ];
+  w.dbData = loadDbRecords();
   w.dbApp = app;
   renderDbTable(w, app);
   const listen = app?.listen?.bind(app) || ((target, type, listener) => target?.addEventListener?.(type, listener));
@@ -53,7 +70,7 @@ export function addDbRecord(b) {
     phone: p.value,
     email: e.value
   });
-  localStorage.setItem("w31-db", JSON.stringify(w.dbData));
+  localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(w.dbData));
   n.value = "";
   p.value = "";
   e.value = "";
@@ -63,7 +80,7 @@ export function addDbRecord(b) {
 export function deleteDbRecord(b, i) {
   const w = b.closest(".window");
   w.dbData.splice(i, 1);
-  localStorage.setItem("w31-db", JSON.stringify(w.dbData));
+  localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(w.dbData));
   renderDbTable(w, w.dbApp);
 }
 
