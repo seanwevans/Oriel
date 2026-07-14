@@ -1,4 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { escapeHtml } from "../utils/html.js";
 let ircLibPromise = null;
 
 function loadIrcLibrary() {
@@ -26,18 +27,35 @@ function loadIrcLibrary() {
 
 export function getIRCContent() {
   return `
-        <div class="irc">
-          <div class="irc-status">Disconnected. Set nick/channel and click connect.</div>
-          <div class="irc-log"></div>
-          <div class="irc-controls">
-            <input type="text" class="irc-nick" placeholder="Nick" />
-            <input type="text" class="irc-channel" placeholder="#channel" />
-            <button class="task-btn irc-connect">Connect</button>
-            <button class="task-btn irc-disconnect">Disconnect</button>
+        <div class="irc-layout">
+          <div class="irc-header">
+            <div class="irc-field">
+              <label>Server</label>
+              <input type="text" class="irc-server" placeholder="wss://host[:port]" />
+            </div>
+            <div class="irc-field">
+              <label>Nick</label>
+              <input type="text" class="irc-nick" placeholder="OrielUser" />
+            </div>
+            <div class="irc-field">
+              <label>Channel</label>
+              <input type="text" class="irc-channel" placeholder="#channel" />
+            </div>
+            <div class="irc-actions">
+              <button class="task-btn irc-connect">Connect</button>
+              <button class="task-btn irc-join" disabled>Join</button>
+            </div>
           </div>
-          <div class="irc-input">
-            <input type="text" class="irc-message" placeholder="Type message and press enter..." />
-            <button class="task-btn irc-send">Send</button>
+          <div class="irc-body">
+            <div class="irc-log"></div>
+            <div class="irc-sidebar">
+              <div class="irc-sidebar-header">Users</div>
+              <div class="irc-users"></div>
+            </div>
+          </div>
+          <div class="irc-input-row">
+            <input type="text" class="irc-input" placeholder="Type a message and press Enter..." disabled />
+            <button class="task-btn irc-send" disabled>Send</button>
           </div>
         </div>
       `;
@@ -60,10 +78,6 @@ export function initIRC(win) {
   let client = null;
   let isConnected = false;
   let activeChannel = null;
-
-  // Helper: Sanitize HTML
-  const escapeHtml = (str) =>
-    String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // Helper: Add Log Entry
   const addLog = (prefix, message, type = "general") => {
@@ -118,7 +132,8 @@ export function initIRC(win) {
     const inChan = connected && activeChannel;
     input.disabled = !inChan;
     sendBtn.disabled = !inChan;
-    channelInput.disabled = !connected; // Can type channel name while connected
+    // channelInput stays enabled in both states: it seeds the auto-join on
+    // connect and feeds the Join button while connected.
   };
 
   // --- Logic ---
@@ -133,6 +148,11 @@ export function initIRC(win) {
     const serverUrl = serverInput.value.trim();
     const nickname = nickInput.value.trim() || "OrielUser";
     const channelToJoin = channelInput.value.trim();
+
+    if (!serverUrl) {
+      addLog("System", "Enter a websocket server address first (e.g. wss://irc.example.org).", "error");
+      return;
+    }
 
     addLog("System", "Loading IRC Library...", "system");
 
@@ -226,7 +246,8 @@ export function initIRC(win) {
       if (host.includes(":")) {
         const parts = host.split(":");
         host = parts[0];
-        port = parseInt(parts[1]);
+        const parsedPort = Number.parseInt(parts[1], 10);
+        if (Number.isFinite(parsedPort)) port = parsedPort;
       }
 
       addLog("System", `Connecting to wss://${host}:${port}...`, "system");
@@ -302,6 +323,8 @@ export function initIRC(win) {
   listen(joinBtn, "click", handleJoin);
   listen(sendBtn, "click", handleSend);
   listen(input, "keydown", handleInputKeyDown);
+
+  toggleUI(false);
 
   return {
     dispose() {

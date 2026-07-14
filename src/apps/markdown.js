@@ -1,16 +1,8 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { DEFAULT_MD_SAMPLE } from "../defaults.js";
+import { escapeHtml } from "../utils/html.js";
 
 const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
-
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function escapeAttribute(str) {
   return escapeHtml(str);

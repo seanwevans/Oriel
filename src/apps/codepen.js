@@ -2,18 +2,10 @@ import { BaseApp } from "./base/BaseApp.js";
 import { MOCK_FS, fileSystemReady, saveFileSystem } from "../filesystem.js";
 import { installFromManifestPath } from "../installer.js";
 import { getWindowBodyContainer } from "../windowContent.js";
+import { escapeHtml } from "../utils/html.js";
 
 const CODEPEN_APP_ROOT = "C\\ORIEL\\CODEPEN";
 const DEFAULT_PEN_URL = "https://codepen.io/team/codepen/pen/PNaGbb";
-
-function escapeHtml(value = "") {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 
 function safeAppName(value, fallback = "CodePen App") {

@@ -1,5 +1,26 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { trackedFetch } from "../network/trackedFetch.js";
+
+// Message fields come straight from the Discord API, so they must be rendered
+// as text, never interpolated into markup.
+export function createDiscordMessageRow(msg = {}) {
+  const row = document.createElement("div");
+  row.className = "discord-msg";
+
+  const ts = new Date(msg.timestamp || msg.edited_timestamp || Date.now());
+  const meta = document.createElement("div");
+  meta.className = "discord-msg-meta";
+  meta.textContent = `${msg.author?.username || "Unknown"} · ${ts.toLocaleString()}`;
+
+  const body = document.createElement("div");
+  body.className = "discord-msg-body";
+  body.textContent = msg.content || "(no content)";
+
+  row.appendChild(meta);
+  row.appendChild(body);
+  return row;
+}
+
 export function getDiscordContent() {
   return `
         <div class="discord">
@@ -54,15 +75,7 @@ export function initDiscord(win, _initData = null, _manager = null, _services = 
       .slice()
       .reverse()
       .forEach((msg) => {
-        const row = document.createElement("div");
-        row.className = "discord-msg";
-        const ts = new Date(msg.timestamp || msg.edited_timestamp || Date.now());
-        const meta = `${msg.author?.username || "Unknown"} · ${ts.toLocaleString()}`;
-
-        row.innerHTML = `<div class="discord-msg-meta">${meta}</div><div class="discord-msg-body">${
-          msg.content ? msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "(no content)"
-        }</div>`;
-        logEl.appendChild(row);
+        logEl.appendChild(createDiscordMessageRow(msg));
       });
   };
 
