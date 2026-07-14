@@ -31,8 +31,10 @@ export function initCardfile(w) {
     w.cards.forEach((card) => {
       const d = document.createElement("div");
       d.className = "cardfile-item " + (card.id === w.activeCardId ? "sel" : "");
-      d.innerHTML =
-        ICONS.cardfile + `<span>${card.header || "(blank)"}</span>`;
+      d.innerHTML = ICONS.cardfile;
+      const label = document.createElement("span");
+      label.textContent = card.header || "(blank)";
+      d.appendChild(label);
       d.onclick = () => {
         w.activeCardId = card.id;
         render();
