@@ -66,6 +66,7 @@ import { ProgramManagerApp } from "./programManager.js";
 import { BrowserApp } from "./browser.js";
 import { RadioGardenApp } from "./radioGarden.js";
 import { RadioApp } from "./radio.js";
+import { GameOfLifeApp } from "./gameOfLife.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "appClass", group: "appClasses", target: "appClass" }
@@ -95,6 +96,7 @@ export const runtimeBindings = {
     DoomApp,
     EmailApp,
     FileManagerApp,
+    GameOfLifeApp,
     HexEditorApp,
     ImageViewerApp,
     IrcApp,

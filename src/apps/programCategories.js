@@ -37,6 +37,7 @@ export const PROGRAM_CATEGORIES = [
       "celeryman",
       "chess",
       "doom",
+      "gameoflife",
       "kakuro",
       "linerider",
       "mafia",
