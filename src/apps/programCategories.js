@@ -97,6 +97,7 @@ export const PROGRAM_CATEGORIES = [
       "compiler",
       "console",
       "control",
+      "json",
       "postgres",
       "procmon",
       "python",
