@@ -1,5 +1,5 @@
 import { BaseApp } from "./base/BaseApp.js";
-function formatHexDump(bytes) {
+export function formatHexDump(bytes) {
   const offsets = [];
   const hexLines = [];
   const asciiLines = [];
@@ -33,7 +33,7 @@ function formatHexDump(bytes) {
   };
 }
 
-function parseHexString(str) {
+export function parseHexString(str) {
   const cleaned = (str || "").replace(/[^0-9a-fA-F]/g, "");
   if (!cleaned) return new Uint8Array();
   if (cleaned.length % 2 !== 0) return null;
@@ -44,7 +44,11 @@ function parseHexString(str) {
   return bytes;
 }
 
-export function initHexEditor(win) {
+export function initHexEditor(win, _initData, _windowManager, _services, app) {
+  const listen =
+    app?.listen?.bind(app) ||
+    ((target, type, fn) => target?.addEventListener?.(type, fn));
+
   const hexArea = win.querySelector(".hex-area");
   const asciiArea = win.querySelector(".hex-ascii");
   const offsetArea = win.querySelector(".hex-offsets");
@@ -81,7 +85,22 @@ export function initHexEditor(win) {
 
   loadSample();
 
-  fileInput?.addEventListener("change", (e) => {
+  // Keep the offset, hex, and ASCII panes vertically aligned when the user
+  // scrolls any one of them. Without this (and with wrap disabled on the
+  // textareas) the three columns would drift out of sync.
+  const panes = [offsetArea, hexArea, asciiArea].filter(Boolean);
+  let syncing = false;
+  const syncScroll = (source) => {
+    if (syncing) return;
+    syncing = true;
+    for (const pane of panes) {
+      if (pane !== source) pane.scrollTop = source.scrollTop;
+    }
+    syncing = false;
+  };
+  panes.forEach((pane) => listen(pane, "scroll", () => syncScroll(pane)));
+
+  listen(fileInput, "change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -92,7 +111,7 @@ export function initHexEditor(win) {
     reader.readAsArrayBuffer(file);
   });
 
-  parseBtn?.addEventListener("click", () => {
+  listen(parseBtn, "click", () => {
     const bytes = parseHexString(hexArea?.value || "");
     if (bytes === null) {
       setStatus("Hex input contains an incomplete byte.", true);
@@ -101,13 +120,13 @@ export function initHexEditor(win) {
     renderBytes(bytes, "Parsed hex input.");
   });
 
-  asciiBtn?.addEventListener("click", () => {
+  listen(asciiBtn, "click", () => {
     const txt = asciiArea?.value || "";
     const bytes = new TextEncoder().encode(txt);
     renderBytes(bytes, "Encoded ASCII view.");
   });
 
-  newBtn?.addEventListener("click", () =>
+  listen(newBtn, "click", () =>
     renderBytes(new Uint8Array(), "New empty buffer.")
   );
 }
@@ -122,9 +141,9 @@ export function getHexEditorContent() {
                     <div class="hex-status">Ready</div>
                 </div>
                 <div class="hex-body">
-                    <textarea class="hex-offsets" readonly aria-label="Offsets"></textarea>
-                    <textarea class="hex-area" spellcheck="false" aria-label="Hex bytes"></textarea>
-                    <textarea class="hex-ascii" spellcheck="false" aria-label="ASCII view"></textarea>
+                    <textarea class="hex-offsets" readonly wrap="off" aria-label="Offsets"></textarea>
+                    <textarea class="hex-area" spellcheck="false" wrap="off" aria-label="Hex bytes"></textarea>
+                    <textarea class="hex-ascii" spellcheck="false" wrap="off" aria-label="ASCII view"></textarea>
                 </div>
                 <div class="hex-footer">
                     <div class="hex-summary">0 bytes</div>
@@ -140,6 +159,7 @@ export class HexEditorApp extends BaseApp {
   }
 
   mount() {
-    return initHexEditor(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+    initHexEditor(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+    return this;
   }
 }
