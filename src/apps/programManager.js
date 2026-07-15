@@ -2,6 +2,7 @@ import { BaseApp } from "./base/BaseApp.js";
 import { PROGRAMS } from "../programs.js";
 import { ICONS } from "../icons.js";
 import { getInstalledPrograms, getManifestForApp } from "../installer.js";
+import { groupProgramsByCategory } from "./programCategories.js";
 import { getWindowBodyContainer } from "../windowContent.js";
 import { publish } from "../eventBus.js";
 import { getAppState, updateAppState } from "../state.js";
@@ -352,10 +353,10 @@ export function getProgramManagerContent(wm) {
   container.appendChild(createProgramViewToggle(activeView, wm));
 
   const programs = getAvailablePrograms();
-  const list = document.createElement("div");
-  list.className = activeView === "details" ? "prog-man-list" : "prog-man-grid";
 
   if (!programs.length) {
+    const list = document.createElement("div");
+    list.className = activeView === "details" ? "prog-man-list" : "prog-man-grid";
     const emptyLabel = document.createElement("div");
     emptyLabel.className = "prog-label";
     emptyLabel.textContent = "No applications available.";
@@ -364,13 +365,32 @@ export function getProgramManagerContent(wm) {
     return container;
   }
 
-  programs.forEach((prog) => {
-    list.appendChild(
-      activeView === "details" ? createProgramDetailRow(prog, wm) : createProgramIconButton(prog, wm)
-    );
+  const sections = document.createElement("div");
+  sections.className = "prog-man-sections";
+
+  groupProgramsByCategory(programs, getProgramDisplayLabel).forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "prog-man-section";
+
+    const heading = document.createElement("h2");
+    heading.className = "prog-man-section-title";
+    heading.textContent = group.title;
+    section.appendChild(heading);
+
+    const list = document.createElement("div");
+    list.className = activeView === "details" ? "prog-man-list" : "prog-man-grid";
+    group.programs.forEach((prog) => {
+      list.appendChild(
+        activeView === "details"
+          ? createProgramDetailRow(prog, wm)
+          : createProgramIconButton(prog, wm)
+      );
+    });
+    section.appendChild(list);
+    sections.appendChild(section);
   });
 
-  container.appendChild(list);
+  container.appendChild(sections);
   return container;
 }
 
