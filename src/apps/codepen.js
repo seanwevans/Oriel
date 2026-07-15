@@ -145,13 +145,18 @@ function triggerDownload({ manifest, entrySource }) {
   URL.revokeObjectURL(url);
 }
 
-async function installCodePenApp({ rawUrl, name, width, height, download }) {
+export function getCodePenAppId(rawUrl) {
+  const parsed = parseCodePenUrl(rawUrl);
+  return parsed ? `codepen-${safeFileName(parsed.hash)}` : null;
+}
+
+export async function installCodePenApp({ rawUrl, name, width, height, download }) {
   const parsed = parseCodePenUrl(rawUrl);
   const embedUrl = getCodePenEmbedUrl(rawUrl, { defaultTab: "result" });
   if (!parsed || !embedUrl) throw new Error("Enter a valid codepen.io pen URL first.");
 
   await fileSystemReady;
-  const id = `codepen-${safeFileName(parsed.hash)}`;
+  const id = getCodePenAppId(rawUrl);
   const appName = safeAppName(name, `CodePen ${parsed.hash}`);
   const folderName = safeFileName(`${parsed.user}-${parsed.hash}`).toUpperCase();
   const appDirPath = `${CODEPEN_APP_ROOT}\\${folderName}`;
