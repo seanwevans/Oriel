@@ -256,6 +256,14 @@ export async function uninstallApp(appId) {
   return { id: normalized };
 }
 
+export async function uninstallAllApps() {
+  const ids = Array.from(runtimeRegistry.keys());
+  runtimeRegistry.clear();
+  await persistRegistry();
+  publish("apps:change", { apps: getInstalledPrograms() });
+  return { ids };
+}
+
 export function getRuntimeInitializer(type) {
   return runtimeRegistry.get(type)?.initializer || null;
 }
