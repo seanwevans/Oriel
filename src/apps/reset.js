@@ -1,5 +1,6 @@
 import { BaseApp } from "./base/BaseApp.js";
 import { uninstallAllApps } from "../installer.js";
+import { clearFeaturedPensSeed } from "./featuredPens.js";
 
 export function initReset(w) {
   const btn = w.querySelector(".reset-now-btn");
@@ -37,6 +38,8 @@ export function initReset(w) {
 
     try {
       const { ids } = await uninstallAllApps();
+      // Forget the featured-pen seed so the default demos reinstall on reload.
+      await clearFeaturedPensSeed();
       setStatus(
         `Uninstalled ${ids.length} installed app${ids.length === 1 ? "" : "s"}. Reloading to apply defaults…`
       );

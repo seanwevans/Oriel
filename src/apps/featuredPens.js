@@ -101,6 +101,12 @@ async function writeSeededIds(ids) {
   }
 }
 
+// Forget which featured pens have been seeded so the defaults install again on
+// the next boot. Used by the reset flow to restore the default desktop.
+export async function clearFeaturedPensSeed() {
+  await writeSeededIds([]);
+}
+
 export async function installFeaturedCodePenApps({
   pens = FEATURED_CODEPEN_PENS,
   installApp = installPenApp,
