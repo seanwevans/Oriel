@@ -98,6 +98,7 @@ export const PROGRAM_CATEGORIES = [
       "console",
       "control",
       "postgres",
+      "procmon",
       "python",
       "reset",
       "retroai",

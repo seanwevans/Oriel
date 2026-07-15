@@ -52,6 +52,7 @@ export const APP_MANIFEST = {
   netnews: { type: "netnews", title: "NetNews", width: 980, height: 640, icon: "netnews", label: "NetNews", appClass: "NetNewsApp" },
   clipbrd: { type: "clipbrd", title: "Clipboard", width: 300, height: 250, icon: "clipboard", label: "Clipboard", executableName: "CLIPBRD.EXE", appClass: "ClipboardApp" },
   taskman: { type: "taskman", title: "Task List", width: 320, height: 350, icon: "taskman", label: "Task List", executableName: "TASKMAN.EXE", appClass: "TaskManApp" },
+  procmon: { type: "procmon", title: "Process Monitor", width: 420, height: 440, icon: "procmon", label: "Proc Mon", executableName: "PROCMON.EXE", appClass: "ProcessMonitorApp" },
   database: { type: "database", title: "Data Manager", width: 500, height: 400, icon: "database", label: "Data Mgr", executableName: "DATAMGR.EXE", appClass: "DatabaseApp" },
   postgres: { type: "postgres", title: "Postgres", width: 820, height: 520, icon: "postgres", label: "Postgres", executableName: "POSTGRES.EXE", appClass: "PostgresApp" },
   compiler: { type: "compiler", title: "Tiny C", width: 450, height: 350, icon: "ccompiler", label: "Tiny C", executableName: "TINYC.EXE", appClass: "CompilerApp" },
