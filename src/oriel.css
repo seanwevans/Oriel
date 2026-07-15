@@ -377,6 +377,26 @@ body {
   outline-offset: -4px;
 }
 
+.prog-man-section-title {
+  position: sticky;
+  top: 33px;
+  z-index: 1;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--win-gray-dark);
+  background-color: var(--win-gray);
+  border-top: 1px solid var(--win-gray-light);
+  border-bottom: 1px solid var(--win-gray-shadow);
+}
+
+.prog-man-section:first-child .prog-man-section-title {
+  border-top: 0;
+}
+
 .prog-man-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
