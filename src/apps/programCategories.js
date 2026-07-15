@@ -58,7 +58,7 @@ export const PROGRAM_CATEGORIES = [
   {
     id: "graphics",
     title: "Graphics & Design",
-    types: ["paint", "photoshop", "pixelstudio", "shaderlab", "whiteboard"]
+    types: ["colorpicker", "paint", "photoshop", "pixelstudio", "shaderlab", "whiteboard"]
   },
   {
     id: "music",

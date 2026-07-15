@@ -68,6 +68,7 @@ import { RadioGardenApp } from "./radioGarden.js";
 import { RadioApp } from "./radio.js";
 import { GameOfLifeApp } from "./gameOfLife.js";
 import { ProcessMonitorApp } from "./processMonitor.js";
+import { ColorPickerApp } from "./colorPicker.js";
 import { JsonFormatterApp } from "./jsonFormatter.js";
 import { TetrisApp } from "./tetris.js";
 
@@ -91,6 +92,7 @@ export const runtimeBindings = {
     ClipboardApp,
     ClockApp,
     CodePenApp,
+    ColorPickerApp,
     CompilerApp,
     ConsoleApp,
     ControlPanelApp,
