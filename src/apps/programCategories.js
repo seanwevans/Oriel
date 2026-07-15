@@ -51,7 +51,8 @@ export const PROGRAM_CATEGORIES = [
       "simcity",
       "skifree",
       "solitaire",
-      "sudoku"
+      "sudoku",
+      "tetris"
     ]
   },
   {
@@ -97,6 +98,7 @@ export const PROGRAM_CATEGORIES = [
       "compiler",
       "console",
       "control",
+      "json",
       "postgres",
       "procmon",
       "python",
