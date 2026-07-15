@@ -11,6 +11,7 @@ export const APP_MANIFEST = {
     appClass: "ProgramManagerApp"
   },
   notepad: { type: "notepad", title: "Notepad", width: 300, height: 200, icon: "notepad", label: "Notepad", executableName: "NOTEPAD.EXE", appClass: "NotepadApp" },
+  sheets: { type: "sheets", title: "Sheets", width: 640, height: 440, icon: "sheets", label: "Sheets", executableName: "SHEETS.EXE", appClass: "SheetsApp" },
   write: { type: "write", title: "Write", width: 500, height: 400, icon: "write", label: "Write", executableName: "WRITE.EXE", appClass: "WriteApp" },
   codepen: { type: "codepen", title: "Pen Runner", width: 900, height: 640, icon: "codepen", label: "Pen Runner", executableName: "PENRUNNER.EXE", appClass: "CodePenApp" },
   winfile: { type: "winfile", title: "File Manager", width: 500, height: 350, icon: "winfile", label: "File Mgr", executableName: "WINFILE.EXE", appClass: "FileManagerApp" },
