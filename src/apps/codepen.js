@@ -275,10 +275,10 @@ export function initPenRunner(win, initData, wm, services, app) {
 
   // Live preview: recompile shortly after typing stops.
   let debounce = null;
+  app?.registerDisposable?.(() => clearTimeout(debounce));
   const scheduleRun = () => {
-    if (debounce) clearTimeout(debounce);
+    clearTimeout(debounce);
     debounce = setTimeout(run, 400);
-    if (app?.registerDisposable) app.registerDisposable(() => clearTimeout(debounce));
   };
 
   [htmlInput, cssInput, jsInput].forEach((el) => on(el, "input", scheduleRun));
