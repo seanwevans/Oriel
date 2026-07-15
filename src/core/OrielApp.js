@@ -23,7 +23,7 @@ import {
 } from "../apps/controlPanel.js";
 import { registerConsoleCommands } from "../apps/console.js";
 import { controlPanelContext } from "../windowManager.js";
-import { bootstrapInstallations } from "../installer.js";
+import { bootstrapInstallations, purgeLegacyCodePenApps } from "../installer.js";
 import { installFeaturedCodePenApps } from "../apps/featuredPens.js";
 import { FileSystemActions } from "./FileSystemActions.js";
 import { DesktopController } from "./DesktopController.js";
@@ -50,7 +50,7 @@ export class OrielApp {
     wallpaper = { applyWallpaperSettings },
     audio = audioActions,
     network = networkActions,
-    installer = { bootstrapInstallations, installFeaturedCodePenApps },
+    installer = { bootstrapInstallations, purgeLegacyCodePenApps, installFeaturedCodePenApps },
     screensaver = { initScreensaver }
   } = {}) {
     this.WindowManager = WindowManager;
@@ -107,6 +107,10 @@ export class OrielApp {
 
     this.installerReady = this.installer
       .bootstrapInstallations()
+      // Remove legacy CodePen-embed installs (toolbar chrome + heavy remote
+      // assets) left in the registry by older builds before seeding featured
+      // pens or rendering the desktop.
+      .then(() => this.installer.purgeLegacyCodePenApps?.())
       // Featured pens install after the registry bootstraps so already
       // installed (or uninstalled) ids are respected.
       .then(() => this.installer.installFeaturedCodePenApps?.())
