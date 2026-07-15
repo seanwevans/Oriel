@@ -51,7 +51,8 @@ export const PROGRAM_CATEGORIES = [
       "simcity",
       "skifree",
       "solitaire",
-      "sudoku"
+      "sudoku",
+      "tetris"
     ]
   },
   {
