@@ -72,9 +72,11 @@ The system is designed around a decoupled "App Host" model that provides applica
 
 * **Simulated Kernel:** Manages a collection of virtual processes with a tick-based scheduler (200ms intervals) that simulates CPU time and process states (READY, RUNNING, WAITING).
 * **Virtual Filesystem:** Supports a standard mock filesystem, JSON-based export/import, and native folder mounting using the File System Access API where supported.
-* **App Registry:** A centralized hub that maps application types to their respective initializers and content providers, allowing for easy expansion.
+* **App Registry:** A centralized hub that maps application types to their `BaseApp` classes, allowing for easy expansion.
 * **Persistent State:** Saves and restores desktop configuration, window positions, and system settings across sessions.
 * **Integrated Audio Engine:** Provides system-wide volume control and tracks media playback across different application windows.
+
+> 📐 For a graphical walkthrough of the topology — system components, boot sequence, the app-registration pipeline, and the `BaseApp` lifecycle — see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## 📂 Application Catalog
 
@@ -87,13 +89,14 @@ Oriel features a vast library of pre-installed applications spanning several cat
 * **PDF Reader & Markdown Viewer:** Inline document viewers for common formats.
 * **Cardfile:** A digital rolodex for managing small notes.
 * **Character Map:** A utility to browse and copy symbols from various character sets.
+* **Sheets:** A Lotus 1-2-3 / Excel-style spreadsheet with a formula bar (cell references, ranges, and aggregate functions).
 
 ### Games & Simulations
 
-* **Classics:** DOOM, Minecraft Classic, Minesweeper, Solitaire, and SkiFree.
+* **Classics:** DOOM, Minecraft Classic, Minesweeper, Solitaire, SkiFree, and Tetris.
 * **Creative Play:** Line Rider, Sandspiel (2D/3D), and Angry Birds.
 * **Logic & Puzzles:** Chess, Sudoku, Kakuro, and Reversi.
-* **Simulation:** SimCity, Cannon Duel, and Pinball.
+* **Simulation:** SimCity, Cannon Duel, Pinball, and Conway's Game of Life.
 
 ### Development & Systems
 
@@ -101,8 +104,16 @@ Oriel features a vast library of pre-installed applications spanning several cat
 * **Shader Lab:** A GLSL playground for real-time fragment shader experimentation.
 * **Postgres:** A SQL console for issuing queries against a virtual database.
 * **Hex Editor:** Inspect and modify raw byte data.
+* **JSON Formatter:** Pretty-print, minify, and validate JSON with in-place error locations.
+* **Process Monitor:** A live view of the simulated kernel's scheduler — per-state tiles, a load sparkline, and a CPU-sorted process table.
 * **Packet Lab:** A visualizer for network flow and packet simulations.
 * **Oriel VM:** A recursive window that runs a nested instance of the Oriel environment.
+
+### Graphics & Design
+
+* **Paint & Photoshop:** Bitmap editors for freehand and layered artwork.
+* **Pixel Studio & Whiteboard:** A pixel-art grid and an infinite sketch canvas.
+* **Color Picker:** RGB/HSL sliders, a hex field, live preview, and a saved-swatch palette.
 
 ### Multimedia & Social
 
