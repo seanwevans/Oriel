@@ -2,34 +2,33 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 const { FEATURED_CODEPEN_PENS, installFeaturedCodePenApps } = await import("./featuredPens.js");
-const { getCodePenAppId, parseCodePenUrl } = await import("./codepen.js");
 const { getManifestForApp, getInstalledPrograms, uninstallApp } = await import("../installer.js");
 
-test("every featured pen entry is a valid CodePen URL with a unique app id", () => {
+test("every featured pen entry has a unique id, a name, and inline source", () => {
   const ids = new Set();
   for (const pen of FEATURED_CODEPEN_PENS) {
-    assert.ok(parseCodePenUrl(pen.url), `invalid CodePen URL: ${pen.url}`);
-    const id = getCodePenAppId(pen.url);
-    assert.ok(id, `no app id derived for ${pen.url}`);
-    assert.ok(!ids.has(id), `duplicate featured app id: ${id}`);
-    ids.add(id);
-    assert.ok(pen.name && typeof pen.name === "string", `missing name for ${pen.url}`);
+    assert.ok(pen.id && typeof pen.id === "string", "missing id");
+    assert.ok(!ids.has(pen.id), `duplicate featured pen id: ${pen.id}`);
+    ids.add(pen.id);
+    assert.ok(pen.name && typeof pen.name === "string", `missing name for ${pen.id}`);
+    const source = `${pen.html || ""}${pen.css || ""}${pen.js || ""}`;
+    assert.ok(source.trim().length > 0, `featured pen ${pen.id} has no source`);
   }
 });
 
 test("featured pens install once and record the seed marker", async () => {
-  const installedUrls = [];
+  const installedIds = [];
   let savedIds = null;
 
   const installed = await installFeaturedCodePenApps({
     pens: [
-      { url: "https://codepen.io/goosethe/pen/azmPzyE", name: "Blorpis" },
-      { url: "https://codepen.io/goosethe/pen/JoRwJjd", name: "Dolf" },
-      { url: "https://codepen.io/goosethe/pen/GgjNXOX", name: "Bro Bater" }
+      { id: "starfield", name: "Starfield", html: "<i></i>" },
+      { id: "bouncing-logo", name: "Bouncing Logo", html: "<i></i>" },
+      { id: "matrix-rain", name: "Matrix Rain", html: "<i></i>" }
     ],
-    installApp: async ({ rawUrl }) => {
-      installedUrls.push(rawUrl);
-      return { manifest: { id: getCodePenAppId(rawUrl) } };
+    installApp: async ({ id }) => {
+      installedIds.push(id);
+      return { manifest: { id: `pen-${id}` } };
     },
     isInstalled: () => false,
     loadSeededIds: async () => [],
@@ -38,9 +37,9 @@ test("featured pens install once and record the seed marker", async () => {
     }
   });
 
-  assert.deepEqual(installed, ["codepen-azmpzye", "codepen-jorwjjd", "codepen-ggjnxox"]);
-  assert.equal(installedUrls.length, 3);
-  assert.deepEqual(savedIds, ["codepen-azmpzye", "codepen-jorwjjd", "codepen-ggjnxox"]);
+  assert.deepEqual(installed, ["pen-starfield", "pen-bouncing-logo", "pen-matrix-rain"]);
+  assert.deepEqual(installedIds, ["starfield", "bouncing-logo", "matrix-rain"]);
+  assert.deepEqual(savedIds, ["pen-starfield", "pen-bouncing-logo", "pen-matrix-rain"]);
 });
 
 test("featured pens that were seeded before are never resurrected", async () => {
@@ -48,13 +47,13 @@ test("featured pens that were seeded before are never resurrected", async () => 
   let saveCalls = 0;
 
   const installed = await installFeaturedCodePenApps({
-    pens: [{ url: "https://codepen.io/goosethe/pen/azmPzyE", name: "Blorpis" }],
+    pens: [{ id: "starfield", name: "Starfield", html: "<i></i>" }],
     installApp: async () => {
       installCalls += 1;
-      return { manifest: { id: "codepen-azmpzye" } };
+      return { manifest: { id: "pen-starfield" } };
     },
     isInstalled: () => false,
-    loadSeededIds: async () => ["codepen-azmpzye"],
+    loadSeededIds: async () => ["pen-starfield"],
     saveSeededIds: async () => {
       saveCalls += 1;
     }
@@ -70,10 +69,10 @@ test("already installed pens are marked seeded without reinstalling", async () =
   let savedIds = null;
 
   const installed = await installFeaturedCodePenApps({
-    pens: [{ url: "https://codepen.io/goosethe/pen/azmPzyE", name: "Blorpis" }],
+    pens: [{ id: "starfield", name: "Starfield", html: "<i></i>" }],
     installApp: async () => {
       installCalls += 1;
-      return { manifest: { id: "codepen-azmpzye" } };
+      return { manifest: { id: "pen-starfield" } };
     },
     isInstalled: () => true,
     loadSeededIds: async () => [],
@@ -84,7 +83,7 @@ test("already installed pens are marked seeded without reinstalling", async () =
 
   assert.deepEqual(installed, []);
   assert.equal(installCalls, 0);
-  assert.deepEqual(savedIds, ["codepen-azmpzye"]);
+  assert.deepEqual(savedIds, ["pen-starfield"]);
 });
 
 test("a failed install stays unseeded so the next boot retries", async () => {
@@ -92,12 +91,12 @@ test("a failed install stays unseeded so the next boot retries", async () => {
 
   const installed = await installFeaturedCodePenApps({
     pens: [
-      { url: "https://codepen.io/goosethe/pen/azmPzyE", name: "Blorpis" },
-      { url: "https://codepen.io/goosethe/pen/JoRwJjd", name: "Dolf" }
+      { id: "starfield", name: "Starfield", html: "<i></i>" },
+      { id: "matrix-rain", name: "Matrix Rain", html: "<i></i>" }
     ],
-    installApp: async ({ rawUrl }) => {
-      if (rawUrl.includes("azmPzyE")) throw new Error("boom");
-      return { manifest: { id: getCodePenAppId(rawUrl) } };
+    installApp: async ({ id }) => {
+      if (id === "starfield") throw new Error("boom");
+      return { manifest: { id: `pen-${id}` } };
     },
     isInstalled: () => false,
     loadSeededIds: async () => [],
@@ -106,8 +105,8 @@ test("a failed install stays unseeded so the next boot retries", async () => {
     }
   });
 
-  assert.deepEqual(installed, ["codepen-jorwjjd"]);
-  assert.deepEqual(savedIds, ["codepen-jorwjjd"]);
+  assert.deepEqual(installed, ["pen-matrix-rain"]);
+  assert.deepEqual(savedIds, ["pen-matrix-rain"]);
 });
 
 test("featured pens install end-to-end through the real installer pipeline", async () => {
@@ -117,17 +116,17 @@ test("featured pens install end-to-end through the real installer pipeline", asy
   });
 
   try {
-    assert.deepEqual(installed.sort(), ["codepen-azmpzye", "codepen-ggjnxox", "codepen-jorwjjd"]);
+    assert.deepEqual(installed.sort(), ["pen-bouncing-logo", "pen-matrix-rain", "pen-starfield"]);
 
-    const blorpis = getManifestForApp("codepen-azmpzye");
-    assert.equal(blorpis.name, "Blorpis");
-    assert.equal(blorpis.icon, "codepen");
-    assert.equal(blorpis.window.width, 900);
+    const starfield = getManifestForApp("pen-starfield");
+    assert.equal(starfield.name, "Starfield");
+    assert.equal(starfield.icon, "codepen");
+    assert.equal(starfield.window.width, 720);
 
     const titles = getInstalledPrograms().map((p) => p.title);
-    assert.ok(titles.includes("Blorpis"));
-    assert.ok(titles.includes("Dolf"));
-    assert.ok(titles.includes("Bro Bater"));
+    assert.ok(titles.includes("Starfield"));
+    assert.ok(titles.includes("Bouncing Logo"));
+    assert.ok(titles.includes("Matrix Rain"));
   } finally {
     for (const id of installed) {
       await uninstallApp(id).catch(() => {});

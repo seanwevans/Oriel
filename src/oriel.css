@@ -6896,7 +6896,7 @@ body {
   }
 }
 
-.codepen-runner,
+.pen-runner,
 .codepen-viewer,
 .codepen-installed-app {
   display: flex;
@@ -6907,9 +6907,10 @@ body {
   color: #f9fafb;
 }
 
-.codepen-form {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(180px, 260px);
+.pen-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 8px;
   padding: 8px;
   background: #c0c0c0;
@@ -6917,7 +6918,7 @@ body {
   border-bottom: 2px solid #808080;
 }
 
-.codepen-field {
+.pen-name-field {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -6925,43 +6926,86 @@ body {
   font-weight: bold;
 }
 
-.codepen-field input {
+.pen-name-field input {
   min-width: 0;
   padding: 4px 6px;
   border: 2px inset #fff;
   font: inherit;
 }
 
-.codepen-actions {
+.pen-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  grid-column: 1 / -1;
 }
 
-.codepen-actions button {
+.pen-actions button {
   padding: 4px 8px;
 }
 
-.codepen-status {
-  grid-column: 1 / -1;
+.pen-status {
+  flex-basis: 100%;
   min-height: 18px;
   font-size: 12px;
 }
 
-.codepen-status.error,
+.pen-status.error,
 .codepen-message.error {
   color: #b91c1c;
 }
 
-.codepen-preview-shell {
+.pen-editors {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  min-height: 0;
+  height: 42%;
+  background: #808080;
+}
+
+.pen-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pen-pane > span {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  background: #111827;
+  color: #93c5fd;
+}
+
+.pen-pane textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: 0;
+  padding: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+.pen-pane textarea:focus {
+  outline: 1px solid #3b82f6;
+  outline-offset: -1px;
+}
+
+.pen-preview-shell {
   flex: 1;
   min-height: 0;
   padding: 8px;
   background: #111827;
 }
 
-.codepen-preview,
+.pen-preview,
 .codepen-viewer iframe,
 .codepen-installed-app iframe {
   width: 100%;
@@ -6971,29 +7015,14 @@ body {
   background: #fff;
 }
 
-.codepen-installed-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
-  background: #111827;
-  border-bottom: 1px solid #374151;
-  color: #f9fafb;
-  font-size: 12px;
-}
-
-.codepen-installed-toolbar a {
-  color: #93c5fd;
-}
-
 .codepen-message {
   padding: 12px;
   background: #c0c0c0;
 }
 
 @media (max-width: 720px) {
-  .codepen-form {
+  .pen-editors {
     grid-template-columns: 1fr;
+    height: 50%;
   }
 }
