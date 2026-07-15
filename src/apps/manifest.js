@@ -12,7 +12,7 @@ export const APP_MANIFEST = {
   },
   notepad: { type: "notepad", title: "Notepad", width: 300, height: 200, icon: "notepad", label: "Notepad", executableName: "NOTEPAD.EXE", appClass: "NotepadApp" },
   write: { type: "write", title: "Write", width: 500, height: 400, icon: "write", label: "Write", executableName: "WRITE.EXE", appClass: "WriteApp" },
-  codepen: { type: "codepen", title: "CodePen Runner", width: 900, height: 640, icon: "codepen", label: "CodePen", executableName: "CODEPEN.EXE", appClass: "CodePenApp" },
+  codepen: { type: "codepen", title: "Pen Runner", width: 900, height: 640, icon: "codepen", label: "Pen Runner", executableName: "PENRUNNER.EXE", appClass: "CodePenApp" },
   winfile: { type: "winfile", title: "File Manager", width: 500, height: 350, icon: "winfile", label: "File Mgr", executableName: "WINFILE.EXE", appClass: "FileManagerApp" },
   cardfile: { type: "cardfile", title: "Cardfile", width: 350, height: 400, icon: "cardfile", label: "Cardfile", executableName: "CARDFILE.EXE", appClass: "CardfileApp" },
   calc: { type: "calc", title: "Calculator", width: 220, height: 250, icon: "calc", label: "Calculator", executableName: "CALC.EXE", appClass: "CalcApp" },

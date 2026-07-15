@@ -4,11 +4,25 @@ import { installFromManifestPath } from "../installer.js";
 import { getWindowBodyContainer } from "../windowContent.js";
 import { escapeHtml } from "../utils/html.js";
 
-const CODEPEN_APP_ROOT = "C\\ORIEL\\CODEPEN";
-const DEFAULT_PEN_URL = "https://codepen.io/team/codepen/pen/PNaGbb";
+// Self-contained pen runner. Instead of embedding codepen.io (which renders
+// CodePen's own toolbar/chrome inside the iframe), Oriel takes the raw HTML,
+// CSS, and JS and compiles them into a single document rendered through an
+// isolated iframe `srcdoc`. Nothing is fetched from CodePen at runtime.
 
+const PEN_APP_ROOT = "C\\ORIEL\\PENS";
 
-function safeAppName(value, fallback = "CodePen App") {
+// Isolated: scripts run, but the pen gets an opaque origin (no allow-same-origin),
+// so it cannot reach Oriel's storage, DOM, or origin.
+const PEN_SANDBOX =
+  "allow-scripts allow-modals allow-popups allow-forms allow-pointer-lock allow-downloads";
+
+const STARTER = {
+  html: `<h1>Hello from Oriel</h1>\n<p>Paste your pen's HTML here.</p>`,
+  css: `body {\n  margin: 0;\n  height: 100vh;\n  display: grid;\n  place-items: center;\n  font-family: system-ui, sans-serif;\n  background: #0f172a;\n  color: #e2e8f0;\n}`,
+  js: `console.log("Pen running inside Oriel");`
+};
+
+function safeAppName(value, fallback = "Web App") {
   const cleaned = String(value || "")
     .replace(/[<>]/g, "")
     .replace(/\s+/g, " ")
@@ -17,71 +31,40 @@ function safeAppName(value, fallback = "CodePen App") {
   return cleaned || fallback;
 }
 
-function safeFileName(value = "codepen") {
-  const cleaned = value
+function safeFileName(value = "pen") {
+  const cleaned = String(value)
     .toLowerCase()
     .replace(/[^a-z0-9-_]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
-  return cleaned || "codepen";
+  return cleaned || "pen";
 }
 
-function titleFromPen(parsed) {
-  if (!parsed) return "CodePen Pen";
-  return `${parsed.userPath || parsed.user}/${parsed.hash}`;
+export function makeAppId(seed) {
+  return `pen-${safeFileName(seed)}`;
 }
 
-export function parseCodePenUrl(rawUrl) {
-  if (!rawUrl || typeof rawUrl !== "string") return null;
-  let url;
-  try {
-    url = new URL(rawUrl.trim());
-  } catch {
-    return null;
-  }
-
-  if (!/(^|\.)codepen\.io$/i.test(url.hostname)) return null;
-
-  const parts = url.pathname.split("/").filter(Boolean);
-  if (parts.length < 3) return null;
-
-  let user = parts[0];
-  let userPath = user;
-  let mode = parts[1];
-  let hash = parts[2];
-
-  if (parts[0] === "team" && parts.length >= 4) {
-    user = parts[1];
-    userPath = `team/${user}`;
-    mode = parts[2];
-    hash = parts[3];
-  }
-
-  if (!user || !hash || !["pen", "embed", "full", "details", "debug"].includes(mode)) {
-    return null;
-  }
-
-  if (!/^[a-zA-Z0-9_-]+$/.test(user) || !/^[a-zA-Z0-9_-]+$/.test(hash)) return null;
-
-  return {
-    user,
-    userPath,
-    hash,
-    mode,
-    originalUrl: url.toString(),
-    title: titleFromPen({ userPath, hash })
-  };
-}
-
-export function getCodePenEmbedUrl(rawUrl, options = {}) {
-  const parsed = parseCodePenUrl(rawUrl);
-  if (!parsed) return null;
-  const params = new URLSearchParams({
-    "default-tab": options.defaultTab || "result",
-    "theme-id": options.themeId || "dark"
-  });
-  if (options.editable) params.set("editable", "true");
-  return `https://codepen.io/${parsed.userPath}/embed/${parsed.hash}?${params.toString()}`;
+// Compile the three sources into one standalone HTML document. The closing
+// script tag is neutralized so JS containing the literal `</script>` cannot
+// terminate the injected block early.
+export function buildPenDocument({ html = "", css = "", js = "" } = {}) {
+  const safeJs = String(js).replace(/<\/script/gi, "<\\/script");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+<script>
+${safeJs}
+</script>
+</body>
+</html>`;
 }
 
 function ensureDir(path) {
@@ -99,11 +82,25 @@ function ensureDir(path) {
   return node;
 }
 
-export function getGeneratedEntrySource({ appName, embedUrl }) {
-  return `const EMBED_URL = ${JSON.stringify(embedUrl)};
-const APP_NAME = ${JSON.stringify(appName)};
+// Produce a self-contained ES module that renders the compiled pen through a
+// sandboxed iframe. The sources are embedded so the installed app never touches
+// the network and never shows any CodePen chrome.
+export function getGeneratedEntrySource({ appName, html = "", css = "", js = "" }) {
+  return `const APP_NAME = ${JSON.stringify(appName)};
+const PEN_HTML = ${JSON.stringify(html)};
+const PEN_CSS = ${JSON.stringify(css)};
+const PEN_JS = ${JSON.stringify(js)};
+const PEN_SANDBOX = ${JSON.stringify(PEN_SANDBOX)};
 
-export default function initInstalledCodePen(win) {
+function buildPenDocument(html, css, js) {
+  const safeJs = String(js).replace(/<\\/script/gi, "<\\\\/script");
+  return "<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n<meta charset=\\"utf-8\\">\\n" +
+    "<meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1.0\\">\\n" +
+    "<style>\\n" + css + "\\n</style>\\n</head>\\n<body>\\n" + html + "\\n" +
+    "<script>\\n" + safeJs + "\\n</script>\\n</body>\\n</html>";
+}
+
+export default function initInstalledPen(win) {
   const body = win.querySelector(".window-body") || win;
   body.innerHTML = "";
   const root = document.createElement("div");
@@ -111,12 +108,8 @@ export default function initInstalledCodePen(win) {
   const iframe = document.createElement("iframe");
   iframe.title = APP_NAME;
   iframe.loading = "lazy";
-  iframe.allow = "accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write";
-  iframe.setAttribute(
-    "sandbox",
-    "allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
-  );
-  iframe.src = EMBED_URL;
+  iframe.setAttribute("sandbox", PEN_SANDBOX);
+  iframe.srcdoc = buildPenDocument(PEN_HTML, PEN_CSS, PEN_JS);
   root.appendChild(iframe);
   body.appendChild(root);
 }
@@ -125,7 +118,7 @@ export default function initInstalledCodePen(win) {
 
 function triggerDownload({ manifest, entrySource }) {
   const payload = {
-    kind: "oriel-codepen-app",
+    kind: "oriel-pen-app",
     manifest,
     files: {
       [manifest.entry]: entrySource
@@ -142,37 +135,38 @@ function triggerDownload({ manifest, entrySource }) {
   URL.revokeObjectURL(url);
 }
 
-export function getCodePenAppId(rawUrl) {
-  const parsed = parseCodePenUrl(rawUrl);
-  return parsed ? `codepen-${safeFileName(parsed.hash)}` : null;
-}
-
-export async function installCodePenApp({ rawUrl, name, width, height, download }) {
-  const parsed = parseCodePenUrl(rawUrl);
-  const embedUrl = getCodePenEmbedUrl(rawUrl, { defaultTab: "result" });
-  if (!parsed || !embedUrl) throw new Error("Enter a valid codepen.io pen URL first.");
+export async function installPenApp({
+  id,
+  name,
+  html = "",
+  css = "",
+  js = "",
+  width,
+  height,
+  download
+}) {
+  const appName = safeAppName(name);
+  const appId = safeFileName(id) ? makeAppId(id) : makeAppId(appName);
 
   await fileSystemReady;
-  const id = getCodePenAppId(rawUrl);
-  const appName = safeAppName(name, `CodePen ${parsed.hash}`);
-  const folderName = safeFileName(`${parsed.user}-${parsed.hash}`).toUpperCase();
-  const appDirPath = `${CODEPEN_APP_ROOT}\\${folderName}`;
+  const folderName = safeFileName(appId).toUpperCase();
+  const appDirPath = `${PEN_APP_ROOT}\\${folderName}`;
   const appDir = ensureDir(appDirPath);
 
   const manifest = {
-    id,
+    id: appId,
     name: appName,
     version: "1.0.0",
     entry: "APP.JS",
     icon: "codepen",
     label: appName.slice(0, 14),
-    permissions: ["iframe", "network"],
+    permissions: ["iframe"],
     window: {
       width: Number(width) || 900,
       height: Number(height) || 640
     }
   };
-  const entrySource = getGeneratedEntrySource({ appName, embedUrl });
+  const entrySource = getGeneratedEntrySource({ appName, html, css, js });
 
   appDir.children["APP.JS"] = { type: "file", content: entrySource };
   appDir.children["MANIFEST.JSON"] = { type: "file", content: JSON.stringify(manifest, null, 2) };
@@ -184,107 +178,126 @@ export async function installCodePenApp({ rawUrl, name, width, height, download 
   return { manifest, manifestPath };
 }
 
-function renderViewer({ win, rawUrl, title }) {
+// Kept for backwards compatibility with older callers that installed pens by
+// name; delegates to the source-based installer.
+export const installCodePenApp = installPenApp;
+
+function renderViewer({ win, html, css, js, title }) {
   const body = getWindowBodyContainer(win) || win;
-  const embedUrl = getCodePenEmbedUrl(rawUrl, { defaultTab: "result" });
   body.innerHTML = "";
   const root = document.createElement("div");
   root.className = "codepen-viewer";
-
-  if (!embedUrl) {
-    root.innerHTML = `<div class="codepen-message error">Unable to load this CodePen URL.</div>`;
-    body.appendChild(root);
-    return;
-  }
-
-  root.innerHTML = `
-    <div class="codepen-installed-toolbar">
-      <strong>${escapeHtml(title || "CodePen Pen")}</strong>
-      <a href="${escapeHtml(rawUrl)}" target="_blank" rel="noreferrer noopener">Open on CodePen</a>
-    </div>
-    <iframe title="${escapeHtml(title || "CodePen Pen")}" loading="lazy" allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write" sandbox="allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
-  `;
-  root.querySelector("iframe").src = embedUrl;
+  const iframe = document.createElement("iframe");
+  iframe.title = title || "Pen preview";
+  iframe.loading = "lazy";
+  iframe.setAttribute("sandbox", PEN_SANDBOX);
+  iframe.srcdoc = buildPenDocument({ html, css, js });
+  root.appendChild(iframe);
   body.appendChild(root);
 }
 
-export function getCodePenContent() {
+export function getPenRunnerContent() {
   return `
-    <div class="codepen-runner">
-      <div class="codepen-form">
-        <label class="codepen-field">
-          <span>CodePen URL</span>
-          <input class="codepen-url" type="url" value="${DEFAULT_PEN_URL}" placeholder="https://codepen.io/user/pen/hash">
+    <div class="pen-runner">
+      <div class="pen-controls">
+        <label class="pen-name-field">
+          <span>App name</span>
+          <input class="pen-name" type="text" value="Web App" maxlength="60">
         </label>
-        <label class="codepen-field codepen-name-field">
-          <span>Installed app name</span>
-          <input class="codepen-name" type="text" value="CodePen App" maxlength="60">
-        </label>
-        <div class="codepen-actions">
-          <button type="button" data-action="run">Run Pen</button>
-          <button type="button" data-action="open">Open in App Window</button>
-          <button type="button" data-action="install">Install as Oriel App</button>
-          <button type="button" data-action="download-install">Download + Install</button>
+        <div class="pen-actions">
+          <button type="button" data-action="run">Run &#9654;</button>
+          <button type="button" data-action="open">Open in Window</button>
+          <button type="button" data-action="install">Install as App</button>
+          <button type="button" data-action="download">Download</button>
         </div>
-        <div class="codepen-status" role="status">Paste a CodePen pen URL, then run it in an isolated iframe.</div>
+        <div class="pen-status" role="status">Paste HTML, CSS, and JS. Oriel compiles them into a live preview.</div>
       </div>
-      <div class="codepen-preview-shell">
-        <iframe class="codepen-preview" title="CodePen preview" loading="lazy" allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write" sandbox="allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
+      <div class="pen-editors">
+        <label class="pen-pane">
+          <span>HTML</span>
+          <textarea class="pen-html" spellcheck="false" autocomplete="off" autocapitalize="off">${escapeHtml(STARTER.html)}</textarea>
+        </label>
+        <label class="pen-pane">
+          <span>CSS</span>
+          <textarea class="pen-css" spellcheck="false" autocomplete="off" autocapitalize="off">${escapeHtml(STARTER.css)}</textarea>
+        </label>
+        <label class="pen-pane">
+          <span>JS</span>
+          <textarea class="pen-js" spellcheck="false" autocomplete="off" autocapitalize="off">${escapeHtml(STARTER.js)}</textarea>
+        </label>
+      </div>
+      <div class="pen-preview-shell">
+        <iframe class="pen-preview" title="Pen preview" sandbox="${PEN_SANDBOX}"></iframe>
       </div>
     </div>
   `;
 }
 
-export function initCodePen(win, initData, wm) {
-  if (initData?.mode === "viewer" && initData.url) {
-    renderViewer({ win, rawUrl: initData.url, title: initData.title });
+export function initPenRunner(win, initData, wm, services, app) {
+  if (initData?.mode === "viewer") {
+    renderViewer({
+      win,
+      html: initData.html,
+      css: initData.css,
+      js: initData.js,
+      title: initData.title
+    });
     return;
   }
 
   const body = getWindowBodyContainer(win) || win;
-  const urlInput = body.querySelector(".codepen-url");
-  const nameInput = body.querySelector(".codepen-name");
-  const status = body.querySelector(".codepen-status");
-  const preview = body.querySelector(".codepen-preview");
+  const nameInput = body.querySelector(".pen-name");
+  const htmlInput = body.querySelector(".pen-html");
+  const cssInput = body.querySelector(".pen-css");
+  const jsInput = body.querySelector(".pen-js");
+  const status = body.querySelector(".pen-status");
+  const preview = body.querySelector(".pen-preview");
+
+  const on = (target, type, listener) =>
+    app?.listen ? app.listen(target, type, listener) : target?.addEventListener(type, listener);
 
   const setStatus = (message, isError = false) => {
+    if (!status) return;
     status.textContent = message;
     status.classList.toggle("error", isError);
   };
 
+  const getSources = () => ({
+    html: htmlInput?.value || "",
+    css: cssInput?.value || "",
+    js: jsInput?.value || ""
+  });
+
   const run = () => {
-    const parsed = parseCodePenUrl(urlInput.value);
-    const embedUrl = getCodePenEmbedUrl(urlInput.value, { defaultTab: "result" });
-    if (!parsed || !embedUrl) {
-      setStatus("Enter a valid codepen.io pen URL, such as https://codepen.io/user/pen/hash.", true);
-      return null;
-    }
-    preview.src = embedUrl;
-    nameInput.value = nameInput.value || `CodePen ${parsed.hash}`;
-    setStatus(`Running ${parsed.userPath}/${parsed.hash} in an isolated iframe.`);
-    return parsed;
+    if (preview) preview.srcdoc = buildPenDocument(getSources());
+    setStatus("Running your compiled pen in an isolated iframe.");
   };
 
-  body.querySelector('[data-action="run"]')?.addEventListener("click", run);
-  body.querySelector('[data-action="open"]')?.addEventListener("click", () => {
-    const parsed = run();
-    if (!parsed) return;
-    const title = safeAppName(nameInput.value, parsed.title);
-    wm.openWindow("codepen", title, 900, 640, {
-      mode: "viewer",
-      url: urlInput.value,
-      title
-    });
+  // Live preview: recompile shortly after typing stops.
+  let debounce = null;
+  const scheduleRun = () => {
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(run, 400);
+    if (app?.registerDisposable) app.registerDisposable(() => clearTimeout(debounce));
+  };
+
+  [htmlInput, cssInput, jsInput].forEach((el) => on(el, "input", scheduleRun));
+
+  on(body.querySelector('[data-action="run"]'), "click", run);
+
+  on(body.querySelector('[data-action="open"]'), "click", () => {
+    const title = safeAppName(nameInput?.value);
+    wm.openWindow("codepen", title, 900, 640, { mode: "viewer", title, ...getSources() });
   });
 
   const install = async (download = false) => {
-    const parsed = run();
-    if (!parsed) return;
+    const name = safeAppName(nameInput?.value);
     try {
-      setStatus(download ? "Downloading and installing Oriel app..." : "Installing Oriel app...");
-      const { manifest, manifestPath } = await installCodePenApp({
-        rawUrl: urlInput.value,
-        name: safeAppName(nameInput.value, parsed.title),
+      setStatus(download ? "Downloading and installing app..." : "Installing app...");
+      const { manifest, manifestPath } = await installPenApp({
+        id: name,
+        name,
+        ...getSources(),
         width: 900,
         height: 640,
         download
@@ -292,24 +305,22 @@ export function initCodePen(win, initData, wm) {
       setStatus(`Installed ${manifest.name}. Manifest saved to ${manifestPath}.`);
       wm.openWindow(manifest.id, manifest.name, manifest.window.width, manifest.window.height);
     } catch (err) {
-      setStatus(err.message || "Unable to install CodePen app.", true);
+      setStatus(err.message || "Unable to install app.", true);
     }
   };
 
-  body.querySelector('[data-action="install"]')?.addEventListener("click", () => install(false));
-  body
-    .querySelector('[data-action="download-install"]')
-    ?.addEventListener("click", () => install(true));
+  on(body.querySelector('[data-action="install"]'), "click", () => install(false));
+  on(body.querySelector('[data-action="download"]'), "click", () => install(true));
 
   run();
 }
 
 export class CodePenApp extends BaseApp {
   getWindowContent() {
-    return this.initData?.mode === "viewer" ? "" : getCodePenContent(this.initData);
+    return this.initData?.mode === "viewer" ? "" : getPenRunnerContent();
   }
 
   mount() {
-    return initCodePen(this.windowEl, this.initData, this.services.windowManager, this.services, this);
+    return initPenRunner(this.windowEl, this.initData, this.services.windowManager, this.services, this);
   }
 }
