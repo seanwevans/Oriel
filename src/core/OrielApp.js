@@ -24,6 +24,7 @@ import {
 import { registerConsoleCommands } from "../apps/console.js";
 import { controlPanelContext } from "../windowManager.js";
 import { bootstrapInstallations } from "../installer.js";
+import { installFeaturedCodePenApps } from "../apps/featuredPens.js";
 import { FileSystemActions } from "./FileSystemActions.js";
 import { DesktopController } from "./DesktopController.js";
 import { DesktopImportController } from "./DesktopImportController.js";
@@ -49,7 +50,7 @@ export class OrielApp {
     wallpaper = { applyWallpaperSettings },
     audio = audioActions,
     network = networkActions,
-    installer = { bootstrapInstallations },
+    installer = { bootstrapInstallations, installFeaturedCodePenApps },
     screensaver = { initScreensaver }
   } = {}) {
     this.WindowManager = WindowManager;
@@ -104,9 +105,14 @@ export class OrielApp {
       refreshNetworkedWindows(this.windowManager || this.services.windowManager)
     );
 
-    this.installerReady = this.installer.bootstrapInstallations().catch((err) => {
-      console.warn("Failed to bootstrap installed apps", err);
-    });
+    this.installerReady = this.installer
+      .bootstrapInstallations()
+      // Featured pens install after the registry bootstraps so already
+      // installed (or uninstalled) ids are respected.
+      .then(() => this.installer.installFeaturedCodePenApps?.())
+      .catch((err) => {
+        console.warn("Failed to bootstrap installed apps", err);
+      });
 
     this.kernel = new this.SimulatedKernel(() => refreshAllProcessViews(this.services));
     updateSystemServices(this.services, { kernel: this.kernel });
