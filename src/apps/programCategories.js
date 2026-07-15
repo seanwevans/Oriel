@@ -22,6 +22,7 @@ export const PROGRAM_CATEGORIES = [
       "notepad",
       "pdfreader",
       "readme",
+      "sheets",
       "taskman",
       "winfile",
       "write"

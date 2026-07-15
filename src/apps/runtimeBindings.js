@@ -61,6 +61,7 @@ import { CalcApp } from "./calc.js";
 import { ReadmeApp } from "./readme.js";
 import { ClipboardApp } from "./clipboard.js";
 import { RssApp } from "./rss.js";
+import { SheetsApp } from "./sheets.js";
 import { ProgramManagerApp } from "./programManager.js";
 import { BrowserApp } from "./browser.js";
 import { RadioGardenApp } from "./radioGarden.js";
@@ -129,6 +130,7 @@ export const runtimeBindings = {
     Sandspiel3dApp,
     SandspielApp,
     ShaderLabApp,
+    SheetsApp,
     SimCityApp,
     SkiFreeApp,
     SolitaireApp,
