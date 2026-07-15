@@ -157,6 +157,31 @@ test("database records render HTML-like values as text only", () => {
   });
 });
 
+test("database falls back to defaults when saved records are corrupt", () => {
+  withFakeDom(() => {
+    const { windowElement, tbody } = createDatabaseWindow();
+    localStorage.setItem("w31-db", "{definitely not json");
+
+    initDatabase(windowElement);
+
+    assert.equal(windowElement.dbData.length, 1);
+    assert.equal(windowElement.dbData[0].name, "Bill");
+    assert.equal(tbody.querySelectorAll("tr").length, 1);
+  });
+});
+
+test("database ignores saved records that are not an array", () => {
+  withFakeDom(() => {
+    const { windowElement } = createDatabaseWindow();
+    localStorage.setItem("w31-db", JSON.stringify({ name: "not-an-array" }));
+
+    initDatabase(windowElement);
+
+    assert.equal(windowElement.dbData.length, 1);
+    assert.equal(windowElement.dbData[0].name, "Bill");
+  });
+});
+
 test("database delete buttons use click listeners", () => {
   withFakeDom(() => {
     const { windowElement, tbody } = createDatabaseWindow();
