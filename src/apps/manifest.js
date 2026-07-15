@@ -58,6 +58,7 @@ export const APP_MANIFEST = {
   postgres: { type: "postgres", title: "Postgres", width: 820, height: 520, icon: "postgres", label: "Postgres", executableName: "POSTGRES.EXE", appClass: "PostgresApp" },
   compiler: { type: "compiler", title: "Tiny C", width: 450, height: 350, icon: "ccompiler", label: "Tiny C", executableName: "TINYC.EXE", appClass: "CompilerApp" },
   python: { type: "python", title: "Tiny Python", width: 450, height: 350, icon: "python", label: "Python", executableName: "PYTHON.EXE", appClass: "PythonApp" },
+  json: { type: "json", title: "JSON Formatter", width: 640, height: 480, icon: "json", label: "JSON", executableName: "JSON.EXE", appClass: "JsonFormatterApp" },
   console: { type: "console", title: "Console", width: 500, height: 350, icon: "console", label: "Console", executableName: "CONSOLE.EXE", appClass: "ConsoleApp" },
   apiclient: { type: "apiclient", title: "API Client", width: 820, height: 640, icon: "apiclient", label: "API Client", appClass: "ApiClientApp" },
   packetlab: { type: "packetlab", title: "Packet Lab", width: 760, height: 520, icon: "packetlab", label: "Packet Lab", appClass: "PacketLabApp" },

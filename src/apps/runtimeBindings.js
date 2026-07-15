@@ -68,6 +68,7 @@ import { RadioGardenApp } from "./radioGarden.js";
 import { RadioApp } from "./radio.js";
 import { GameOfLifeApp } from "./gameOfLife.js";
 import { ProcessMonitorApp } from "./processMonitor.js";
+import { JsonFormatterApp } from "./jsonFormatter.js";
 import { TetrisApp } from "./tetris.js";
 
 const RUNTIME_BINDING_FIELDS = [
@@ -102,6 +103,7 @@ export const runtimeBindings = {
     HexEditorApp,
     ImageViewerApp,
     IrcApp,
+    JsonFormatterApp,
     KakuroApp,
     LineRiderApp,
     MafiaApp,
