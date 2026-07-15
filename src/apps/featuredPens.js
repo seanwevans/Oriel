@@ -18,6 +18,12 @@ export const FEATURED_CODEPEN_PENS = [
     name: "Dolf",
     width: 900,
     height: 640
+  },
+  {
+    url: "https://codepen.io/goosethe/pen/GgjNXOX",
+    name: "Bro Bater",
+    width: 900,
+    height: 640
   }
 ];
 

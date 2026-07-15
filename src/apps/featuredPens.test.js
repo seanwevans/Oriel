@@ -24,7 +24,8 @@ test("featured pens install once and record the seed marker", async () => {
   const installed = await installFeaturedCodePenApps({
     pens: [
       { url: "https://codepen.io/goosethe/pen/azmPzyE", name: "Blorpis" },
-      { url: "https://codepen.io/goosethe/pen/JoRwJjd", name: "Dolf" }
+      { url: "https://codepen.io/goosethe/pen/JoRwJjd", name: "Dolf" },
+      { url: "https://codepen.io/goosethe/pen/GgjNXOX", name: "Bro Bater" }
     ],
     installApp: async ({ rawUrl }) => {
       installedUrls.push(rawUrl);
@@ -37,9 +38,9 @@ test("featured pens install once and record the seed marker", async () => {
     }
   });
 
-  assert.deepEqual(installed, ["codepen-azmpzye", "codepen-jorwjjd"]);
-  assert.equal(installedUrls.length, 2);
-  assert.deepEqual(savedIds, ["codepen-azmpzye", "codepen-jorwjjd"]);
+  assert.deepEqual(installed, ["codepen-azmpzye", "codepen-jorwjjd", "codepen-ggjnxox"]);
+  assert.equal(installedUrls.length, 3);
+  assert.deepEqual(savedIds, ["codepen-azmpzye", "codepen-jorwjjd", "codepen-ggjnxox"]);
 });
 
 test("featured pens that were seeded before are never resurrected", async () => {
@@ -116,7 +117,7 @@ test("featured pens install end-to-end through the real installer pipeline", asy
   });
 
   try {
-    assert.deepEqual(installed.sort(), ["codepen-azmpzye", "codepen-jorwjjd"]);
+    assert.deepEqual(installed.sort(), ["codepen-azmpzye", "codepen-ggjnxox", "codepen-jorwjjd"]);
 
     const blorpis = getManifestForApp("codepen-azmpzye");
     assert.equal(blorpis.name, "Blorpis");
@@ -126,6 +127,7 @@ test("featured pens install end-to-end through the real installer pipeline", asy
     const titles = getInstalledPrograms().map((p) => p.title);
     assert.ok(titles.includes("Blorpis"));
     assert.ok(titles.includes("Dolf"));
+    assert.ok(titles.includes("Bro Bater"));
   } finally {
     for (const id of installed) {
       await uninstallApp(id).catch(() => {});
