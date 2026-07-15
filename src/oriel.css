@@ -4812,8 +4812,9 @@ body {
   display: grid;
   grid-template-columns: repeat(8, 30px);
   grid-template-rows: repeat(8, 30px);
-  border: 2px solid #808080;
-  background: #008000;
+  border: 2px solid #003300;
+  /* Darker than the cells so the 1px gaps read as visible grid lines. */
+  background: #003300;
   gap: 1px;
 }
 
