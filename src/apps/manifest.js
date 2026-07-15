@@ -26,6 +26,7 @@ export const APP_MANIFEST = {
   gameoflife: { type: "gameoflife", title: "Game of Life", width: 580, height: 470, icon: "gameoflife", label: "Life", executableName: "LIFE.EXE", appClass: "GameOfLifeApp" },
   mafia: { type: "mafia", title: "Mystery Mafia", width: 760, height: 640, icon: "mafia", label: "Mafia", appClass: "MafiaApp" },
   paint: { type: "paint", title: "Paintbrush", width: 500, height: 400, icon: "paint", label: "Paintbrush", executableName: "PBRUSH.EXE", appClass: "PaintApp" },
+  colorpicker: { type: "colorpicker", title: "Color Picker", width: 420, height: 420, icon: "colorpicker", label: "Colors", executableName: "COLORS.EXE", appClass: "ColorPickerApp" },
   pixelstudio: { type: "pixelstudio", title: "Pixel Studio", width: 980, height: 620, icon: "pixelstudio", label: "pixelstudio", appClass: "PixelStudioApp" },
   whiteboard: { type: "whiteboard", title: "Whiteboard", width: 900, height: 640, icon: "whiteboard", label: "whiteboard", appClass: "WhiteboardApp" },
   photoshop: { type: "photoshop", title: "Photoshop 3.0", width: 760, height: 560, icon: "photoshop", label: "Photoshop", executableName: "PHOTOSHP.EXE", appClass: "PhotoshopApp" },
