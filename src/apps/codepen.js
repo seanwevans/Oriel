@@ -99,9 +99,8 @@ function ensureDir(path) {
   return node;
 }
 
-function getGeneratedEntrySource({ appName, embedUrl, originalUrl }) {
+export function getGeneratedEntrySource({ appName, embedUrl }) {
   return `const EMBED_URL = ${JSON.stringify(embedUrl)};
-const ORIGINAL_URL = ${JSON.stringify(originalUrl)};
 const APP_NAME = ${JSON.stringify(appName)};
 
 export default function initInstalledCodePen(win) {
@@ -109,18 +108,16 @@ export default function initInstalledCodePen(win) {
   body.innerHTML = "";
   const root = document.createElement("div");
   root.className = "codepen-installed-app";
-  root.innerHTML = ` + JSON.stringify(`
-    <div class="codepen-installed-toolbar">
-      <strong></strong>
-      <a target="_blank" rel="noreferrer noopener">Open on CodePen</a>
-    </div>
-    <iframe title="Installed CodePen app" loading="lazy" allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write" sandbox="allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"></iframe>
-  `) + `;
-  root.querySelector("strong").textContent = APP_NAME;
-  const link = root.querySelector("a");
-  link.href = ORIGINAL_URL;
-  const iframe = root.querySelector("iframe");
+  const iframe = document.createElement("iframe");
+  iframe.title = APP_NAME;
+  iframe.loading = "lazy";
+  iframe.allow = "accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write";
+  iframe.setAttribute(
+    "sandbox",
+    "allow-downloads allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
+  );
   iframe.src = EMBED_URL;
+  root.appendChild(iframe);
   body.appendChild(root);
 }
 `;
@@ -175,7 +172,7 @@ export async function installCodePenApp({ rawUrl, name, width, height, download 
       height: Number(height) || 640
     }
   };
-  const entrySource = getGeneratedEntrySource({ appName, embedUrl, originalUrl: parsed.originalUrl });
+  const entrySource = getGeneratedEntrySource({ appName, embedUrl });
 
   appDir.children["APP.JS"] = { type: "file", content: entrySource };
   appDir.children["MANIFEST.JSON"] = { type: "file", content: JSON.stringify(manifest, null, 2) };
