@@ -256,6 +256,37 @@ export async function uninstallApp(appId) {
   return { id: normalized };
 }
 
+// Apps installed by the old CodePen runner were stored under
+// C:\ORIEL\CODEPEN\... and their entry source embeds a codepen.io/embed iframe
+// (which renders CodePen's toolbar and loads heavy remote assets). The current
+// runner installs self-contained srcdoc apps under C:\ORIEL\PENS\..., so the
+// legacy path uniquely identifies installs that predate the change.
+const LEGACY_CODEPEN_PATH = /\\ORIEL\\CODEPEN\\/i;
+
+export async function purgeLegacyCodePenApps() {
+  const removed = [];
+  for (const [id, entry] of runtimeRegistry) {
+    const paths = `${entry.entryPath || ""} ${entry.manifestPath || ""}`;
+    if (LEGACY_CODEPEN_PATH.test(paths)) {
+      runtimeRegistry.delete(id);
+      removed.push(id);
+    }
+  }
+  if (removed.length) {
+    await persistRegistry();
+    publish("apps:change", { apps: getInstalledPrograms() });
+  }
+  return { removed };
+}
+
+export async function uninstallAllApps() {
+  const ids = Array.from(runtimeRegistry.keys());
+  runtimeRegistry.clear();
+  await persistRegistry();
+  publish("apps:change", { apps: getInstalledPrograms() });
+  return { ids };
+}
+
 export function getRuntimeInitializer(type) {
   return runtimeRegistry.get(type)?.initializer || null;
 }

@@ -1,4 +1,7 @@
 import { BaseApp } from "./base/BaseApp.js";
+import { uninstallAllApps } from "../installer.js";
+import { clearFeaturedPensSeed } from "./featuredPens.js";
+
 export function initReset(w) {
   const btn = w.querySelector(".reset-now-btn");
   const status = w.querySelector(".reset-status");
@@ -9,14 +12,16 @@ export function initReset(w) {
 
   if (!btn) return;
 
-  btn.onclick = () => {
+  btn.onclick = async () => {
     const confirmed = window.confirm(
-      "This will clear all saved Oriel data and reload the desktop. Continue?"
+      "This will clear all saved Oriel data, uninstall every non-native app, and reload the desktop. Continue?"
     );
     if (!confirmed) {
       setStatus("Reset cancelled.");
       return;
     }
+
+    btn.disabled = true;
 
     const keysToClear = [
       "oriel-desktop-state",
@@ -24,12 +29,24 @@ export function initReset(w) {
       "oriel-volume",
       "oriel-network-defaults",
       "oriel-radio-cache-v1",
+      "oriel-app-registry",
       "w31-cards",
       "w31-db"
     ];
 
     keysToClear.forEach((key) => localStorage.removeItem(key));
-    setStatus("Saved data cleared. Reloading to apply defaults…");
+
+    try {
+      const { ids } = await uninstallAllApps();
+      // Forget the featured-pen seed so the default demos reinstall on reload.
+      await clearFeaturedPensSeed();
+      setStatus(
+        `Uninstalled ${ids.length} installed app${ids.length === 1 ? "" : "s"}. Reloading to apply defaults…`
+      );
+    } catch (err) {
+      console.warn("Failed to uninstall apps during reset", err);
+      setStatus("Saved data cleared. Reloading to apply defaults…");
+    }
 
     setTimeout(() => window.location.reload(), 300);
   };
@@ -46,6 +63,7 @@ export function getResetContent() {
                     <li>File system changes</li>
                     <li>Sound levels & network presets</li>
                     <li>App data such as Cardfile or Data Manager</li>
+                    <li>Installed (non-native) apps, such as pens</li>
                 </ul>
                 <button class="task-btn reset-now-btn" style="width:180px;">Reset and Reload</button>
                 <div class="reset-status" aria-live="polite">No changes yet.</div>
