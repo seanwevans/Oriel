@@ -25,6 +25,7 @@ export const APP_MANIFEST = {
   sudoku: { type: "sudoku", title: "Sudoku", width: 520, height: 620, icon: "sudoku", label: "Sudoku", appClass: "SudokuApp" },
   gameoflife: { type: "gameoflife", title: "Game of Life", width: 580, height: 470, icon: "gameoflife", label: "Life", executableName: "LIFE.EXE", appClass: "GameOfLifeApp" },
   tetris: { type: "tetris", title: "Tetris", width: 380, height: 500, icon: "tetris", label: "Tetris", executableName: "TETRIS.EXE", appClass: "TetrisApp" },
+  snake: { type: "snake", title: "Snake", width: 400, height: 480, icon: "snake", label: "Snake", executableName: "SNAKE.EXE", appClass: "SnakeApp" },
   mafia: { type: "mafia", title: "Mystery Mafia", width: 760, height: 640, icon: "mafia", label: "Mafia", appClass: "MafiaApp" },
   paint: { type: "paint", title: "Paintbrush", width: 500, height: 400, icon: "paint", label: "Paintbrush", executableName: "PBRUSH.EXE", appClass: "PaintApp" },
   colorpicker: { type: "colorpicker", title: "Color Picker", width: 420, height: 420, icon: "colorpicker", label: "Colors", executableName: "COLORS.EXE", appClass: "ColorPickerApp" },

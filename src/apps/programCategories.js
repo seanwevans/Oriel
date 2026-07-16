@@ -50,6 +50,7 @@ export const PROGRAM_CATEGORIES = [
       "sandspiel3d",
       "simcity",
       "skifree",
+      "snake",
       "solitaire",
       "sudoku",
       "tetris"
