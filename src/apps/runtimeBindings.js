@@ -72,6 +72,7 @@ import { ColorPickerApp } from "./colorPicker.js";
 import { JsonFormatterApp } from "./jsonFormatter.js";
 import { TetrisApp } from "./tetris.js";
 import { SnakeApp } from "./snake.js";
+import { Game2048App } from "./game2048.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "appClass", group: "appClasses", target: "appClass" }
@@ -102,6 +103,7 @@ export const runtimeBindings = {
     DoomApp,
     EmailApp,
     FileManagerApp,
+    Game2048App,
     GameOfLifeApp,
     HexEditorApp,
     ImageViewerApp,
