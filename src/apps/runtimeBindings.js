@@ -71,6 +71,7 @@ import { ProcessMonitorApp } from "./processMonitor.js";
 import { ColorPickerApp } from "./colorPicker.js";
 import { JsonFormatterApp } from "./jsonFormatter.js";
 import { TetrisApp } from "./tetris.js";
+import { SnakeApp } from "./snake.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "appClass", group: "appClasses", target: "appClass" }
@@ -142,6 +143,7 @@ export const runtimeBindings = {
     SheetsApp,
     SimCityApp,
     SkiFreeApp,
+    SnakeApp,
     SolitaireApp,
     SoundRecorderApp,
     SpotifyApp,

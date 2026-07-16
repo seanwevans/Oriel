@@ -7635,3 +7635,64 @@ body {
   font-family: var(--font-mono);
   color: var(--win-gray-shadow);
 }
+
+/* Snake -- classic grid snake on a canvas. */
+.snake-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--win-gray);
+  font-family: var(--font-main);
+}
+
+.snake-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--win-gray-shadow);
+}
+
+.snake-score {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.snake-btn {
+  padding: 2px 10px;
+  background: var(--win-gray);
+  border: 1px solid var(--win-gray-dark);
+  box-shadow: inset 1px 1px 0 var(--win-gray-light), inset -1px -1px 0 var(--win-gray-shadow);
+  cursor: pointer;
+}
+
+.snake-btn:active {
+  box-shadow: inset -1px -1px 0 var(--win-gray-light), inset 1px 1px 0 var(--win-gray-shadow);
+}
+
+.snake-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  background: #05070d;
+  padding: 8px;
+}
+
+.snake-canvas {
+  display: block;
+  image-rendering: pixelated;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 0 0 1px #0a0f16;
+}
+
+.snake-status {
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  border-top: 1px solid var(--win-gray-shadow);
+  box-shadow: inset 0 1px 0 var(--win-gray-light);
+}
