@@ -73,6 +73,7 @@ import { JsonFormatterApp } from "./jsonFormatter.js";
 import { TetrisApp } from "./tetris.js";
 import { SnakeApp } from "./snake.js";
 import { Game2048App } from "./game2048.js";
+import { RegexTesterApp } from "./regexTester.js";
 
 const RUNTIME_BINDING_FIELDS = [
   { field: "appClass", group: "appClasses", target: "appClass" }
@@ -135,6 +136,7 @@ export const runtimeBindings = {
     RadioApp,
     RadioGardenApp,
     ReadmeApp,
+    RegexTesterApp,
     ResetApp,
     RetroAIApp,
     ReversiApp,
