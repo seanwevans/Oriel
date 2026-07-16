@@ -7696,3 +7696,87 @@ body {
   border-top: 1px solid var(--win-gray-shadow);
   box-shadow: inset 0 1px 0 var(--win-gray-light);
 }
+
+/* 2048 -- sliding tile puzzle. */
+.g2048-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--win-gray);
+  font-family: var(--font-main);
+}
+
+.g2048-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--win-gray-shadow);
+}
+
+.g2048-score {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.g2048-btn {
+  padding: 2px 10px;
+  background: var(--win-gray);
+  border: 1px solid var(--win-gray-dark);
+  box-shadow: inset 1px 1px 0 var(--win-gray-light), inset -1px -1px 0 var(--win-gray-shadow);
+  cursor: pointer;
+}
+
+.g2048-btn:active {
+  box-shadow: inset -1px -1px 0 var(--win-gray-light), inset 1px 1px 0 var(--win-gray-shadow);
+}
+
+.g2048-board {
+  flex: 1;
+  align-self: center;
+  width: min(100%, 340px);
+  aspect-ratio: 1 / 1;
+  margin: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px;
+  background: #bbada0;
+  border-radius: 6px;
+}
+
+.g2048-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #cdc1b4;
+  font-weight: bold;
+  font-size: clamp(16px, 6vw, 30px);
+  color: #776e65;
+  font-variant-numeric: tabular-nums;
+}
+
+.g2048-tile[data-val="0"] { color: transparent; }
+.g2048-tile[data-val="2"]    { background: #eee4da; }
+.g2048-tile[data-val="4"]    { background: #ede0c8; }
+.g2048-tile[data-val="8"]    { background: #f2b179; color: #f9f6f2; }
+.g2048-tile[data-val="16"]   { background: #f59563; color: #f9f6f2; }
+.g2048-tile[data-val="32"]   { background: #f67c5f; color: #f9f6f2; }
+.g2048-tile[data-val="64"]   { background: #f65e3b; color: #f9f6f2; }
+.g2048-tile[data-val="128"]  { background: #edcf72; color: #f9f6f2; font-size: clamp(14px, 5vw, 26px); }
+.g2048-tile[data-val="256"]  { background: #edcc61; color: #f9f6f2; font-size: clamp(14px, 5vw, 26px); }
+.g2048-tile[data-val="512"]  { background: #edc850; color: #f9f6f2; font-size: clamp(14px, 5vw, 26px); }
+.g2048-tile[data-val="1024"] { background: #edc53f; color: #f9f6f2; font-size: clamp(12px, 4.2vw, 22px); }
+.g2048-tile[data-val="2048"] { background: #edc22e; color: #f9f6f2; font-size: clamp(12px, 4.2vw, 22px); }
+.g2048-tile[data-val="super"]{ background: #3c3a32; color: #f9f6f2; font-size: clamp(12px, 4.2vw, 22px); }
+
+.g2048-status {
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  border-top: 1px solid var(--win-gray-shadow);
+  box-shadow: inset 0 1px 0 var(--win-gray-light);
+}
