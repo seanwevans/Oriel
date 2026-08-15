@@ -1,4 +1,25 @@
-const DESKTOP_STATE_KEY = "oriel-desktop-state";
+const DESKTOP_STATE_BASE_KEY = "oriel-desktop-state";
+
+// The Oriel VM app boots a nested copy of Oriel in a same-origin iframe, which
+// means it shares localStorage with the desktop hosting it. Without a namespace
+// the nested instance saves its windows over the real desktop's state, so
+// opening apps "inside the VM" silently rewrites the outer session. The VM marks
+// its own URL, and that marker moves the nested instance onto its own key.
+export const VM_INSTANCE_FLAG = "oriel-vm";
+
+function isNestedVmInstance() {
+  try {
+    const search = globalThis.location?.search;
+    if (!search) return false;
+    return new URLSearchParams(search).has(VM_INSTANCE_FLAG);
+  } catch {
+    return false;
+  }
+}
+
+const DESKTOP_STATE_KEY = isNestedVmInstance()
+  ? `${DESKTOP_STATE_BASE_KEY}:vm`
+  : DESKTOP_STATE_BASE_KEY;
 function createDefaultDesktopState() {
   return {
     windows: [],
@@ -25,7 +46,14 @@ function getMemoryStorage() {
 }
 
 function getLocalStorage() {
-  return typeof localStorage !== "undefined" ? localStorage : null;
+  // Merely touching `localStorage` throws in a sandboxed frame or when a browser
+  // blocks storage access, so the guard has to cover the access itself and not
+  // just an undefined value.
+  try {
+    return typeof localStorage !== "undefined" ? localStorage : null;
+  } catch {
+    return null;
+  }
 }
 
 function normalizeDesktopState(parsed) {
