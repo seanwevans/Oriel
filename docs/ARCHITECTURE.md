@@ -95,24 +95,30 @@ sequenceDiagram
 ## 3. Application registration pipeline
 
 Each app is declared in four places, then resolved into a live class at runtime.
-`composeRuntimeManifest` joins the metadata in `APP_MANIFEST` with the class
+`composeRuntimeManifest` joins the metadata in `APP_MANIFEST` with the loader
 table in `runtimeBindings.js`, validating that every declared `appClass` has a
-binding. `AppRegistry.createApp(type)` constructs the class; `AppHost` drives its
-lifecycle.
+binding. `AppHost` drives the resulting instance's lifecycle.
+
+Bindings are **loaders**, not classes: `lazyApp(() => import("./snake.js"))`
+keeps every app out of the entry chunk until it is first opened. That gives the
+registry two construction paths — `createApp(type)` builds synchronously from an
+already-loaded class, and `createAppAsync(type)` fetches the module first. The
+window manager tries the synchronous path, and falls back to opening a
+placeholder window that fills itself in when the chunk arrives.
 
 ```mermaid
 flowchart LR
   subgraph declare["Declared per app"]
     m["manifest.js<br/>metadata + appClass name"]
-    b["runtimeBindings.js<br/>name → class"]
+    b["runtimeBindings.js<br/>name → lazy loader"]
     c["programCategories.js<br/>Program Manager group"]
     i["icons.js<br/>desktop/taskbar icon"]
   end
 
   m --> compose["composeRuntimeManifest()<br/>validate + join"]
   b --> compose
-  compose --> registry["AppRegistry.manifest<br/>{ type → { …, appClass } }"]
-  registry --> create["createApp(type, ctx)"]
+  compose --> registry["AppRegistry.manifest<br/>{ type → { …, loadAppClass } }"]
+  registry --> create["createApp / createAppAsync<br/>(loads chunk on first open)"]
   create --> instance["new AppClass({ windowEl, initData, services })"]
   instance --> host["AppHost mounts + tracks"]
 
@@ -195,7 +201,7 @@ src/
   apps/
     base/BaseApp.js        App lifecycle contract
     manifest.js            App metadata + appClass names
-    runtimeBindings.js     appClass name → class table
+    runtimeBindings.js     appClass name → lazy module loader
     programCategories.js   Program Manager grouping
     <app>.js               ~70 self-contained apps
   icons.js                 SVG icons keyed by app type

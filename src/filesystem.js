@@ -30,7 +30,7 @@ export const DEFAULT_FS = {
           "SCREEN.PNG": {
             type: "file",
             app: "imageviewer",
-            content: { name: "screen.png", src: DEFAULT_SCREEN_IMAGE }
+            content: { name: "screen.webp", src: DEFAULT_SCREEN_IMAGE }
           }
         }
       }

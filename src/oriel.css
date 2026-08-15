@@ -496,6 +496,14 @@ body {
   font-weight: bold;
 }
 
+/* Placeholder shown while an app's chunk loads. Only visible on an app's first
+   open — afterwards the module is cached and content renders immediately. */
+.app-loading {
+  padding: 12px;
+  color: #444;
+  font-size: 12px;
+}
+
 .prog-label {
   font-size: 13px;
   padding: 1px 3px;
