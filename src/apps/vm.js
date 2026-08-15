@@ -7,7 +7,11 @@ export function initVm(win) {
 
   if (!iframe || !bootBtn || !resetBtn || !status) return;
 
-  const vmUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+  // Mark the nested instance so it namespaces its saved desktop state instead of
+  // writing over the state of the desktop hosting it (see state.js).
+  const vmParams = new URLSearchParams(window.location.search);
+  vmParams.set("oriel-vm", "1");
+  const vmUrl = `${window.location.origin}${window.location.pathname}?${vmParams}`;
 
   const setStatus = (text) => {
     status.textContent = text;
