@@ -8,15 +8,33 @@ test("boot renders the splash image", async () => {
   const imageUrl = new URL(DEFAULT_SPLASH_IMAGE);
   const imageBuffer = await fs.readFile(imageUrl);
 
-  assert.ok(imageBuffer.byteLength > 0, "splash2.jpeg should be readable");
+  assert.ok(imageBuffer.byteLength > 0, "splash2.webp should be readable");
 
-  const hasJpegSignature =
-    imageBuffer[0] === 0xff &&
-    imageBuffer[1] === 0xd8 &&
-    imageBuffer[imageBuffer.length - 2] === 0xff &&
-    imageBuffer[imageBuffer.length - 1] === 0xd9;
+  // WebP is a RIFF container: "RIFF" <4-byte length> "WEBP".
+  const hasWebpSignature =
+    imageBuffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+    imageBuffer.subarray(8, 12).toString("ascii") === "WEBP";
 
-  assert.ok(hasJpegSignature, "splash2.jpeg should be a valid JPEG");
+  assert.ok(hasWebpSignature, "splash2.webp should be a valid WebP");
+});
+
+test("boot images stay small enough to ship on the first paint", async () => {
+  // These three assets were 10.6 MB of PNG/JPEG before conversion, which
+  // dominated first load. Guard the budget so a future re-export cannot
+  // silently reintroduce multi-megabyte artwork.
+  const budgetsKb = {
+    "splash2.webp": 600,
+    "wallpaper.webp": 400,
+    "screen.webp": 400
+  };
+
+  for (const [name, budgetKb] of Object.entries(budgetsKb)) {
+    const { size } = await fs.stat(new URL(`./assets/${name}`, import.meta.url));
+    assert.ok(
+      size / 1024 < budgetKb,
+      `${name} is ${(size / 1024).toFixed(0)}KB, over its ${budgetKb}KB budget`
+    );
+  }
 });
 
 test("boot registers console commands after exposing the kernel globally", async () => {

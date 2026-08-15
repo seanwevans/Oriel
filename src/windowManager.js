@@ -25,6 +25,12 @@ import {
   setupMenuBar as setupWindowMenuBar
 } from "./window/windowDom.js";
 
+// Shown for the moment between a window opening and its app's chunk arriving.
+// For an app that has been opened before the module is already cached, so this
+// resolves within a microtask and never reaches the screen.
+const APP_LOADING_PLACEHOLDER =
+  '<div class="app-loading" role="status" aria-live="polite">Loading…</div>';
+
 export const controlPanelContext = {};
 controlPanelContext.screensaver = screensaverContext;
 
@@ -151,11 +157,18 @@ export class WindowManager {
       initData,
       services
     });
+    // An app whose module has not been fetched yet cannot supply its markup
+    // synchronously. The window still opens immediately with a placeholder, and
+    // the real content and mount follow once the chunk arrives.
+    const deferredLoad =
+      !appInstance && this.appRegistry.hasApp?.(type) ? type : null;
     let content =
       typeof appInstance?.getWindowContent === "function"
         ? appInstance.getWindowContent()
-        : "";
-    const initializer = appInstance ? null : getRuntimeInitializer(type);
+        : deferredLoad
+          ? APP_LOADING_PLACEHOLDER
+          : "";
+    const initializer = appInstance || deferredLoad ? null : getRuntimeInitializer(type);
     const winEl = this.createWindowDOM(
       id,
       type,
@@ -196,15 +209,19 @@ export class WindowManager {
     services.kernel?.registerProcess?.(id, title);
     if (!this.isRestoring) this.focusWindow(id);
     // Initialize app logic when an app has behavior beyond its rendered content.
-    this._mountWindowApp({
-      appInstance,
-      initializer,
-      winEl,
-      winObj,
-      initData,
-      type,
-      hasContent: Boolean(content)
-    });
+    if (deferredLoad) {
+      this._mountDeferredWindowApp({ winEl, winObj, initData, type, services });
+    } else {
+      this._mountWindowApp({
+        appInstance,
+        initializer,
+        winEl,
+        winObj,
+        initData,
+        type,
+        hasContent: Boolean(content)
+      });
+    }
     // Refresh logic
     refreshAllTaskManagers(this);
     if (stateOverrides.maximized) this.maximizeWindow(id);
@@ -455,6 +472,62 @@ export class WindowManager {
   getIconElementForType(type) {
     return getProgramManagerIconElement(type);
   }
+  // Opens a window for an app whose module is not loaded yet. The window frame
+  // already exists and shows a placeholder; this fetches the class, swaps in the
+  // real markup, and hands the instance to the AppHost exactly as the
+  // synchronous path does.
+  _mountDeferredWindowApp({ winEl, winObj, initData, type, services }) {
+    const pending = this.appRegistry
+      .createAppAsync(type, { windowEl: null, initData, services })
+      .then((appInstance) => {
+        // The user may have closed the window while the chunk was in flight.
+        if (winObj.isUnmounted || !this.windows.includes(winObj)) {
+          if (typeof appInstance?.dispose === "function") appInstance.dispose();
+          return null;
+        }
+
+        if (!appInstance) {
+          this.renderRuntimeError(winEl, new Error(`No app registered for ${type}`));
+          return null;
+        }
+
+        const content =
+          typeof appInstance.getWindowContent === "function"
+            ? appInstance.getWindowContent()
+            : "";
+        this.replaceWindowContent(winEl, content);
+
+        return this.appHost.mountInstance({ appInstance, winEl, winObj, type });
+      })
+      .catch((err) => {
+        if (winObj.isUnmounted) return null;
+        this.renderRuntimeError(winEl, err);
+        return null;
+      })
+      .finally(() => {
+        if (winObj.pendingMountPromise === pending) {
+          winObj.pendingMountPromise = null;
+          winEl.pendingMountPromise = null;
+        }
+        if (this.windows.includes(winObj)) refreshAllTaskManagers(this);
+      });
+
+    winObj.pendingMountPromise = pending;
+    winEl.pendingMountPromise = pending;
+  }
+  // Swaps a window's body for freshly rendered app markup, accepting the same
+  // string-or-Node shapes that `getWindowContent()` is allowed to return.
+  replaceWindowContent(winEl, content) {
+    const contentArea = getWindowBodyContainer(winEl);
+    if (!contentArea) return;
+
+    contentArea.replaceChildren();
+    if (typeof content === "string") {
+      contentArea.innerHTML = content;
+    } else if (globalThis.Node && content instanceof globalThis.Node) {
+      contentArea.appendChild(content);
+    }
+  }
   _mountWindowApp({ appInstance, initializer, winEl, winObj, initData, type, hasContent }) {
     let mountResult = null;
     if (appInstance) {
@@ -494,9 +567,11 @@ export class WindowManager {
   setupProgramManagerMenu(win) {
     setupProgramManagerMenu(this, win);
   }
-  getAppContent(type, initData = null) {
+  // Async because an app's module may not be loaded yet. Callers that only need
+  // markup for an already-open app type resolve on the microtask queue.
+  async getAppContent(type, initData = null) {
     const registry = this.appRegistry || new AppRegistry({ controlPanelContext });
-    const app = registry.createApp(type, {
+    const app = await registry.createAppAsync(type, {
       windowEl: null,
       initData,
       services: this.services || createSystemServices({ windowManager: this, kernel: globalThis.kernel || globalThis.window?.kernel || null, publish, subscribe })

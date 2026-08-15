@@ -343,10 +343,12 @@ function createOpenWindowManager({ appInstance = null } = {}) {
 
 function deferred() {
   let resolve;
-  const promise = new Promise((next) => {
+  let reject;
+  const promise = new Promise((next, fail) => {
     resolve = next;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 test("createWindowDOM renders a hostile title as text, not markup", () => {
@@ -695,9 +697,9 @@ test("renderRuntimeError renders hostile error messages as text", () => {
   assert.equal(win.querySelector("img"), null);
 });
 
-test("Cardfile content exposes the controls its initializer wires", () => {
+test("Cardfile content exposes the controls its initializer wires", async () => {
   const wm = createTestWindowManager();
-  const content = wm.getCardfileContent();
+  const content = await wm.getCardfileContent();
 
   assert.match(content, /id="card-add"/);
   assert.match(content, /id="card-del"/);
@@ -797,11 +799,11 @@ test("top window lookup and shortcuts ignore minimized windows", () => {
   assert.deepEqual(wm.closeWindowCalls, ["visible"]);
 });
 
-test("Notepad file content remains textarea value text", () => {
+test("Notepad file content remains textarea value text", async () => {
   const wm = createTestWindowManager();
   const hostileText = "notes </textarea> \"quoted\" <img src=x onerror=alert(1)>";
 
-  const content = wm.getNotepadContent({
+  const content = await wm.getNotepadContent({
     text: hostileText,
     nativeFileHandle: { createWritable() {} }
   });
@@ -812,11 +814,11 @@ test("Notepad file content remains textarea value text", () => {
   assert.equal(win.querySelector("img"), null);
 });
 
-test("Markdown file content remains textarea value text", () => {
+test("Markdown file content remains textarea value text", async () => {
   const wm = createTestWindowManager();
   const hostileText = "# Title\n</textarea> \"quoted\" <img src=x onerror=alert(1)>";
 
-  const content = wm.getMarkdownContent(hostileText);
+  const content = await wm.getMarkdownContent(hostileText);
   const win = wm.createWindowDOM("markdown-hostile", "markdown", "README.md", 320, 240, content);
 
   assert.equal(win.querySelector(".md-input").value, hostileText);
@@ -824,12 +826,12 @@ test("Markdown file content remains textarea value text", () => {
   assert.equal(win.querySelector("img"), null);
 });
 
-test("PDF reader file name and source are assigned without HTML interpolation", () => {
+test("PDF reader file name and source are assigned without HTML interpolation", async () => {
   const wm = createTestWindowManager();
   const hostileName = "manual </textarea> \"quoted\" <img src=x onerror=alert(1)>.pdf";
   const hostileSrc = 'https://example.test/manual.pdf?name="quoted"&literal=<img>';
 
-  const content = wm.getPdfReaderContent({ name: hostileName, src: hostileSrc });
+  const content = await wm.getPdfReaderContent({ name: hostileName, src: hostileSrc });
   const win = wm.createWindowDOM("pdf-hostile", "pdfreader", hostileName, 320, 240, content);
 
   assert.equal(win.querySelector(".pdf-status").textContent, `Loaded ${hostileName}`);
@@ -838,12 +840,12 @@ test("PDF reader file name and source are assigned without HTML interpolation", 
   assert.equal(win.querySelector("img"), null);
 });
 
-test("Image viewer file name and URL remain DOM property values", () => {
+test("Image viewer file name and URL remain DOM property values", async () => {
   const wm = createTestWindowManager();
   const hostileName = "photo </textarea> \"quoted\" <img src=x onerror=alert(1)>.png";
   const hostileSrc = 'data:image/png;base64,PHRleHQ+IjwvaW1nPiI=';
 
-  const content = wm.getImageViewerContent({ name: hostileName, src: hostileSrc });
+  const content = await wm.getImageViewerContent({ name: hostileName, src: hostileSrc });
   const win = wm.createWindowDOM("image-hostile", "imageviewer", hostileName, 320, 240, content);
   const preview = win.querySelector(".img-preview");
 
@@ -852,4 +854,104 @@ test("Image viewer file name and URL remain DOM property values", () => {
   assert.equal(preview.src, hostileSrc);
   assert.equal(preview.alt, hostileName);
   assert.equal(win.querySelectorAll("img").length, 1);
+});
+
+// Lazy app loading: an app whose module has not been fetched yet opens into a
+// placeholder frame, then swaps in its real content once the chunk resolves.
+function createLazyWindowManager({ appInstance = null, loadError = null } = {}) {
+  const wm = createOpenWindowManager();
+  const load = deferred();
+
+  wm.appRegistry = {
+    hasApp: () => true,
+    // Not loaded yet, so the synchronous open path cannot build the app.
+    createApp: () => null,
+    createAppAsync(_type, args) {
+      wm.createAppArgs = args;
+      return load.promise;
+    }
+  };
+
+  wm.settleLoad = () => {
+    if (loadError) load.reject(loadError);
+    else load.resolve(appInstance);
+    return load.promise.catch(() => {});
+  };
+
+  return wm;
+}
+
+test("openWindow renders a placeholder while a lazy app chunk loads", async () => {
+  let mounted = false;
+  const appInstance = {
+    getWindowContent: () => '<div class="lazy-body">Lazy content</div>',
+    setWindowElement(winEl) {
+      this.windowEl = winEl;
+    },
+    mount() {
+      mounted = true;
+      return this;
+    }
+  };
+  const wm = createLazyWindowManager({ appInstance });
+
+  const win = wm.openWindow("lazy", "Lazy", 320, 240);
+
+  // The window frame exists immediately — openWindow stays synchronous.
+  assert.ok(win.id);
+  const body = win.el.querySelector(".window-body");
+  assert.match(body.innerHTML, /app-loading/);
+  assert.ok(win.pendingMountPromise instanceof Promise);
+  assert.equal(win.appInstance, null);
+
+  await wm.settleLoad();
+  await win.pendingMountPromise;
+
+  assert.match(body.innerHTML, /lazy-body/, "real content should replace the placeholder");
+  assert.equal(body.innerHTML.includes("app-loading"), false);
+  assert.equal(mounted, true);
+  assert.equal(win.appInstance, appInstance);
+  assert.equal(win.pendingMountPromise, null);
+});
+
+test("closing a window mid-load disposes the app that arrives late", async () => {
+  let disposed = false;
+  let mounted = false;
+  const appInstance = {
+    getWindowContent: () => "<div>Too late</div>",
+    setWindowElement() {},
+    mount() {
+      mounted = true;
+      return this;
+    },
+    dispose() {
+      disposed = true;
+    }
+  };
+  const wm = createLazyWindowManager({ appInstance });
+
+  const win = wm.openWindow("lazy", "Lazy", 320, 240);
+  const pending = win.pendingMountPromise;
+
+  wm.closeWindow(win.id);
+
+  await wm.settleLoad();
+  await pending;
+
+  assert.equal(disposed, true, "an instance for a closed window must be disposed");
+  assert.equal(mounted, false, "a closed window must not mount its app");
+  assert.equal(wm.windows.includes(win), false);
+});
+
+test("a failed app chunk load renders a runtime error in the window", async () => {
+  const wm = createLazyWindowManager({ loadError: new Error("chunk load failed") });
+
+  const win = wm.openWindow("lazy", "Lazy", 320, 240);
+
+  await wm.settleLoad();
+  await win.pendingMountPromise;
+
+  const error = win.el.querySelector(".runtime-error");
+  assert.ok(error, "the window should show the failure rather than a stuck placeholder");
+  assert.match(error.textContent, /chunk load failed/);
 });

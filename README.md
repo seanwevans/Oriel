@@ -1,5 +1,5 @@
 # Oriel
-<img width="2935" height="1659" alt="screen" src="src/assets/screen.png" />
+<img width="1920" height="912" alt="screen" src="src/assets/screen.webp" />
 
 **[Try the Live Demo!](https://seanwevans.github.io/Oriel/)**
 

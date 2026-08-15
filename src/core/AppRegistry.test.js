@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { AppRegistry } from "./AppRegistry.js";
+import { lazyApp } from "../apps/runtimeBindings.js";
 import { APP_DEFINITIONS, APP_MANIFEST, getExecutableEntries } from "../apps/manifest.js";
 
 class TestClassApp {
@@ -32,17 +33,98 @@ function createRegistryHarness() {
   return { registry };
 }
 
-test("manifest apps resolve through app classes", () => {
+test("manifest apps resolve through app class loaders", () => {
   const registry = new AppRegistry();
 
   for (const definition of APP_DEFINITIONS) {
     assert.ok(definition.appClass, `${definition.type} should declare an appClass`);
     assert.equal(
-      typeof registry.manifest[definition.type]?.appClass,
+      typeof registry.manifest[definition.type]?.loadAppClass,
       "function",
       `${definition.type} should resolve an app class binding`
     );
+    assert.ok(
+      registry.hasApp(definition.type),
+      `${definition.type} should be constructible`
+    );
   }
+});
+
+test("manifest apps are not loaded until they are first constructed", () => {
+  const registry = new AppRegistry();
+
+  // Nothing has been opened yet, so no app module should be in memory. This is
+  // what keeps ~80 applications out of the entry chunk.
+  for (const definition of APP_DEFINITIONS) {
+    assert.equal(
+      registry.getLoadedAppClass(definition.type),
+      null,
+      `${definition.type} should not be resolved before first use`
+    );
+  }
+});
+
+test("loading an app caches its class for later synchronous construction", async () => {
+  const registry = new AppRegistry();
+
+  assert.equal(registry.createApp("notepad"), null);
+
+  const app = await registry.createAppAsync("notepad", { initData: "hello" });
+  assert.equal(app?.constructor.name, "NotepadApp");
+
+  // Once loaded, the synchronous path works — this is what lets openWindow
+  // render a reopened app without a placeholder frame.
+  assert.equal(registry.getLoadedAppClass("notepad")?.name, "NotepadApp");
+  assert.equal(registry.createApp("notepad")?.constructor.name, "NotepadApp");
+});
+
+test("concurrent loads of the same app share a single module fetch", async () => {
+  let loadCount = 0;
+  class SharedApp {}
+  const registry = new AppRegistry({
+    manifest: { shared: { type: "shared", title: "Shared", appClass: "SharedApp" } },
+    bindings: {
+      appClasses: {
+        SharedApp: lazyApp(() => {
+          loadCount += 1;
+          return Promise.resolve(SharedApp);
+        })
+      }
+    }
+  });
+
+  const [first, second] = await Promise.all([
+    registry.createAppAsync("shared"),
+    registry.createAppAsync("shared")
+  ]);
+
+  assert.equal(loadCount, 1);
+  assert.equal(first.constructor, SharedApp);
+  assert.equal(second.constructor, SharedApp);
+});
+
+test("a failed app load is not cached, so reopening retries", async () => {
+  let attempts = 0;
+  class RecoveringApp {}
+  const registry = new AppRegistry({
+    manifest: { flaky: { type: "flaky", title: "Flaky", appClass: "RecoveringApp" } },
+    bindings: {
+      appClasses: {
+        RecoveringApp: lazyApp(() => {
+          attempts += 1;
+          return attempts === 1
+            ? Promise.reject(new Error("chunk load failed"))
+            : Promise.resolve(RecoveringApp);
+        })
+      }
+    }
+  });
+
+  await assert.rejects(() => registry.createAppAsync("flaky"), /chunk load failed/);
+
+  const app = await registry.createAppAsync("flaky");
+  assert.equal(app.constructor, RecoveringApp);
+  assert.equal(attempts, 2);
 });
 
 test("appClass entries construct the registered class with host arguments and control panel context", () => {
@@ -67,7 +149,7 @@ test("missing apps and metadata-only entries without app classes return null", (
   assert.equal(registry.createApp("emptyApp"), null);
 });
 
-test("BaseApp migrations are resolved through app classes", () => {
+test("BaseApp migrations are resolved through app classes", async () => {
   const registry = new AppRegistry();
 
   for (const [type, className] of [
@@ -83,7 +165,7 @@ test("BaseApp migrations are resolved through app classes", () => {
     ["mplayer", "MediaPlayerApp"],
     ["soundrec", "SoundRecorderApp"]
   ]) {
-    const app = registry.createApp(type, { initData: "hello" });
+    const app = await registry.createAppAsync(type, { initData: "hello" });
 
     assert.equal(app?.constructor.name, className);
   }
