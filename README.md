@@ -124,15 +124,31 @@ Oriel features a vast library of pre-installed applications spanning several cat
 
 ## 🧑‍💻 Developer Notes
 
-### Migrating an app to `BaseApp`
+### The app lifecycle contract
 
-Use this checklist as the completion gate before deleting `LegacyFunctionApp` and `LEGACY_CLEANUP_KEYS`:
+Every app extends `BaseApp` and exposes three hooks. The migration off the old
+`LegacyFunctionApp` wiring is complete — all manifest entries use `appClass`, and
+`src/apps/lifecycleContract.test.js` enforces the rules below against every
+registered app, so a new app cannot quietly break them:
 
-- [ ] Implement an app class that extends `BaseApp` and moves static window markup into `getWindowContent()`.
-- [ ] Keep `getWindowContent()` side-effect free; move DOM listeners, timers, network requests, media setup, animation loops, and other runtime work into `mount()`.
-- [ ] Register every cleanup path through `dispose()` or `BaseApp` helpers such as `listen()`, `setInterval()`, `requestAnimationFrame()`, `trackObjectUrl()`, `trackMediaElement()`, and `trackAbortController()`.
-- [ ] Update the manifest entry to use `appClass` and remove legacy `initializer`, `initializerKey`, `contentProvider`, and `contentProviderKey` wiring for that app.
-- [ ] Add or update a lifecycle regression test that proves resources owned by the app are released on `dispose()`. Cover the relevant resource category, especially timers, animation frames, media/object URLs, and network `AbortController` usage.
+- **`getWindowContent()` returns markup and nothing else.** No listeners on
+  `window` or `document`, no timers, no animation frames, no `fetch`, no audio
+  contexts. Listeners bound to elements the method itself creates are fine —
+  those are released with the window's DOM. Everything else outlives the window
+  and must move to `mount()`.
+- **`mount()` wires runtime behavior**, after the window element exists.
+- **`dispose()` releases everything**, and must be safe to call on an app that
+  was never mounted — a window can be closed while its chunk is still loading.
+
+Register cleanup through the `BaseApp` helpers rather than by hand: `listen()`,
+`setInterval()`, `setTimeout()`, `requestAnimationFrame()`, `trackObjectUrl()`,
+`trackMediaElement()`, `trackAbortController()`, `trackMediaStream()`,
+`trackAudioContext()`, and `createBroadcastChannel()`. Each registers a
+disposable that `dispose()` drains automatically.
+
+When an app owns a resource category the helpers do not cover, add a regression
+test alongside the ones in `src/apps/resourceCleanup.test.js` proving `dispose()`
+releases it.
 
 ## ⚙️ Configuration
 
