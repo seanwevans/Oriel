@@ -60,8 +60,12 @@ export function isNativeFsSupported() {
   return typeof window !== "undefined" && typeof window.showDirectoryPicker === "function";
 }
 
+// Resolves to null when the environment has no IndexedDB at all. That is not a
+// failure — every caller has a localStorage or default-tree fallback for it — so
+// it is reported as an absent handle rather than a rejection. Only a genuine
+// open error rejects, and only that is worth warning about.
 function openDatabase() {
-  if (!supportsIndexedDb) return Promise.reject(new Error("IndexedDB is unavailable"));
+  if (!supportsIndexedDb) return Promise.resolve(null);
   if (!dbPromise) {
     dbPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -88,6 +92,7 @@ function openDatabase() {
 async function readStoredFileSystem() {
   try {
     const db = await openDatabase();
+    if (!db) return null;
     return await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
@@ -106,14 +111,16 @@ export async function readFileStoreValue(key) {
   if (!key) return null;
   try {
     const db = await openDatabase();
-    const stored = await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
-    if (stored) return stored;
+    if (db) {
+      const stored = await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+      if (stored) return stored;
+    }
   } catch (err) {
     console.warn(`Unable to read '${key}' from IndexedDB`, err);
   }
@@ -133,19 +140,22 @@ export async function readFileStoreValue(key) {
 async function writeStoredFileSystem(fs) {
   try {
     const db = await openDatabase();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.put(fs, FS_STORAGE_KEY);
+    if (db) {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.put(fs, FS_STORAGE_KEY);
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
   } catch (err) {
     console.warn("Unable to write file system to IndexedDB", err);
-    if (supportsLocalStorage) {
-      localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fs));
-    }
+  }
+
+  if (supportsLocalStorage) {
+    localStorage.setItem(FS_STORAGE_KEY, JSON.stringify(fs));
   }
 }
 
@@ -153,18 +163,21 @@ export async function writeFileStoreValue(key, value) {
   if (!key) return;
   try {
     const db = await openDatabase();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.put(value, key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-    return;
+    if (db) {
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.put(value, key);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      return;
+    }
   } catch (err) {
     console.warn(`Unable to write '${key}' to IndexedDB`, err);
-    if (!supportsLocalStorage) return;
   }
+
+  if (!supportsLocalStorage) return;
 
   try {
     localStorage.setItem(key, JSON.stringify(value));

@@ -49,3 +49,39 @@ test("replaceFileSystem copies __proto__ entries without invoking prototype sett
   assert.equal(children.__proto__.content, "data");
   assert.equal(Object.prototype.content, undefined);
 });
+
+// The store degrades to localStorage, or to the default tree, when IndexedDB is
+// missing — a browser with site data blocked, a private window, or the Node test
+// runner. That fallback is the designed path, so it has to be silent: warning on
+// it trains readers to ignore the console, and it printed a stack trace on every
+// import of this module under `npm test`.
+test("an environment without IndexedDB falls back quietly instead of warning", async () => {
+  assert.equal(
+    typeof globalThis.indexedDB,
+    "undefined",
+    "this test only proves something in an environment that has no IndexedDB"
+  );
+
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args.map(String).join(" "));
+
+  try {
+    // A distinct specifier gives a fresh module instance, so the top-level
+    // initialization this is checking runs again under the captured console.
+    const fresh = await import("./filesystem.js?fresh-without-indexeddb");
+    await fresh.fileSystemReady;
+
+    assert.deepEqual(warnings, [], "initializing the file system warned");
+
+    await fresh.writeFileStoreValue("oriel-fallback-probe", { ok: true });
+    assert.equal(await fresh.readFileStoreValue("oriel-fallback-probe"), null);
+
+    // The default tree is still handed out, so callers get a usable filesystem.
+    assert.ok(fresh.MOCK_FS["C\\"], "the default drive was not hydrated");
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.deepEqual(warnings, [], `unexpected warnings: ${warnings.join(" | ")}`);
+});
