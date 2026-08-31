@@ -14,6 +14,11 @@ import { test } from "node:test";
 // the window's DOM when it closes, which is why Program Manager can wire its own
 // icon grid at render time.
 //
+// Apps are bound to lazy loaders, so their classes are not in memory until the
+// registry has fetched them. The suite resolves every class up front and asserts
+// that it did, otherwise a binding that stopped resolving would silently shrink
+// the contract's coverage to nothing instead of failing.
+//
 // This arms traps on the escaping globals, then constructs and renders every app
 // in the registry against them.
 
@@ -108,7 +113,26 @@ function restoreGlobals() {
 installFakeGlobals();
 const { AppRegistry } = await import("../core/AppRegistry.js");
 const registry = new AppRegistry();
+
+// App modules are fetched with the fakes installed because their top-level code
+// may touch `window`/`document`. Anything they trap on the way in belongs to
+// module evaluation rather than to a single app, so the log is reset afterwards.
+const loadFailures = [];
+for (const { type } of registry.definitions) {
+  try {
+    const AppClass = await registry.loadAppClass(type);
+    if (!AppClass) loadFailures.push(`${type}: loader resolved no class`);
+  } catch (err) {
+    loadFailures.push(`${type}: loading the app module threw — ${err.message}`);
+  }
+}
+sideEffects.length = 0;
 restoreGlobals();
+
+test("every registered app resolves to a class the contract can inspect", () => {
+  assert.notEqual(registry.definitions.length, 0, "the registry exposed no apps");
+  assert.deepEqual(loadFailures, [], `apps that never loaded:\n${loadFailures.join("\n")}`);
+});
 
 test("every registered app constructs and renders without side effects", () => {
   installFakeGlobals();
@@ -164,7 +188,10 @@ test("every registered app exposes the full lifecycle surface", () => {
   try {
     for (const definition of registry.definitions) {
       const app = registry.createApp(definition.type, { windowEl: null, initData: null, services: {} });
-      if (!app) continue;
+      if (!app) {
+        failures.push(`${definition.type}: registry returned no instance`);
+        continue;
+      }
 
       for (const hook of ["getWindowContent", "setWindowElement", "mount", "dispose"]) {
         if (typeof app[hook] !== "function") {
@@ -186,7 +213,10 @@ test("disposing an app that was never mounted is safe", () => {
   try {
     for (const definition of registry.definitions) {
       const app = registry.createApp(definition.type, { windowEl: null, initData: null, services: {} });
-      if (!app) continue;
+      if (!app) {
+        failures.push(`${definition.type}: registry returned no instance`);
+        continue;
+      }
 
       // Windows can be closed before an app finishes mounting, so dispose() has
       // to tolerate being called against a bare instance.
